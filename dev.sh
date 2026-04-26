@@ -81,7 +81,10 @@ load_env() {
 
   export ASPNETCORE_ENVIRONMENT=Development
   export ASPNETCORE_URLS="http://localhost:${API_PORT}"
-  export ConnectionStrings__DefaultConnection="Host=localhost;Port=${POSTGRES_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+  # Single community DB — aliased to both names so foundation's validator is satisfied.
+  local _cs="Host=localhost;Port=${POSTGRES_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+  export ConnectionStrings__DefaultConnection="$_cs"
+  export ConnectionStrings__Postgres="$_cs"
   export FILE_STORAGE_PATH="${FILE_STORAGE_PATH:-$ROOT_DIR/.local/storage}"
   export VITE_API_BASE_URL="http://localhost:${API_PORT}"
 

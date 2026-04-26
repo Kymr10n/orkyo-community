@@ -12,6 +12,9 @@
   <Folder Name="/backend/src/">
     <Project Path="backend/src/Orkyo.Community.csproj" />
   </Folder>
+  <Folder Name="/backend/worker/">
+    <Project Path="backend/worker/Orkyo.Community.Worker.csproj" />
+  </Folder>
   <Project Path="../orkyo-foundation/backend/migration-abstractions/Orkyo.Migration.Abstractions.csproj" />
   <Project Path="../orkyo-foundation/backend/migrations-foundation/Orkyo.Foundation.Migrations.csproj" />
   <Project Path="../orkyo-foundation/backend/migrator-runtime/Orkyo.Migrator.csproj" />

@@ -33,6 +33,16 @@ try
 
     builder.WebHost.ConfigureKestrel(k => k.Limits.MaxRequestBodySize = 10 * 1024 * 1024);
 
+    // Community uses DefaultConnection for all DB access. Alias it to the names
+    // foundation's ConfigurationValidator and DeploymentConfig expect so they work
+    // without requiring operators to configure the same string twice.
+    var defaultConn = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (!string.IsNullOrEmpty(defaultConn))
+    {
+        builder.Configuration["ConnectionStrings:Postgres"] = defaultConn;
+        builder.Configuration["ConnectionStrings:ControlPlane"] = defaultConn;
+    }
+
     if (args.Contains("--validate"))
         return ValidateMode.Run(builder.Configuration, builder.Environment.EnvironmentName);
 

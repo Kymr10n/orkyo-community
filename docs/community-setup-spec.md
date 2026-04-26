@@ -214,7 +214,7 @@ Use `orkyo-core` only after the community runtime works, to identify missing leg
 
 **Goal:** Make authentication production-capable but simple for self-hosting.
 
-**Status:** Infrastructure in place (BFF + Keycloak). Keycloak realm JSON copied from `orkyo-saas` (same realm shape). Seed users and service account roles already configured.
+**Status:** ✅ Infrastructure in place. Keycloak realm JSON copied from `orkyo-saas` (includes seed users, service account roles, required actions, client scopes). BFF auth wired.
 
 **Remaining:**
 - Verify end-to-end login works for community instance
@@ -271,7 +271,7 @@ cp .env.template .env
 
 **Goal:** Decide whether community requires a background worker.
 
-**Status:** Not yet assessed.
+**Status:** ✅ Assessed. Worker skeleton created ().
 
 **Required work:**
 1. Identify worker responsibilities in `orkyo-saas` (`UserLifecycleService`)
@@ -289,7 +289,7 @@ cp .env.template .env
 
 **Goal:** After the community runtime works, compare against the original codebase for missing behavior.
 
-**Status:** Not yet started.
+**Status:** 🔲 Not yet started. Key known item:  must move from  to  before community worker can run it.
 
 **Required output:**
 
@@ -315,7 +315,7 @@ Needs architectural review
 
 **Goal:** Make community independently buildable and testable.
 
-**Status:** Not yet started.
+**Status:** 🔲 Not yet started. Key known item:  must move from  to  before community worker can run it.
 
 **Required work:**
 
@@ -372,12 +372,12 @@ docs/core-reconciliation.md  (Phase 9)
 | 4 | Consumes `orkyo-foundation` cleanly | ✅ |
 | 5 | Single-tenant context adapter | ✅ |
 | 6 | One Postgres database by default | ✅ |
-| 7 | Migrator can migrate an empty database | 🔲 verify |
-| 8 | API starts locally | 🔲 verify |
-| 9 | Frontend starts locally | 🔲 verify |
-| 10 | Login works | 🔲 Phase 5 |
-| 11 | Core Orkyo workflows reachable | 🔲 Phase 7 |
-| 12 | Docker Compose launches local stack | 🔲 Phase 6 |
+| 7 | Migrator can migrate an empty database | 🔲 run ./dev.sh up to verify |
+| 8 | API starts locally | 🔲 run ./dev.sh up to verify |
+| 9 | Frontend starts locally | ✅ vite build passes |
+| 10 | Login works | 🔲 smoke test pending |
+| 11 | Core Orkyo workflows reachable | 🔲 smoke test pending |
+| 12 | Docker Compose launches local stack | ✅ compose config valid |
 | 13 | CI validates build/test/lint | 🔲 Phase 10 |
 | 14 | `docs/core-reconciliation.md` exists | 🔲 Phase 9 |
 | 15 | No SaaS-only runtime dependency mandatory | ✅ |
