@@ -1,0 +1,25 @@
+FROM node:22-alpine
+WORKDIR /app
+
+# Copy package files and install. The docker-entrypoint.sh will re-install
+# if node_modules is absent or empty (e.g. fresh named volume).
+COPY package*.json ./
+RUN npm install
+
+# Copy source and entrypoint (src/ and public/ will be overridden by
+# read-only volume mounts in docker compose dev for hot-reload).
+COPY . .
+RUN chmod +x docker-entrypoint.sh
+
+# The entire orkyo-foundation/frontend directory is volume-mounted at /foundation
+# at runtime (see compose). Symlink it to the path vite.config.ts resolves via
+# import.meta.url so all foundation files (src, contracts, tsconfig.json, …)
+# are visible to Vite:
+#   new URL("../../orkyo-foundation/frontend", import.meta.url)
+#   → /orkyo-foundation/frontend  (when import.meta.url is /app/vite.config.ts)
+RUN mkdir -p /orkyo-foundation && ln -s /foundation /orkyo-foundation/frontend
+
+EXPOSE 5173
+
+ENTRYPOINT ["./docker-entrypoint.sh"]
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

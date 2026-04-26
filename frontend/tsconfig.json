@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "jsx": "react-jsx",
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "./.tsbuild",
+    "tsBuildInfoFile": "./.tsbuild/.tsbuildinfo",
+    "types": ["vite/client", "vitest/globals", "node"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@foundation/contracts/*": [
+        "./../../orkyo-foundation/frontend/contracts/*",
+        "./node_modules/@orkyo/foundation/contracts/*"
+      ],
+      "@foundation/src/*": [
+        "./../../orkyo-foundation/frontend/src/*",
+        "./node_modules/@orkyo/foundation/src/*"
+      ]
+    }
+  },
+  "references": [{ "path": "../../orkyo-foundation/frontend" }],
+  "include": ["src", "vite.config.ts"]
+}

@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>Orkyo.Community</RootNamespace>
+    <AssemblyName>Orkyo.Community</AssemblyName>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+
+  <!-- Foundation: project reference locally, NuGet in CI/Docker -->
+  <Choose>
+    <When Condition="Exists('..\..\..\orkyo-foundation\backend\src\Orkyo.Foundation.csproj')">
+      <ItemGroup>
+        <ProjectReference Include="..\..\..\orkyo-foundation\backend\src\Orkyo.Foundation.csproj" />
+        <ProjectReference Include="..\..\..\orkyo-foundation\backend\migration-abstractions\Orkyo.Migration.Abstractions.csproj" />
+        <ProjectReference Include="..\..\..\orkyo-foundation\backend\migrator-runtime\Orkyo.Migrator.csproj" />
+        <ProjectReference Include="..\..\..\orkyo-foundation\backend\migrations-foundation\Orkyo.Foundation.Migrations.csproj" />
+        <ProjectReference Include="..\migrations\Orkyo.Community.Migrations.csproj" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <PackageReference Include="Orkyo.Foundation" Version="0.1.*" />
+        <PackageReference Include="Orkyo.Migration.Abstractions" Version="0.1.*" />
+        <PackageReference Include="Orkyo.Migrator" Version="0.1.*" />
+        <PackageReference Include="Orkyo.Foundation.Migrations" Version="0.1.*" />
+        <ProjectReference Include="..\migrations\Orkyo.Community.Migrations.csproj" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="11.*" />
+    <PackageReference Include="Npgsql" Version="9.0.2" />
+    <PackageReference Include="MailKit" Version="4.16.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+  </ItemGroup>
+</Project>

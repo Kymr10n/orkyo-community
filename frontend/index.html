@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/orkyo-16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/orkyo-32.png" />
+    <link rel="icon" type="image/png" sizes="32x32"
+          href="/orkyo-32.png"
+          media="(prefers-color-scheme: light)" />
+    <link rel="icon" type="image/png" sizes="32x32"
+          href="/orkyo-dark-32.png"
+          media="(prefers-color-scheme: dark)" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/orkyo-180.png" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#000000" />
+
+    <title>Orkyo</title>
+  </head>
+  <body>
+    <div id="root">
+      <style>
+        .app-loader{display:flex;align-items:center;justify-content:center;height:100vh;background:#09090b}
+        @media(prefers-color-scheme:light){.app-loader{background:#fff}}
+        .app-loader>div{width:24px;height:24px;border:2px solid #3b82f6;border-top-color:transparent;border-radius:50%;animation:l .6s linear infinite}
+        @keyframes l{to{transform:rotate(360deg)}}
+      </style>
+      <div class="app-loader"><div></div></div>
+    </div>
+    <script src="/__runtime_config.js"></script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

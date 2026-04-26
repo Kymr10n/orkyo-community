@@ -1,0 +1,135 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: orkyo-community-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.2
+    container_name: orkyo-community-keycloak
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_DB: dev-mem
+      KC_HEALTH_ENABLED: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME: http://localhost:${KEYCLOAK_PORT}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import
+      - ../../../orkyo-foundation/keycloak/themes/orkyo:/opt/keycloak/themes/orkyo:ro
+    ports:
+      - "${KEYCLOAK_PORT}:8080"
+      - "9001:9000"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/8080' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: orkyo-community-mailhog
+    ports:
+      - "${SMTP_PORT:-1025}:1025"
+      - "${MAILHOG_UI_PORT}:8025"
+
+  migrator:
+    build:
+      context: ../../../
+      dockerfile: orkyo-community/backend/migrator/Dockerfile
+    container_name: orkyo-community-migrator
+    command: [migrate, --target, all]
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      APP_VERSION: ${APP_VERSION}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: on-failure
+
+  api:
+    build:
+      context: ../../../
+      dockerfile: orkyo-community/backend/api/Dockerfile
+    container_name: orkyo-community-api
+    depends_on:
+      db:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+      keycloak:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      Community__TenantId: ${COMMUNITY__TENANTID}
+      Community__TenantSlug: ${COMMUNITY__TENANTSLUG}
+      Community__TenantName: ${COMMUNITY__TENANTNAME}
+      APP_BASE_URL: ${APP_BASE_URL}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      KEYCLOAK_URL: ${KEYCLOAK_URL}
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      KEYCLOAK_BACKEND_CLIENT_ID: ${KEYCLOAK_BACKEND_CLIENT_ID}
+      KEYCLOAK_BACKEND_CLIENT_SECRET: ${KEYCLOAK_BACKEND_CLIENT_SECRET}
+      OIDC_AUTHORITY: ${OIDC_AUTHORITY}
+      OIDC_INTERNAL_AUTHORITY: http://keycloak:8080/realms/${KEYCLOAK_REALM}
+      FILE_STORAGE_PATH: /app/storage
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
+      SMTP_USE_SSL: "false"
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME}
+      BFF_ENABLED: "true"
+      BFF_COOKIE_DOMAIN: ""
+      BFF_COOKIE_SECURE: "false"
+      BFF_REDIRECT_URI: http://localhost:${API_PORT}/api/auth/bff/callback
+      BFF_ALLOWED_HOSTS: localhost,*.localhost
+    ports:
+      - "${API_PORT}:8080"
+    volumes:
+      - api_storage:/app/storage
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile.dev
+    container_name: orkyo-community-frontend
+    env_file: ../../.env
+    environment:
+      VITE_API_BASE_URL: http://localhost:${API_PORT}
+    ports:
+      - "${FRONTEND_PORT}:5173"
+    volumes:
+      - ../../frontend/src:/app/src:ro
+      - ../../frontend/public:/app/public:ro
+      - ../../../orkyo-foundation/frontend:/foundation:ro
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  api_storage:

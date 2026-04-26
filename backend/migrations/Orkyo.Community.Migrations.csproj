@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>Orkyo.Community.Migrations</RootNamespace>
+    <AssemblyName>Orkyo.Community.Migrations</AssemblyName>
+    <Description>Community migration module: single-database schema for self-hosted deployment.</Description>
+  </PropertyGroup>
+
+  <Choose>
+    <When Condition="Exists('..\..\..\orkyo-foundation\backend\migration-abstractions\Orkyo.Migration.Abstractions.csproj')">
+      <ItemGroup>
+        <ProjectReference Include="..\..\..\orkyo-foundation\backend\migration-abstractions\Orkyo.Migration.Abstractions.csproj" />
+        <ProjectReference Include="..\..\..\orkyo-foundation\backend\migrator-runtime\Orkyo.Migrator.csproj" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <PackageReference Include="Orkyo.Migration.Abstractions" Version="0.1.*" />
+        <PackageReference Include="Orkyo.Migrator" Version="0.1.*" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.5" />
+    <PackageReference Include="Npgsql" Version="9.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="sql\**\*.sql" />
+  </ItemGroup>
+</Project>

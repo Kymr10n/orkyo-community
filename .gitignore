@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/.tsbuild/
+**/coverage/
+**/TestResults/
+.env
+.local/
+**/.vs/
+**/.idea/

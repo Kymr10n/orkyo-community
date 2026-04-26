@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/backend/" />
+  <Folder Name="/backend/api/">
+    <Project Path="backend/api/Orkyo.Community.Api.csproj" />
+  </Folder>
+  <Folder Name="/backend/migrations/">
+    <Project Path="backend/migrations/Orkyo.Community.Migrations.csproj" />
+  </Folder>
+  <Folder Name="/backend/migrator/">
+    <Project Path="backend/migrator/Orkyo.Community.Migrator.csproj" />
+  </Folder>
+  <Folder Name="/backend/src/">
+    <Project Path="backend/src/Orkyo.Community.csproj" />
+  </Folder>
+  <Project Path="../orkyo-foundation/backend/migration-abstractions/Orkyo.Migration.Abstractions.csproj" />
+  <Project Path="../orkyo-foundation/backend/migrations-foundation/Orkyo.Foundation.Migrations.csproj" />
+  <Project Path="../orkyo-foundation/backend/migrator-runtime/Orkyo.Migrator.csproj" />
+  <Project Path="../orkyo-foundation/backend/shared/Orkyo.Shared.csproj" />
+  <Project Path="../orkyo-foundation/backend/src/Orkyo.Foundation.csproj" />
+</Solution>

@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AssemblyName>Orkyo.Community.Migrator</AssemblyName>
+    <RootNamespace>Orkyo.Community.Migrator</RootNamespace>
+  </PropertyGroup>
+
+  <Choose>
+    <When Condition="Exists('..\..\..\orkyo-foundation\backend\migrator-runtime\Orkyo.Migrator.csproj')">
+      <ItemGroup>
+        <ProjectReference Include="..\..\..\orkyo-foundation\backend\migrator-runtime\Orkyo.Migrator.csproj" />
+        <ProjectReference Include="..\..\..\orkyo-foundation\backend\migrations-foundation\Orkyo.Foundation.Migrations.csproj" />
+        <ProjectReference Include="..\migrations\Orkyo.Community.Migrations.csproj" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <PackageReference Include="Orkyo.Migrator" Version="0.1.*" />
+        <PackageReference Include="Orkyo.Foundation.Migrations" Version="0.1.*" />
+        <ProjectReference Include="..\migrations\Orkyo.Community.Migrations.csproj" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.5" />
+  </ItemGroup>
+</Project>
