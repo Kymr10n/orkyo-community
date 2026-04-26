@@ -346,18 +346,18 @@ npm run build
 
 **Goal:** Make community understandable for external/self-hosted users.
 
-**Status:** `README.md` created. Remaining docs not yet written.
+**Status:** ✅ Core docs written.
 
 **Required docs:**
 ```text
-README.md                    ✅ created
-docs/community-setup-spec.md ✅ this file
-docs/architecture.md
-docs/configuration.md
-docs/deployment-docker.md
-docs/authentication.md
-docs/migrations.md
-docs/core-reconciliation.md  (Phase 9)
+README.md                    ✅
+docs/community-setup-spec.md ✅
+docs/architecture.md         ✅
+docs/configuration.md        ✅
+docs/migrations.md           ✅
+docs/core-reconciliation.md  ✅
+docs/deployment-docker.md    🔲 (covers production self-hosting)
+docs/authentication.md       🔲 (covers production Keycloak setup)
 ```
 
 ---
@@ -374,10 +374,10 @@ docs/core-reconciliation.md  (Phase 9)
 | 6 | One Postgres database by default | ✅ |
 | 7 | Migrator can migrate an empty database | 🔲 run ./dev.sh up to verify |
 | 8 | API starts locally | 🔲 run ./dev.sh up to verify |
-| 9 | Frontend starts locally | ✅ vite build passes |
+| 9 | Frontend starts locally | ✅ vite build + tsc clean |
 | 10 | Login works | 🔲 smoke test pending |
 | 11 | Core Orkyo workflows reachable | 🔲 smoke test pending |
 | 12 | Docker Compose launches local stack | ✅ compose config valid |
-| 13 | CI validates build/test/lint | 🔲 Phase 10 |
-| 14 | `docs/core-reconciliation.md` exists | 🔲 Phase 9 |
+| 13 | CI validates build/test/lint | ✅ .github/workflows/ci.yml |
+| 14 | `docs/core-reconciliation.md` exists | ✅ |
 | 15 | No SaaS-only runtime dependency mandatory | ✅ |
