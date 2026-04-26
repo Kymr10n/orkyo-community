@@ -12,6 +12,9 @@
   <Folder Name="/backend/src/">
     <Project Path="backend/src/Orkyo.Community.csproj" />
   </Folder>
+  <Folder Name="/backend/tests/">
+    <Project Path="backend/tests/Orkyo.Community.Tests.csproj" />
+  </Folder>
   <Folder Name="/backend/worker/">
     <Project Path="backend/worker/Orkyo.Community.Worker.csproj" />
   </Folder>

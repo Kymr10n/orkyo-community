@@ -238,6 +238,7 @@ try
     app.MapAuditEndpoints();
     app.MapDiagnosticsAdminEndpoints();
     app.MapSettingsAdminEndpoints();
+    app.MapUserAdminEndpoints();
 
     // Domain
     app.MapAnnouncementEndpoints();

@@ -1,12 +1,9 @@
+using Api.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Orkyo.Community.Services;
+using Orkyo.Shared.Keycloak;
 using Serilog;
-
-// TODO (Phase 8): Port UserLifecycleService from orkyo-saas/backend/worker to
-// orkyo-foundation, then register it here. Decision: UserLifecycleService is
-// product-agnostic (GDPR inactivity management) → move to foundation, consume
-// in both saas and community workers.
-//
-// Until then, community worker is a stub that starts and idles cleanly.
-// The GDPR user lifecycle will NOT run until Phase 8 is complete.
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -16,13 +13,20 @@ Log.Logger = new LoggerConfiguration()
 
 try
 {
-    Log.Information("Starting Orkyo Community Worker (stub — user lifecycle not yet implemented)");
+    Log.Information("Starting Orkyo Community Worker");
 
     using var host = Host.CreateDefaultBuilder(args)
         .UseSerilog()
-        .ConfigureServices((_, services) =>
+        .ConfigureServices((context, services) =>
         {
-            services.AddHostedService<StubWorkerService>();
+            services.AddHttpClient();
+            services.AddSingleton(KeycloakOptions.FromConfiguration(context.Configuration));
+            // Community DB factory: CreateControlPlaneConnection() → single community database
+            services.AddSingleton<IDbConnectionFactory, CommunityDbConnectionFactory>();
+            services.AddSingleton<IOrgDbConnectionFactory>(sp =>
+                sp.GetRequiredService<IDbConnectionFactory>());
+            services.AddSingleton<UserLifecycleService>();
+            services.AddHostedService<CommunityWorkerService>();
         })
         .Build();
 
@@ -37,21 +41,46 @@ finally
     Log.CloseAndFlush();
 }
 
-/// <summary>
-/// Placeholder service — idles until UserLifecycleService is ported from saas to foundation.
-/// </summary>
-internal sealed class StubWorkerService : BackgroundService
+internal sealed class CommunityWorkerService : BackgroundService
 {
-    private readonly ILogger<StubWorkerService> _logger;
+    private readonly ILogger<CommunityWorkerService> _logger;
+    private readonly UserLifecycleService _userLifecycle;
+    private DateTime _lastDailyCheck = DateTime.MinValue;
 
-    public StubWorkerService(ILogger<StubWorkerService> logger) => _logger = logger;
+    public CommunityWorkerService(ILogger<CommunityWorkerService> logger, UserLifecycleService userLifecycle)
+    {
+        _logger = logger;
+        _userLifecycle = userLifecycle;
+    }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogWarning(
-            "Community worker is a stub. UserLifecycleService must be moved to " +
-            "orkyo-foundation before GDPR user lifecycle runs. See docs/community-setup-spec.md Phase 8.");
+        _logger.LogInformation("Community worker started");
 
-        await Task.Delay(Timeout.Infinite, stoppingToken);
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                var now = DateTime.UtcNow;
+
+                // Run GDPR user lifecycle once per day
+                if (now - _lastDailyCheck >= TimeSpan.FromHours(24))
+                {
+                    _logger.LogInformation("Running user lifecycle check");
+                    await _userLifecycle.ProcessAsync(stoppingToken);
+                    _lastDailyCheck = now;
+                }
+
+                await Task.Delay(TimeSpan.FromMinutes(15), stoppingToken);
+            }
+            catch (OperationCanceledException) { break; }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in worker");
+                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+            }
+        }
+
+        _logger.LogInformation("Community worker stopped");
     }
 }
