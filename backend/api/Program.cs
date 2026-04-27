@@ -81,6 +81,7 @@ try
                 policy.WithOrigins([.. allowedOrigins])
                     .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                     .WithHeaders("Content-Type", "Authorization",
+                        Api.Constants.HeaderConstants.TenantSlug,
                         Api.Constants.HeaderConstants.CorrelationId,
                         Api.Constants.HeaderConstants.CsrfToken)
                     .AllowCredentials();
