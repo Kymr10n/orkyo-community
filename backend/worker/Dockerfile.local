@@ -1,0 +1,33 @@
+# Local development build — uses foundation sibling source via project references.
+# Context: parent directory (../) — no GHCR_TOKEN required.
+# For the production/CI build see: Dockerfile
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY orkyo-foundation/backend/shared                  orkyo-foundation/backend/shared/
+COPY orkyo-foundation/backend/src                     orkyo-foundation/backend/src/
+COPY orkyo-foundation/backend/migration-abstractions  orkyo-foundation/backend/migration-abstractions/
+COPY orkyo-foundation/backend/migrator-runtime        orkyo-foundation/backend/migrator-runtime/
+COPY orkyo-foundation/backend/migrations-foundation   orkyo-foundation/backend/migrations-foundation/
+
+COPY orkyo-community/backend/migrations  orkyo-community/backend/migrations/
+COPY orkyo-community/backend/src         orkyo-community/backend/src/
+COPY orkyo-community/backend/worker      orkyo-community/backend/worker/
+
+WORKDIR /src/orkyo-community/backend/worker
+RUN dotnet restore Orkyo.Community.Worker.csproj
+RUN dotnet publish Orkyo.Community.Worker.csproj -c Release -o /app/publish --no-restore
+
+# Runtime stage — identical to Dockerfile (production)
+FROM mcr.microsoft.com/dotnet/runtime:10.0 AS runtime
+WORKDIR /app
+COPY --from=build /app/publish .
+
+RUN useradd -r -u 999 -s /bin/false appuser \
+    && chown -R appuser:appuser /app
+USER appuser
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD pgrep -f Orkyo.Community.Worker.dll || exit 1
+
+ENTRYPOINT ["dotnet", "Orkyo.Community.Worker.dll"]

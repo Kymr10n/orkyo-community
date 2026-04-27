@@ -87,9 +87,13 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: NuGet — restore for audit
-        env:
-          NUGET_AUTH_TOKEN: ${{ secrets.GHCR_TOKEN }}
-        run: dotnet restore Orkyo.Community.slnx
+        run: |
+          dotnet nuget add source https://nuget.pkg.github.com/Kymr10n/index.json \
+            --name github --username Kymr10n \
+            --password ${{ secrets.GHCR_TOKEN }} \
+            --store-password-in-clear-text
+          dotnet restore Orkyo.Community.slnx
+
 
       - name: NuGet — check for vulnerable packages
         run: |
@@ -159,9 +163,13 @@ jobs:
           restore-keys: nuget-community-
 
       - name: Restore
-        env:
-          NUGET_AUTH_TOKEN: ${{ secrets.GHCR_TOKEN }}
-        run: dotnet restore Orkyo.Community.slnx
+        run: |
+          dotnet nuget add source https://nuget.pkg.github.com/Kymr10n/index.json \
+            --name github --username Kymr10n \
+            --password ${{ secrets.GHCR_TOKEN }} \
+            --store-password-in-clear-text
+          dotnet restore Orkyo.Community.slnx
+
 
       - name: Format check
         run: dotnet format Orkyo.Community.slnx --verify-no-changes --no-restore
@@ -272,9 +280,13 @@ jobs:
           global-json-file: global.json
 
       - name: Restore
-        env:
-          NUGET_AUTH_TOKEN: ${{ secrets.GHCR_TOKEN }}
-        run: dotnet restore Orkyo.Community.slnx
+        run: |
+          dotnet nuget add source https://nuget.pkg.github.com/Kymr10n/index.json \
+            --name github --username Kymr10n \
+            --password ${{ secrets.GHCR_TOKEN }} \
+            --store-password-in-clear-text
+          dotnet restore Orkyo.Community.slnx
+
 
       - name: Build
         run: dotnet build Orkyo.Community.slnx -c Release --no-restore

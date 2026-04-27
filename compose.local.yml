@@ -50,8 +50,8 @@ services:
 
   migrator:
     build:
-      context: ..
-      dockerfile: orkyo-community/backend/migrator/Dockerfile
+      context: ../
+      dockerfile: orkyo-community/backend/migrator/Dockerfile.local
     container_name: orkyo-community-migrator
     environment:
       ORKYO_EDITION: community
@@ -66,8 +66,8 @@ services:
 
   api:
     build:
-      context: ..
-      dockerfile: orkyo-community/backend/api/Dockerfile
+      context: ../
+      dockerfile: orkyo-community/backend/api/Dockerfile.local
     container_name: orkyo-community-api
     depends_on:
       db:
