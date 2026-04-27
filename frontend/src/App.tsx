@@ -1,17 +1,28 @@
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@foundation/src/contexts/AuthContext";
 import { ApexGateway } from "@foundation/src/components/auth/ApexGateway";
 import { TenantApp } from "@foundation/src/components/auth/TenantApp";
 import { ThemeToggle } from "@foundation/src/components/layout/ThemeToggle";
 import { AUTH_STAGES } from "@foundation/src/constants/auth";
+import { CommunityAdminPage } from "@/pages/CommunityAdminPage";
 
 /**
  * Community shell — single-tenant, no subdomain routing.
- * Renders ApexGateway for the auth pipeline and switches to TenantApp when ready.
- * SaaS render slots (admin page, tenant select, plan cards) are omitted.
+ *
+ * Rendering priority:
+ *  1. /admin + canAccessAdminPage → CommunityAdminPage (independent of auth stage)
+ *  2. authStage !== READY          → ApexGateway (auth pipeline)
+ *  3. authStage === READY          → TenantApp (main application)
  */
 function CommunityShell() {
-  const { authStage } = useAuth();
+  const { authStage, canAccessAdminPage } = useAuth();
+  const { pathname } = useLocation();
+
+  const isAdminRoute = pathname === '/admin' || pathname.startsWith('/admin/');
+
+  if (isAdminRoute && canAccessAdminPage) {
+    return <CommunityAdminPage />;
+  }
 
   if (authStage !== AUTH_STAGES.READY) {
     return (

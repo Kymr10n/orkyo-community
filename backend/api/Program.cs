@@ -120,6 +120,7 @@ try
 
     builder.Services.AddScoped<IAdminAuditService, CommunityAuditService>();
     builder.Services.AddSingleton<IBreakGlassSessionStore, NullBreakGlassSessionStore>();
+    builder.Services.AddScoped<CommunityJitProvisioningMiddleware>();
 
     // Tenant + org contexts (resolved per-request by ContextEnrichmentMiddleware using SingleTenantResolver)
     builder.Services.AddScoped<TenantContext>(sp =>
@@ -227,6 +228,7 @@ try
     app.UseAuthentication();
     app.UseMiddleware<CsrfMiddleware>();
     app.UseAuthorization();
+    app.UseMiddleware<CommunityJitProvisioningMiddleware>();
     app.UseMiddleware<SingleTenantMiddleware>();
     app.UseMiddleware<ContextEnrichmentMiddleware>();
 
