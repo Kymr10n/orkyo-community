@@ -13,25 +13,22 @@ VALUES (
 ) ON CONFLICT (id) DO NOTHING;
 
 -- ── Demo spaces ───────────────────────────────────────────────────────────────
-INSERT INTO spaces (id, site_id, name, code, is_physical, created_at, updated_at)
+INSERT INTO spaces (id, site_id, name, code, is_physical, geometry, created_at, updated_at)
 VALUES
     ('d0000000-0000-0000-0001-000000000001', 'd0000000-0000-0000-0000-000000000001',
-     'Meeting Room A', 'MR-A', true, NOW(), NOW()),
+     'Meeting Room A', 'MR-A', true, '{}'::jsonb, NOW(), NOW()),
     ('d0000000-0000-0000-0001-000000000002', 'd0000000-0000-0000-0000-000000000001',
-     'Meeting Room B', 'MR-B', true, NOW(), NOW()),
+     'Meeting Room B', 'MR-B', true, '{}'::jsonb, NOW(), NOW()),
     ('d0000000-0000-0000-0001-000000000003', 'd0000000-0000-0000-0000-000000000001',
-     'Open Workspace', 'OW-1', true, NOW(), NOW()),
+     'Open Workspace', 'OW-1', true, '{}'::jsonb, NOW(), NOW()),
     ('d0000000-0000-0000-0001-000000000004', 'd0000000-0000-0000-0000-000000000001',
-     'Focus Booth', 'FB-1', true, NOW(), NOW())
+     'Focus Booth', 'FB-1', true, '{}'::jsonb, NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- ── Demo criteria ─────────────────────────────────────────────────────────────
-INSERT INTO criteria (id, site_id, key, display_name, data_type, is_required, created_at, updated_at)
+INSERT INTO criteria (id, name, data_type, created_at, updated_at)
 VALUES
-    ('d0000000-0000-0000-0002-000000000001', 'd0000000-0000-0000-0000-000000000001',
-     'capacity', 'Capacity (persons)', 'integer', false, NOW(), NOW()),
-    ('d0000000-0000-0000-0002-000000000002', 'd0000000-0000-0000-0000-000000000001',
-     'has_av', 'AV Equipment', 'boolean', false, NOW(), NOW()),
-    ('d0000000-0000-0000-0002-000000000003', 'd0000000-0000-0000-0000-000000000001',
-     'has_whiteboard', 'Whiteboard', 'boolean', false, NOW(), NOW())
+    ('d0000000-0000-0000-0002-000000000001', 'Capacity (persons)', 'Number', NOW(), NOW()),
+    ('d0000000-0000-0000-0002-000000000002', 'AV Equipment',       'Boolean', NOW(), NOW()),
+    ('d0000000-0000-0000-0002-000000000003', 'Whiteboard',         'Boolean', NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;

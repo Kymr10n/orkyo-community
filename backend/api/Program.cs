@@ -117,6 +117,9 @@ try
     // Community quota: all resources unlimited
     builder.Services.AddScoped<IQuotaEnforcer, CommunityQuotaEnforcer>();
 
+    builder.Services.AddScoped<IAdminAuditService, CommunityAuditService>();
+    builder.Services.AddSingleton<IBreakGlassSessionStore, NullBreakGlassSessionStore>();
+
     // Tenant + org contexts (resolved per-request by ContextEnrichmentMiddleware using SingleTenantResolver)
     builder.Services.AddScoped<TenantContext>(sp =>
     {

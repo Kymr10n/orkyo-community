@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 ROOT_DIR="$PWD"
-LOCAL_COMPOSE_FILE="$ROOT_DIR/infra/compose/docker-compose.yml"
+LOCAL_COMPOSE_FILE="$ROOT_DIR/compose.local.yml"
 FRONTEND_ROOT="$ROOT_DIR/frontend"
 
 RED='\033[0;31m'
@@ -141,7 +141,7 @@ cmd_up() {
   wait_for_url "http://localhost:${API_PORT}/health" "API"
 
   success "Full stack is up"
-  echo "Frontend: http://localhost:${FRONTEND_PORT}"
+  echo "Frontend: http://localhost:${FRONTEND_PORT}  (Community)"
   echo "API:      http://localhost:${API_PORT}"
   echo "Swagger:  http://localhost:${API_PORT}/swagger"
   echo "Keycloak: http://localhost:${KEYCLOAK_PORT}"

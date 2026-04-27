@@ -29,8 +29,8 @@ services:
       KC_HOSTNAME: http://localhost:${KEYCLOAK_PORT}
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
     volumes:
-      - ./keycloak:/opt/keycloak/data/import
-      - ../../../orkyo-foundation/keycloak/themes/orkyo:/opt/keycloak/themes/orkyo:ro
+      - ./infra/compose/keycloak:/opt/keycloak/data/import
+      - ../orkyo-foundation/keycloak/themes/orkyo:/opt/keycloak/themes/orkyo:ro
     ports:
       - "${KEYCLOAK_PORT}:8080"
       - "9001:9000"
@@ -45,18 +45,20 @@ services:
     image: mailhog/mailhog:v1.0.1
     container_name: orkyo-community-mailhog
     ports:
-      - "${SMTP_PORT:-1025}:1025"
+      - "${SMTP_PORT}:1025"
       - "${MAILHOG_UI_PORT}:8025"
 
   migrator:
     build:
-      context: ../../../
+      context: ..
       dockerfile: orkyo-community/backend/migrator/Dockerfile
     container_name: orkyo-community-migrator
-    command: [migrate, --target, all]
     environment:
+      ORKYO_EDITION: community
       ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__ControlPlane: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
       APP_VERSION: ${APP_VERSION}
+    command: [migrate, --target, all]
     depends_on:
       db:
         condition: service_healthy
@@ -64,7 +66,7 @@ services:
 
   api:
     build:
-      context: ../../../
+      context: ..
       dockerfile: orkyo-community/backend/api/Dockerfile
     container_name: orkyo-community-api
     depends_on:
@@ -114,18 +116,18 @@ services:
 
   frontend:
     build:
-      context: ../../frontend
+      context: ./frontend
       dockerfile: Dockerfile.dev
     container_name: orkyo-community-frontend
-    env_file: ../../.env
+    env_file: .env
     environment:
       VITE_API_BASE_URL: http://localhost:${API_PORT}
     ports:
       - "${FRONTEND_PORT}:5173"
     volumes:
-      - ../../frontend/src:/app/src:ro
-      - ../../frontend/public:/app/public:ro
-      - ../../../orkyo-foundation/frontend:/foundation:ro
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+      - ../orkyo-foundation/frontend:/foundation:ro
     depends_on:
       api:
         condition: service_healthy
