@@ -247,6 +247,7 @@ try
     app.MapUserAdminEndpoints();
 
     // Domain
+    app.MapSettingsEndpoints();
     app.MapAnnouncementEndpoints();
     app.MapUserAnnouncementEndpoints();
     app.MapSecurityEndpoints();

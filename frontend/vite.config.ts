@@ -76,6 +76,16 @@ export default defineConfig({
       "lucide-react",
     ],
   },
+  optimizeDeps: {
+    esbuildOptions: {
+      // Some pre-bundled deps (@dnd-kit, lucide-react) ship source map files
+      // with empty "sources" arrays, causing browser DevTools to log
+      // "No sources are declared in this source map." Disabling source maps
+      // for pre-bundled deps eliminates those warnings without affecting
+      // source maps for our own application code.
+      sourcemap: false,
+    },
+  },
   server: {
     host: true,
     port: 5173,
