@@ -1,0 +1,11 @@
+title = "Orkyo Community Gitleaks Config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Test fixtures and CI config — no real secrets"
+paths = [
+  '''\.github/workflows/release-ci\.yml''',
+  '''backend/tests/appsettings.*\.json''',
+]

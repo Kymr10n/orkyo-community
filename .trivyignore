@@ -1,0 +1,3 @@
+# Trivy CVE exceptions for orkyo-community
+# Format: CVE-YYYY-NNNNN  # Impact | Reason | Added: YYYY-MM-DD | Review: YYYY-MM-DD
+# (no exceptions at initial setup)

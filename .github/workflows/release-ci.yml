@@ -1,0 +1,661 @@
+name: CI
+
+# Triggers:
+#   pull_request to main     — security + build + test + smoke (no push)
+#   push to main             — + build images (sha) + container scan
+#   push to v* tags          — + assemble release bundle + smoke-selfhosted + GH Release
+#   nightly 03:00 UTC        — full pipeline if code changed
+#   workflow_dispatch        — manual run
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore: ['*.md', 'docs/**']
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths-ignore: ['*.md', 'docs/**']
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: release-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io/kymr10n
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  # ─────────────────────────────────────────────
+  # NIGHTLY CHANGE CHECK
+  # ─────────────────────────────────────────────
+  nightly-change-check:
+    name: Nightly Change Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      has_changes: ${{ steps.check.outputs.has_changes }}
+    steps:
+      - name: Check for code changes since last successful nightly
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: runs } = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner, repo: context.repo.repo,
+              workflow_id: 'release-ci.yml', event: 'schedule',
+              status: 'success', per_page: 1,
+            });
+            if (runs.workflow_runs.length === 0) { core.setOutput('has_changes', 'true'); return; }
+            const lastSha = runs.workflow_runs[0].head_sha;
+            core.setOutput('has_changes', lastSha !== context.sha ? 'true' : 'false');
+            if (lastSha === context.sha) core.notice('No changes since last nightly — skipping');
+
+  # ─────────────────────────────────────────────
+  # SECURITY AUDIT
+  # ─────────────────────────────────────────────
+  security-audit:
+    name: security-audit
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name != 'schedule' ||
+      needs.nightly-change-check.outputs.has_changes == 'true'
+    needs: [nightly-change-check]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: NuGet — restore for audit
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: dotnet restore Orkyo.Community.slnx
+
+      - name: NuGet — check for vulnerable packages
+        run: |
+          output=$(dotnet list Orkyo.Community.slnx package --vulnerable --include-transitive 2>&1)
+          echo "$output"
+          if echo "$output" | grep -qi "has the following vulnerable packages"; then
+            echo "::error::Vulnerable NuGet packages detected"; exit 1
+          fi
+
+      - name: npm — install + audit
+        run: npm ci && npm audit --audit-level=high --omit=dev
+        working-directory: frontend
+
+      - name: npm — license scan (open-source distribution requirement)
+        run: |
+          npx --yes license-checker@^25.0.1 \
+            --summary --excludePrivatePackages \
+            --failOn "GPL-2.0;GPL-3.0;AGPL-3.0;LGPL-2.0;LGPL-2.1;LGPL-3.0"
+        working-directory: frontend
+
+      - name: Trivy — IaC config scan
+        uses: aquasecurity/trivy-action@0.31.0
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+
+      - name: Gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+
+      - name: Trivy — filesystem scan
+        uses: aquasecurity/trivy-action@0.31.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+          ignore-unfixed: true
+
+      - name: Migration header lint
+        run: bash scripts/ci/lint-migration-headers.sh backend/migrations/sql
+
+  # ─────────────────────────────────────────────
+  # BACKEND CI
+  # ─────────────────────────────────────────────
+  backend-ci:
+    name: backend-ci
+    runs-on: ubuntu-latest
+    needs: [security-audit]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-community-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: nuget-community-
+
+      - name: Restore
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: dotnet restore Orkyo.Community.slnx
+
+      - name: Format check
+        run: dotnet format Orkyo.Community.slnx --verify-no-changes --no-restore
+
+      - name: Build
+        run: dotnet build Orkyo.Community.slnx -c Release --no-restore -warnaserror
+
+      - name: Test
+        run: |
+          dotnet test Orkyo.Community.slnx \
+            -c Release --no-build \
+            --verbosity normal \
+            --logger GitHubActions \
+            --collect:"XPlat Code Coverage" \
+            --results-directory backend/TestResults
+
+      - name: Upload backend coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v5
+        with:
+          directory: backend/TestResults
+          flags: backend
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  # ─────────────────────────────────────────────
+  # FRONTEND CI
+  # ─────────────────────────────────────────────
+  frontend-ci:
+    name: frontend-ci
+    runs-on: ubuntu-latest
+    needs: [security-audit]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Configure npm for GitHub Packages (@orkyo/foundation)
+        run: |
+          echo "@orkyo:registry=https://npm.pkg.github.com" > frontend/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GHCR_TOKEN }}" >> frontend/.npmrc
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Lint
+        run: npm run lint
+        working-directory: frontend
+
+      - name: Type check
+        run: npm run typecheck
+        working-directory: frontend
+
+      - name: Build
+        run: npm run build
+        working-directory: frontend
+
+      - name: Test with coverage
+        run: npm run test:coverage
+        working-directory: frontend
+
+      - name: Upload frontend coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v5
+        with:
+          files: frontend/coverage/cobertura-coverage.xml
+          flags: frontend
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  # ─────────────────────────────────────────────
+  # SMOKE TESTS — gates image builds
+  # ─────────────────────────────────────────────
+  smoke-tests:
+    name: smoke-tests
+    runs-on: ubuntu-latest
+    needs: [backend-ci, frontend-ci]
+    timeout-minutes: 15
+    if: >-
+      !failure() && !cancelled() &&
+      (github.event_name != 'schedule' ||
+       needs.nightly-change-check.outputs.has_changes == 'true')
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: dotnet restore Orkyo.Community.slnx
+
+      - name: Build
+        run: dotnet build Orkyo.Community.slnx -c Release --no-restore
+
+      - name: Create tenant database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres \
+            -c "CREATE DATABASE orkyo_community_ci;" || true
+
+      - name: Run migrator
+        env:
+          CONNECTION_STRING: "Host=localhost;Port=5432;Database=orkyo_community_ci;Username=postgres;Password=postgres"
+          APP_VERSION: ci-${{ github.sha }}
+        run: |
+          dotnet run --no-build -c Release \
+            --project backend/migrator/Orkyo.Community.Migrator.csproj \
+            -- migrate --target all
+          dotnet run --no-build -c Release \
+            --project backend/migrator/Orkyo.Community.Migrator.csproj \
+            -- migrate --target all
+
+      - name: Start API and verify health
+        env:
+          ConnectionStrings__Postgres: "Host=localhost;Port=5432;Database=orkyo_community_ci;Username=postgres;Password=postgres"
+          ASPNETCORE_URLS: "http://+:5002"
+          KEYCLOAK_URL: "http://localhost:8082"
+          KEYCLOAK_REALM: "orkyo-community"
+          KEYCLOAK_BACKEND_CLIENT_ID: "orkyo-backend"
+          KEYCLOAK_BACKEND_CLIENT_SECRET: "ci-secret"
+          OIDC_AUTHORITY: "http://localhost:8082/realms/orkyo-community"
+          JWT_ISSUER: "orkyo-api"
+          JWT_AUDIENCE: "orkyo-app"
+          JWT_SECRET: "ci-test-secret-at-least-32-characters-long"
+          SMTP_HOST: "localhost"
+          SMTP_PORT: "1025"
+          SMTP_USE_SSL: "false"
+          SMTP_FROM_EMAIL: "noreply@ci.local"
+          SMTP_FROM_NAME: "Orkyo CI"
+          FILE_STORAGE_PATH: "/tmp/orkyo-ci-storage"
+        run: |
+          dotnet run --no-build -c Release \
+            --project backend/api/Orkyo.Community.Api.csproj \
+            > /tmp/api.log 2>&1 &
+          echo $! > /tmp/api.pid
+
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:5002/api/health >/dev/null 2>&1; then
+              echo "API healthy after ${i}s"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API failed to start"; tail -n 100 /tmp/api.log; exit 1
+
+      - name: Teardown
+        if: always()
+        run: |
+          [ -f /tmp/api.pid ] && kill "$(cat /tmp/api.pid)" 2>/dev/null || true
+
+  # ─────────────────────────────────────────────
+  # BUILD IMAGES — main + v* tags, after smoke
+  # ─────────────────────────────────────────────
+  build-images:
+    name: Build Images (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    needs: [smoke-tests]
+    if: >-
+      !failure() && !cancelled() &&
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    permissions:
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - service: api
+            dockerfile: backend/api/Dockerfile
+          - service: worker
+            dockerfile: backend/worker/Dockerfile
+          - service: migrator
+            dockerfile: backend/migrator/Dockerfile
+          - service: frontend
+            dockerfile: frontend/Dockerfile.prod
+            context: frontend
+            no_secret: true
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Build and push (backend)
+        if: matrix.no_secret != true
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ env.REGISTRY }}/orkyo-community-${{ matrix.service }}:sha-${{ github.sha }}
+          secrets: nuget_token=${{ secrets.GHCR_TOKEN }}
+          cache-from: type=gha,scope=community-${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=community-${{ matrix.service }}
+
+      - name: Build and push (frontend)
+        if: matrix.no_secret == true
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ env.REGISTRY }}/orkyo-community-${{ matrix.service }}:sha-${{ github.sha }}
+          cache-from: type=gha,scope=community-${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=community-${{ matrix.service }}
+
+  # ─────────────────────────────────────────────
+  # CONTAINER SCAN
+  # ─────────────────────────────────────────────
+  container-scan:
+    name: Container Scan (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    needs: [build-images]
+    if: >-
+      !failure() && !cancelled() &&
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    strategy:
+      matrix:
+        service: [api, worker, migrator, frontend]
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Trivy — image scan
+        uses: aquasecurity/trivy-action@0.31.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/orkyo-community-${{ matrix.service }}:sha-${{ github.sha }}
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+          ignore-unfixed: true
+          trivyignores: .trivyignore
+
+      - name: Verify non-root container
+        if: matrix.service != 'frontend'
+        run: |
+          uid=$(docker run --rm \
+            ${{ env.REGISTRY }}/orkyo-community-${{ matrix.service }}:sha-${{ github.sha }} \
+            id -u 2>/dev/null || echo "999")
+          if [ "$uid" = "0" ]; then
+            echo "::error::${{ matrix.service }} runs as root"; exit 1
+          fi
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/orkyo-community-${{ matrix.service }}:sha-${{ github.sha }}
+          format: spdx-json
+          output-file: sbom-${{ matrix.service }}.spdx.json
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ matrix.service }}-${{ github.sha }}
+          path: sbom-${{ matrix.service }}.spdx.json
+          retention-days: 90
+
+  # ─────────────────────────────────────────────
+  # RELEASE BUNDLE + SMOKE + GH RELEASE — v* only
+  # ─────────────────────────────────────────────
+  assemble-selfhosted:
+    name: Assemble Release Bundle
+    runs-on: ubuntu-latest
+    needs: [container-scan]
+    if: >-
+      !failure() && !cancelled() &&
+      startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          MAJOR="${VERSION%%.*}"
+          MINOR="${VERSION%.*}"
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "MAJOR=$MAJOR" >> "$GITHUB_OUTPUT"
+          echo "MINOR=$MINOR" >> "$GITHUB_OUTPUT"
+
+      - name: Promote images to version tags
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Re-tag images (no rebuild)
+        env:
+          V: ${{ steps.version.outputs.VERSION }}
+          MINOR: ${{ steps.version.outputs.MINOR }}
+          MAJOR: ${{ steps.version.outputs.MAJOR }}
+        run: |
+          for svc in api worker migrator frontend; do
+            SHA_IMG="${{ env.REGISTRY }}/orkyo-community-${svc}:sha-${{ github.sha }}"
+            docker pull "$SHA_IMG"
+            for tag in "$V" "$MINOR" "$MAJOR"; do
+              docker tag "$SHA_IMG" "${{ env.REGISTRY }}/orkyo-community-${svc}:${tag}"
+              docker push "${{ env.REGISTRY }}/orkyo-community-${svc}:${tag}"
+            done
+          done
+
+      - name: Assemble release bundle
+        run: bash scripts/ci/assemble-release.sh "${{ steps.version.outputs.VERSION }}" dist
+
+      - name: Upload bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-bundle
+          path: dist/
+          retention-days: 1
+
+      - name: Store version output
+        id: bundle
+        run: echo "VERSION=${{ steps.version.outputs.VERSION }}" >> "$GITHUB_OUTPUT"
+
+  smoke-selfhosted:
+    name: Smoke — Self-Hosted Bundle
+    runs-on: ubuntu-latest
+    needs: [assemble-selfhosted]
+    if: >-
+      !failure() && !cancelled() &&
+      startsWith(github.ref, 'refs/tags/v')
+    timeout-minutes: 10
+
+    steps:
+      - name: Download release bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: release-bundle
+          path: dist/
+
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify checksum
+        run: |
+          cd dist
+          sha256sum -c "orkyo-community-v${{ steps.version.outputs.VERSION }}.zip.sha256"
+
+      - name: Unpack bundle
+        run: |
+          cd dist
+          unzip "orkyo-community-v${{ steps.version.outputs.VERSION }}.zip" -d bundle
+
+      - name: Generate test .env
+        run: |
+          cp dist/bundle/.env.template dist/bundle/.env
+          sed -i 's/CHANGE_ME_[^ ]*/ci-test-value/g' dist/bundle/.env
+
+      - name: Start services
+        working-directory: dist/bundle
+        run: |
+          docker compose up -d
+          sleep 10
+
+      - name: Verify API health
+        run: |
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:8080/api/health >/dev/null 2>&1; then
+              echo "API healthy"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "API not healthy"
+          docker compose -f dist/bundle/docker-compose.yml logs
+          exit 1
+
+      - name: Verify frontend serves
+        run: curl -sf http://localhost/ | grep -q html || (echo "Frontend not responding"; exit 1)
+        continue-on-error: true
+
+      - name: Teardown
+        if: always()
+        working-directory: dist/bundle
+        run: docker compose down -v
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [smoke-selfhosted]
+    if: >-
+      !failure() && !cancelled() &&
+      startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Download release bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: release-bundle
+          path: dist/
+
+      - name: Download SBOMs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: sbom-*-${{ github.sha }}
+          path: sboms/
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            dist/orkyo-community-v${{ steps.version.outputs.VERSION }}.zip \
+            dist/orkyo-community-v${{ steps.version.outputs.VERSION }}.zip.sha256 \
+            sboms/*.spdx.json \
+            --generate-notes \
+            --title "Orkyo Community ${{ github.ref_name }}"
+
+  # ─────────────────────────────────────────────
+  # EVIDENCE BUNDLE — always
+  # ─────────────────────────────────────────────
+  release-evidence-bundle:
+    name: Release Evidence
+    runs-on: ubuntu-latest
+    needs:
+      - nightly-change-check
+      - security-audit
+      - backend-ci
+      - frontend-ci
+      - smoke-tests
+      - build-images
+      - container-scan
+      - assemble-selfhosted
+      - smoke-selfhosted
+      - create-release
+    if: always()
+
+    steps:
+      - name: Collect job results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const jobs = ${{ toJSON(needs) }};
+            const lines = ['# Release Evidence Bundle', '',
+              `**Run:** ${context.runId}`, `**SHA:** ${context.sha}`,
+              `**Ref:** ${context.ref}`, `**Event:** ${context.eventName}`,
+              '', '## Job Results', ''];
+            for (const [job, result] of Object.entries(jobs)) {
+              const icon = result.result === 'success' ? '✅'
+                : result.result === 'skipped' ? '⏭️' : '❌';
+              lines.push(`${icon} **${job}**: ${result.result}`);
+            }
+            await core.summary.addRaw(lines.join('\n')).write();

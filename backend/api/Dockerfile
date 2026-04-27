@@ -1,27 +1,36 @@
+# syntax=docker/dockerfile:1.4
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-WORKDIR /src/orkyo-community/backend/api
+WORKDIR /src
 
-COPY orkyo-foundation/backend/shared                  /src/orkyo-foundation/backend/shared
-COPY orkyo-foundation/backend/src                     /src/orkyo-foundation/backend/src
-COPY orkyo-foundation/backend/migration-abstractions  /src/orkyo-foundation/backend/migration-abstractions
-COPY orkyo-foundation/backend/migrator-runtime        /src/orkyo-foundation/backend/migrator-runtime
-COPY orkyo-foundation/backend/migrations-foundation   /src/orkyo-foundation/backend/migrations-foundation
+COPY backend/migrations/Orkyo.Community.Migrations.csproj backend/migrations/
+COPY backend/src/Orkyo.Community.csproj backend/src/
+COPY backend/api/Orkyo.Community.Api.csproj backend/api/
+COPY nuget.config ./
 
-COPY orkyo-community/backend/migrations  /src/orkyo-community/backend/migrations
-COPY orkyo-community/backend/src         /src/orkyo-community/backend/src
+RUN --mount=type=secret,id=nuget_token \
+    NUGET_AUTH_TOKEN=$(cat /run/secrets/nuget_token) \
+    dotnet restore backend/api/Orkyo.Community.Api.csproj
 
-COPY orkyo-community/backend/api/Orkyo.Community.Api.csproj  ./
-RUN dotnet restore Orkyo.Community.Api.csproj
+COPY backend/ backend/
 
-COPY orkyo-community/backend/api ./
-RUN dotnet publish Orkyo.Community.Api.csproj -c Release -o /app/publish --no-restore
+RUN dotnet publish backend/api/Orkyo.Community.Api.csproj \
+    -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .
-RUN mkdir -p /app/storage
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd -r -u 999 -s /bin/false appuser \
+    && mkdir -p /app/storage \
+    && chown -R appuser:appuser /app
 
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
+USER appuser
+
+HEALTHCHECK --interval=10s --timeout=3s --retries=5 \
+  CMD curl -sf http://localhost:8080/api/health || exit 1
+
 ENTRYPOINT ["dotnet", "Orkyo.Community.Api.dll"]

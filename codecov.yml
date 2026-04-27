@@ -1,0 +1,32 @@
+codecov:
+  require_ci_to_pass: true
+
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+    patch:
+      default:
+        target: 80%
+        only_pulls: true
+
+flags:
+  backend:
+    paths: [backend/src/**, backend/api/**, backend/worker/**]
+    carryforward: true
+  frontend:
+    paths: [frontend/src/**]
+    carryforward: true
+
+ignore:
+  - "backend/tests/**"
+  - "backend/migrations/**"
+  - "backend/migrator/**"
+  - "backend/**/*Options.cs"
+  - "backend/**/*Constants.cs"
+  - "backend/**/Program.cs"
+  - "frontend/src/**/*.test.*"
+  - "frontend/src/**/*.spec.*"
+  - "frontend/vite.config.*"

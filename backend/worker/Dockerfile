@@ -1,20 +1,19 @@
 # syntax=docker/dockerfile:1.4
-# Migrator is a one-shot CLI — no HEALTHCHECK.
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 COPY backend/migrations/Orkyo.Community.Migrations.csproj backend/migrations/
-COPY backend/migrator/Orkyo.Community.Migrator.csproj backend/migrator/
+COPY backend/src/Orkyo.Community.csproj backend/src/
+COPY backend/worker/Orkyo.Community.Worker.csproj backend/worker/
 COPY nuget.config ./
 
 RUN --mount=type=secret,id=nuget_token \
     NUGET_AUTH_TOKEN=$(cat /run/secrets/nuget_token) \
-    dotnet restore backend/migrator/Orkyo.Community.Migrator.csproj
+    dotnet restore backend/worker/Orkyo.Community.Worker.csproj
 
-COPY backend/migrations/ backend/migrations/
-COPY backend/migrator/ backend/migrator/
+COPY backend/ backend/
 
-RUN dotnet publish backend/migrator/Orkyo.Community.Migrator.csproj \
+RUN dotnet publish backend/worker/Orkyo.Community.Worker.csproj \
     -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/runtime:10.0 AS runtime
@@ -25,4 +24,7 @@ RUN useradd -r -u 999 -s /bin/false appuser \
     && chown -R appuser:appuser /app
 USER appuser
 
-ENTRYPOINT ["dotnet", "Orkyo.Community.Migrator.dll"]
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD pgrep -f Orkyo.Community.Worker.dll || exit 1
+
+ENTRYPOINT ["dotnet", "Orkyo.Community.Worker.dll"]
