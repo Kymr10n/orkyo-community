@@ -9,6 +9,7 @@ using Api.Services;
 using Api.Services.AutoSchedule;
 using Api.Endpoints;
 using Api.Endpoints.Admin;
+using Orkyo.Community.Api.Endpoints;
 using Orkyo.Community.Middleware;
 using Orkyo.Community.Migrations;
 using Orkyo.Community.Services;
@@ -247,6 +248,7 @@ try
     app.MapUserAdminEndpoints();
 
     // Domain
+    app.MapCommunityTenantEndpoints();
     app.MapSettingsEndpoints();
     app.MapAnnouncementEndpoints();
     app.MapUserAnnouncementEndpoints();
