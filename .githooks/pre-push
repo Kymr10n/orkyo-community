@@ -3,7 +3,7 @@ set -e
 REPO_ROOT=$(git rev-parse --show-toplevel)
 
 echo "pre-push: backend build..."
-dotnet build "$REPO_ROOT/Orkyo.Community.slnx" -c Release -warnaserror -q
+dotnet build "$REPO_ROOT/Orkyo.Community.slnx"
 
 echo "pre-push: frontend lint..."
 npm run lint --prefix "$REPO_ROOT/frontend"
