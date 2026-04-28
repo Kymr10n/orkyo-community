@@ -2,6 +2,9 @@
 set -e
 REPO_ROOT=$(git rev-parse --show-toplevel)
 
+echo "pre-push: backend format check..."
+dotnet format "$REPO_ROOT/Orkyo.Community.slnx" --verify-no-changes --no-restore
+
 echo "pre-push: backend build..."
 dotnet build "$REPO_ROOT/Orkyo.Community.slnx"
 
