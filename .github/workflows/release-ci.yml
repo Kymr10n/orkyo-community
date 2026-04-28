@@ -1,27 +1,27 @@
 name: CI
 
 # Triggers:
-#   pull_request to main     — security + build + test + smoke (no push)
+#   pull_request to main     — security audits + build + test + smoke (no push)
 #   push to main             — + build images (sha) + container scan
 #   push to v* tags          — + assemble release bundle + smoke-selfhosted + GH Release
-#   nightly 03:00 UTC        — full pipeline if code changed
+#   nightly 04:00 UTC        — security audits + build + test (if code changed)
 #   workflow_dispatch        — manual run
 
 on:
   pull_request:
     branches: [main]
-    paths-ignore: ['*.md', 'docs/**']
+    paths-ignore: ['**.md', 'docs/**']
   push:
     branches: [main]
     tags: ['v*']
-    paths-ignore: ['*.md', 'docs/**']
+    paths-ignore: ['**.md', 'docs/**']
   schedule:
-    - cron: '0 3 * * *'
+    - cron: '0 4 * * *'
   workflow_dispatch:
 
 concurrency:
   group: release-ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -61,66 +61,21 @@ jobs:
             if (lastSha === context.sha) core.notice('No changes since last nightly — skipping');
 
   # ─────────────────────────────────────────────
-  # SECURITY AUDIT
+  # SECURITY AUDITS — three parallel jobs, all gate downstream builds
   # ─────────────────────────────────────────────
-  security-audit:
-    name: security-audit
+  audit-secrets:
+    name: audit / secrets + fs
     runs-on: ubuntu-latest
+    needs: [nightly-change-check]
     if: >-
       github.event_name != 'schedule' ||
       needs.nightly-change-check.outputs.has_changes == 'true'
-    needs: [nightly-change-check]
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout (full history for secret scan)
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - uses: actions/setup-dotnet@v4
-        with:
-          global-json-file: global.json
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: NuGet — restore for audit
-        run: |
-          dotnet nuget add source https://nuget.pkg.github.com/Kymr10n/index.json \
-            --name github --username Kymr10n \
-            --password ${{ secrets.GHCR_TOKEN }} \
-            --store-password-in-clear-text
-          dotnet restore Orkyo.Community.slnx
-
-
-      - name: NuGet — check for vulnerable packages
-        run: |
-          output=$(dotnet list Orkyo.Community.slnx package --vulnerable --include-transitive 2>&1)
-          echo "$output"
-          if echo "$output" | grep -qi "has the following vulnerable packages"; then
-            echo "::error::Vulnerable NuGet packages detected"; exit 1
-          fi
-
-      - name: npm — install + audit
-        run: npm ci && npm audit --audit-level=high --omit=dev
-        working-directory: frontend
-
-      - name: npm — license scan (open-source distribution requirement)
-        run: |
-          npx --yes license-checker@^25.0.1 \
-            --summary --excludePrivatePackages \
-            --failOn "GPL-2.0;GPL-3.0;AGPL-3.0;LGPL-2.0;LGPL-2.1;LGPL-3.0"
-        working-directory: frontend
-
-      - name: Trivy — IaC config scan
-        uses: aquasecurity/trivy-action@0.36.0
-        with:
-          scan-type: config
-          scan-ref: .
-          severity: HIGH,CRITICAL
-          exit-code: '1'
 
       - name: Gitleaks secret scan
         uses: gitleaks/gitleaks-action@v2
@@ -128,8 +83,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_CONFIG: .gitleaks.toml
 
+      - name: Trivy — IaC config scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+
       - name: Trivy — filesystem scan
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -140,13 +103,76 @@ jobs:
       - name: Migration header lint
         run: bash scripts/ci/lint-migration-headers.sh backend/migrations/sql
 
+  audit-nuget:
+    name: audit / NuGet
+    runs-on: ubuntu-latest
+    needs: [nightly-change-check]
+    if: >-
+      github.event_name != 'schedule' ||
+      needs.nightly-change-check.outputs.has_changes == 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: |
+          dotnet nuget add source https://nuget.pkg.github.com/Kymr10n/index.json \
+            --name github --username Kymr10n \
+            --password ${{ secrets.GHCR_TOKEN }} \
+            --store-password-in-clear-text
+          dotnet restore Orkyo.Community.slnx
+
+      - name: Check for vulnerable packages
+        run: |
+          output=$(dotnet list Orkyo.Community.slnx package --vulnerable --include-transitive 2>&1)
+          echo "$output"
+          if echo "$output" | grep -qi "has the following vulnerable packages"; then
+            echo "::error::Vulnerable NuGet packages detected"; exit 1
+          fi
+
+  audit-npm:
+    name: audit / npm
+    runs-on: ubuntu-latest
+    needs: [nightly-change-check]
+    if: >-
+      github.event_name != 'schedule' ||
+      needs.nightly-change-check.outputs.has_changes == 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend deps
+        run: npm ci
+        working-directory: frontend
+
+      - name: npm audit
+        run: npm audit --audit-level=high --omit=dev
+        working-directory: frontend
+
+      - name: License scan (open-source distribution requirement)
+        run: |
+          npx --yes license-checker@^25.0.1 \
+            --summary --excludePrivatePackages \
+            --failOn "GPL-2.0;GPL-3.0;AGPL-3.0;LGPL-2.0;LGPL-2.1;LGPL-3.0"
+        working-directory: frontend
+
   # ─────────────────────────────────────────────
   # BACKEND CI
   # ─────────────────────────────────────────────
   backend-ci:
     name: backend-ci
     runs-on: ubuntu-latest
-    needs: [security-audit]
+    needs: [audit-secrets, audit-nuget, audit-npm]
 
     steps:
       - uses: actions/checkout@v4
@@ -169,7 +195,6 @@ jobs:
             --password ${{ secrets.GHCR_TOKEN }} \
             --store-password-in-clear-text
           dotnet restore Orkyo.Community.slnx
-
 
       - name: Format check
         run: dotnet format Orkyo.Community.slnx --verify-no-changes --no-restore
@@ -200,7 +225,7 @@ jobs:
   frontend-ci:
     name: frontend-ci
     runs-on: ubuntu-latest
-    needs: [security-audit]
+    needs: [audit-secrets, audit-nuget, audit-npm]
 
     steps:
       - uses: actions/checkout@v4
@@ -287,7 +312,6 @@ jobs:
             --store-password-in-clear-text
           dotnet restore Orkyo.Community.slnx
 
-
       - name: Build
         run: dotnet build Orkyo.Community.slnx -c Release --no-restore
 
@@ -371,7 +395,7 @@ jobs:
           - service: migrator
             dockerfile: backend/migrator/Dockerfile
           - service: frontend
-            dockerfile: frontend/Dockerfile.prod
+            dockerfile: frontend/Dockerfile
             context: frontend
             no_secret: true
       fail-fast: false
@@ -438,7 +462,7 @@ jobs:
           password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Trivy — image scan
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/orkyo-community-${{ matrix.service }}:sha-${{ github.sha }}
           severity: HIGH,CRITICAL
@@ -496,12 +520,24 @@ jobs:
           echo "MAJOR=$MAJOR" >> "$GITHUB_OUTPUT"
           echo "MINOR=$MINOR" >> "$GITHUB_OUTPUT"
 
-      - name: Promote images to version tags
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Provenance gate — verify all SHA images exist
+        run: |
+          for svc in api worker migrator frontend; do
+            IMAGE="${{ env.REGISTRY }}/orkyo-community-${svc}:sha-${{ github.sha }}"
+            echo "Checking: $IMAGE"
+            if ! docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
+              echo "::error::SHA image not found: $IMAGE"
+              echo "::error::Push to main must succeed before creating a release tag"
+              exit 1
+            fi
+          done
 
       - name: Re-tag images (no rebuild)
         env:
@@ -527,10 +563,6 @@ jobs:
           name: release-bundle
           path: dist/
           retention-days: 1
-
-      - name: Store version output
-        id: bundle
-        run: echo "VERSION=${{ steps.version.outputs.VERSION }}" >> "$GITHUB_OUTPUT"
 
   smoke-selfhosted:
     name: Smoke — Self-Hosted Bundle
@@ -644,7 +676,9 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - nightly-change-check
-      - security-audit
+      - audit-secrets
+      - audit-nuget
+      - audit-npm
       - backend-ci
       - frontend-ci
       - smoke-tests

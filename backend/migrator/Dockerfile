@@ -7,14 +7,12 @@ COPY backend/migrations/Orkyo.Community.Migrations.csproj backend/migrations/
 COPY backend/migrator/Orkyo.Community.Migrator.csproj backend/migrator/
 COPY nuget.config ./
 
-RUN --mount=type=secret,id=nuget_token,required=false \
-    set -e; \
-    TOKEN=$(cat /run/secrets/nuget_token 2>/dev/null || true); \
-    if [ -n "$TOKEN" ]; then \
-      dotnet nuget add source https://nuget.pkg.github.com/Kymr10n/index.json \
-        --name github --username Kymr10n --password "$TOKEN" --store-password-in-clear-text; \
-    fi; \
-    dotnet restore backend/migrator/Orkyo.Community.Migrator.csproj
+RUN --mount=type=secret,id=nuget_token,required=true \
+    dotnet nuget add source https://nuget.pkg.github.com/Kymr10n/index.json \
+      --name github --username Kymr10n \
+      --password "$(cat /run/secrets/nuget_token)" \
+      --store-password-in-clear-text \
+    && dotnet restore backend/migrator/Orkyo.Community.Migrator.csproj
 
 COPY backend/migrations/ backend/migrations/
 COPY backend/migrator/ backend/migrator/
