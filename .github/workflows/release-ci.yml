@@ -47,7 +47,7 @@ jobs:
     steps:
       - name: Check for code changes since last successful nightly
         id: check
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const { data: runs } = await github.rest.actions.listWorkflowRuns({
@@ -115,7 +115,7 @@ jobs:
         working-directory: frontend
 
       - name: Trivy — IaC config scan
-        uses: aquasecurity/trivy-action@0.31.0
+        uses: aquasecurity/trivy-action@0.36.0
         with:
           scan-type: config
           scan-ref: .
@@ -129,7 +129,7 @@ jobs:
           GITLEAKS_CONFIG: .gitleaks.toml
 
       - name: Trivy — filesystem scan
-        uses: aquasecurity/trivy-action@0.31.0
+        uses: aquasecurity/trivy-action@0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -438,7 +438,7 @@ jobs:
           password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Trivy — image scan
-        uses: aquasecurity/trivy-action@0.31.0
+        uses: aquasecurity/trivy-action@0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/orkyo-community-${{ matrix.service }}:sha-${{ github.sha }}
           severity: HIGH,CRITICAL
@@ -657,7 +657,7 @@ jobs:
 
     steps:
       - name: Collect job results
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const jobs = ${{ toJSON(needs) }};

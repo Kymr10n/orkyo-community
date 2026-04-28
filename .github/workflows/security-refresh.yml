@@ -42,7 +42,7 @@ jobs:
       - name: Trivy — scan
         id: trivy
         continue-on-error: true
-        uses: aquasecurity/trivy-action@0.31.0
+        uses: aquasecurity/trivy-action@0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/orkyo-community-frontend:security-refresh
           severity: HIGH,CRITICAL
@@ -52,7 +52,7 @@ jobs:
 
       - name: Create or reopen issue on failure
         if: steps.trivy.outcome == 'failure'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const title = '🔒 Security: HIGH/CRITICAL CVEs in community-frontend base image';
