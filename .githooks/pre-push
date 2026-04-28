@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+REPO_ROOT=$(git rev-parse --show-toplevel)
+
+echo "pre-push: backend build..."
+dotnet build "$REPO_ROOT/Orkyo.Community.slnx" -c Release -warnaserror -q
+
+echo "pre-push: frontend lint..."
+npm run lint --prefix "$REPO_ROOT/frontend"
+
+echo "pre-push: frontend typecheck..."
+npm run typecheck --prefix "$REPO_ROOT/frontend"
