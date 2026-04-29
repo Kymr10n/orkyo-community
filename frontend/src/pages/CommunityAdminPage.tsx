@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
 } from '@foundation/src/components/ui/popover';
 import { Separator } from '@foundation/src/components/ui/separator';
-import { ArrowLeft, LogOut, Settings, Shield, User } from 'lucide-react';
+import { ArrowLeft, LogOut, Shield, User } from 'lucide-react';
 import { useAuth } from '@foundation/src/contexts/AuthContext';
 import { ThemeToggle } from '@foundation/src/components/layout/ThemeToggle';
 import { CommunityConfigurationTab } from '@/components/admin/CommunityConfigurationTab';
