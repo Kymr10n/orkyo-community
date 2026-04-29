@@ -414,7 +414,7 @@ jobs:
 
       - name: Build and push (backend)
         if: matrix.no_secret != true
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ${{ matrix.dockerfile }}
@@ -426,7 +426,7 @@ jobs:
 
       - name: Build and push (frontend)
         if: matrix.no_secret == true
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
