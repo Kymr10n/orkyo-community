@@ -1,0 +1,203 @@
+# Orkyo Community — Self-Hosted Deployment
+#
+# Usage:
+#   docker compose up -d                         Start all services
+#   docker compose --profile mail-test up -d     Include MailHog for email testing
+#
+# Prerequisites:
+#   1. Copy .env.template to .env and fill in all CHANGE_ME_* values
+#   2. Run ./scripts/bootstrap.sh to validate configuration
+#
+# Image registry: ghcr.io/kymr10n
+
+name: orkyo-community
+
+services:
+
+  # ── Database ──────────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: orkyo_community_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      KEYCLOAK_DB: ${KEYCLOAK_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    networks:
+      - orkyo-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Redis (BFF sessions, Data Protection keys) ────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: orkyo_community_redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    networks:
+      - orkyo-internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Database Migrator (runs once, then exits) ──────────────────────────────────
+  migrator:
+    image: ghcr.io/kymr10n/orkyo-community-migrator:${ORKYO_VERSION}
+    container_name: orkyo_community_migrator
+    restart: "no"
+    environment:
+      ORKYO_EDITION: community
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+    networks:
+      - orkyo-internal
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ── API ───────────────────────────────────────────────────────────────────────
+  api:
+    image: ghcr.io/kymr10n/orkyo-community-api:${ORKYO_VERSION}
+    container_name: orkyo_community_api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080
+      OIDC_INTERNAL_AUTHORITY: http://keycloak:8080/realms/${KEYCLOAK_REALM}
+      REDIS_CONNECTION: "redis:6379,password=${REDIS_PASSWORD},abortConnect=false"
+      FILE_STORAGE_PATH: /app/storage
+      BFF_ENABLED: "true"
+      BFF_COOKIE_SECURE: "true"
+      BFF_REDIRECT_URI: ${APP_BASE_URL}/api/auth/bff/callback
+    # Published for health checks and direct access; operators behind a reverse
+    # proxy may remove this port and route all traffic through the frontend.
+    ports:
+      - "8080:8080"
+    volumes:
+      - api_storage:/app/storage
+    networks:
+      - orkyo-internal
+      - orkyo-public
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+  # ── Worker (background jobs) ──────────────────────────────────────────────────
+  worker:
+    image: ghcr.io/kymr10n/orkyo-community-worker:${ORKYO_VERSION}
+    container_name: orkyo_community_worker
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080
+    networks:
+      - orkyo-internal
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # ── Frontend (nginx SPA + API proxy) ─────────────────────────────────────────
+  frontend:
+    image: ghcr.io/kymr10n/orkyo-community-frontend:${ORKYO_VERSION}
+    container_name: orkyo_community_frontend
+    restart: unless-stopped
+    environment:
+      API_BASE_URL: ""
+    ports:
+      - "80:80"
+    networks:
+      - orkyo-internal
+      - orkyo-public
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ── Keycloak (identity provider) ──────────────────────────────────────────────
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1
+    container_name: orkyo_community_keycloak
+    restart: unless-stopped
+    command: start-dev --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://db:5432/${KEYCLOAK_DB}
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_HOSTNAME: ${KEYCLOAK_URL}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+    ports:
+      - "9080:8080"
+    volumes:
+      - ./config/keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro
+      - keycloak_data:/opt/keycloak/data
+    networks:
+      - orkyo-internal
+      - orkyo-public
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/8080' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+  # ── MailHog (email testing — optional) ───────────────────────────────────────
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: orkyo_community_mailhog
+    profiles: ["mail-test"]
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+    networks:
+      - orkyo-internal
+
+networks:
+  orkyo-internal:
+    name: orkyo-community-internal
+    driver: bridge
+  orkyo-public:
+    name: orkyo-community-public
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: orkyo_community_postgres
+  api_storage:
+    name: orkyo_community_storage
+  keycloak_data:
+    name: orkyo_community_keycloak

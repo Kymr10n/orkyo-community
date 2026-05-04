@@ -297,6 +297,16 @@ jobs:
         ports:
           - 5432:5432
 
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+        ports:
+          - 6379:6379
+
     steps:
       - uses: actions/checkout@v4
 
@@ -352,6 +362,8 @@ jobs:
           SMTP_FROM_EMAIL: "noreply@ci.local"
           SMTP_FROM_NAME: "Orkyo CI"
           FILE_STORAGE_PATH: "/tmp/orkyo-ci-storage"
+          APP_BASE_URL: "http://localhost:5002"
+          REDIS_CONNECTION: "localhost:6379,abortConnect=false"
         run: |
           dotnet run --no-build -c Release \
             --project backend/api/Orkyo.Community.Api.csproj \
@@ -592,18 +604,25 @@ jobs:
       - name: Unpack bundle
         run: |
           cd dist
-          unzip "orkyo-community-v${{ steps.version.outputs.VERSION }}.zip" -d bundle
+          unzip "orkyo-community-v${{ steps.version.outputs.VERSION }}.zip"
 
       - name: Generate test .env
         run: |
-          cp dist/bundle/.env.template dist/bundle/.env
-          sed -i 's/CHANGE_ME_[^ ]*/ci-test-value/g' dist/bundle/.env
+          BUNDLE="dist/orkyo-community-v${{ steps.version.outputs.VERSION }}"
+          cp "$BUNDLE/.env.template" "$BUNDLE/.env"
+          sed -i 's/CHANGE_ME_[^ ]*/ci-test-value/g' "$BUNDLE/.env"
+          # Keycloak and SMTP can't start cleanly in CI — set plausible stub values
+          sed -i 's|^KEYCLOAK_URL=.*|KEYCLOAK_URL=http://localhost:9080|' "$BUNDLE/.env"
+          sed -i 's|^OIDC_AUTHORITY=.*|OIDC_AUTHORITY=http://localhost:9080/realms/orkyo-community|' "$BUNDLE/.env"
+          sed -i 's|^SMTP_HOST=.*|SMTP_HOST=localhost|'    "$BUNDLE/.env"
+          sed -i 's|^SMTP_PORT=.*|SMTP_PORT=1025|'         "$BUNDLE/.env"
+          sed -i 's|^SMTP_USE_SSL=.*|SMTP_USE_SSL=false|'  "$BUNDLE/.env"
 
-      - name: Start services
-        working-directory: dist/bundle
+      - name: Start services (db + redis + migrator + api + frontend, no keycloak)
+        working-directory: dist/orkyo-community-v${{ steps.version.outputs.VERSION }}
         run: |
-          docker compose up -d
-          sleep 10
+          docker compose up -d db redis migrator api frontend
+          sleep 15
 
       - name: Verify API health
         run: |
@@ -615,7 +634,7 @@ jobs:
             sleep 3
           done
           echo "API not healthy"
-          docker compose -f dist/bundle/docker-compose.yml logs
+          docker compose -f dist/orkyo-community-v${{ steps.version.outputs.VERSION }}/compose.yml logs
           exit 1
 
       - name: Verify frontend serves
@@ -624,7 +643,7 @@ jobs:
 
       - name: Teardown
         if: always()
-        working-directory: dist/bundle
+        working-directory: dist/orkyo-community-v${{ steps.version.outputs.VERSION }}
         run: docker compose down -v
 
   create-release:

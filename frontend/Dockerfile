@@ -14,7 +14,9 @@ RUN apk upgrade --no-cache
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
-
+COPY runtime_config.tpl.js /runtime_config.tpl.js
+COPY docker-entrypoint-prod.sh /docker-entrypoint-prod.sh
+RUN chmod +x /docker-entrypoint-prod.sh
 RUN chown -R nginx:nginx /usr/share/nginx/html \
     && chmod -R 755 /usr/share/nginx/html
 
@@ -23,4 +25,4 @@ EXPOSE 80
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
   CMD wget -qO- http://localhost/health || exit 1
 
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/docker-entrypoint-prod.sh"]

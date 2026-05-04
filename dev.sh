@@ -88,6 +88,9 @@ load_env() {
   export FILE_STORAGE_PATH="${FILE_STORAGE_PATH:-$ROOT_DIR/.local/storage}"
   export VITE_API_BASE_URL="http://localhost:${API_PORT}"
 
+  # Redis — used by API for BFF sessions and Data Protection keys
+  export REDIS_CONNECTION="localhost:${REDIS_PORT},password=${REDIS_PASSWORD},abortConnect=false"
+
   # BFF auth constants for host-mode API
   export BFF_ENABLED=true
   export BFF_COOKIE_DOMAIN=""
@@ -192,13 +195,14 @@ cmd_infra() {
   sync_assets
   check_env_or_confirm
 
-  log "Starting infrastructure (db, keycloak, mailhog)"
-  "${COMPOSE_CMD[@]}" up -d --remove-orphans db keycloak mailhog
+  log "Starting infrastructure (db, redis, keycloak, mailhog)"
+  "${COMPOSE_CMD[@]}" up -d --remove-orphans db redis keycloak mailhog
 
   wait_for_url "http://localhost:9001/health/ready" "Keycloak"
 
   success "Infrastructure is up"
   echo "Postgres: localhost:${POSTGRES_PORT}"
+  echo "Redis:    localhost:${REDIS_PORT}"
   echo "Keycloak: http://localhost:${KEYCLOAK_PORT}"
   echo "MailHog:  http://localhost:${MAILHOG_UI_PORT}"
   echo ""
