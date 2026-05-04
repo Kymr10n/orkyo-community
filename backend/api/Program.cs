@@ -234,8 +234,16 @@ try
     app.UseMiddleware<ContextEnrichmentMiddleware>();
 
     // ── Endpoints ─────────────────────────────────────────────────────────────
-    app.MapHealthChecks("/health")
-        .WithMetadata(new SkipTenantResolutionAttribute());
+    var healthCheckOptions = new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+    {
+        ResponseWriter = WriteHealthCheckResponse
+    };
+    app.MapHealthChecks("/health", healthCheckOptions).AsInfrastructureEndpoint();
+    app.MapGet("/health/live", () => Results.Ok(new { status = "ok" })).AsInfrastructureEndpoint();
+    app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+    {
+        Predicate = check => check.Tags.Contains("ready")
+    }).AsInfrastructureEndpoint();
 
     app.MapBffAuthEndpoints();
     app.MapSessionEndpoints();
@@ -282,6 +290,26 @@ catch (Exception ex) when (ex is not OperationCanceledException)
 finally
 {
     Log.CloseAndFlush();
+}
+
+static async Task WriteHealthCheckResponse(
+    HttpContext context,
+    Microsoft.Extensions.Diagnostics.HealthChecks.HealthReport report)
+{
+    context.Response.ContentType = "application/json";
+    var result = System.Text.Json.JsonSerializer.Serialize(new
+    {
+        status = report.Status.ToString(),
+        utc = DateTime.UtcNow.ToString("O"),
+        checks = report.Entries.Select(e => new
+        {
+            name = e.Key,
+            status = e.Value.Status.ToString(),
+            description = e.Value.Description,
+            duration = e.Value.Duration.TotalMilliseconds
+        })
+    });
+    await context.Response.WriteAsync(result);
 }
 
 public partial class Program { }

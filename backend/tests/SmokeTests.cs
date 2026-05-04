@@ -20,6 +20,13 @@ public class SmokeTests
     }
 
     [Fact]
+    public async Task HealthLiveness_ReturnsOk()
+    {
+        var response = await _client.GetAsync("/health/live");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task AuthorizedEndpoint_WithoutToken_Returns401()
     {
         var response = await _client.GetAsync("/api/sites");

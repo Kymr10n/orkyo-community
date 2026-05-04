@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Orkyo.Community.Tests.Mocks;
 
@@ -76,6 +77,19 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
             services.AddSingleton<IKeycloakAdminService>(MockKeycloakAdminService);
 
             // Community has no break-glass store — nothing to replace here.
+
+            // Re-register the NpgSql health check with the correct test connection string.
+            // Program.cs captures the connection string value before WebApplicationFactory's
+            // ConfigureAppConfiguration overrides run, so the health check would otherwise
+            // use the appsettings.json default (localhost:5432) instead of the test port.
+            var testDbCs = $"Host=localhost;Port={_databaseFixture.DatabasePort};Database={TestConstants.TenantDatabase};Username=postgres;Password=postgres";
+            services.Configure<HealthCheckServiceOptions>(opts =>
+            {
+                var existing = opts.Registrations.FirstOrDefault(r => r.Name == "postgres");
+                if (existing is not null) opts.Registrations.Remove(existing);
+            });
+            services.AddHealthChecks()
+                .AddNpgSql(testDbCs, name: "postgres", tags: ["db", "ready"]);
 
         });
     }
