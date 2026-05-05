@@ -126,7 +126,7 @@ services:
     environment:
       API_BASE_URL: ""
     ports:
-      - "80:80"
+      - "80:8080"
     networks:
       - orkyo-internal
       - orkyo-public
@@ -134,7 +134,7 @@ services:
       api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 3

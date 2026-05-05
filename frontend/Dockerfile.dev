@@ -17,8 +17,11 @@ RUN chmod +x docker-entrypoint.sh
 # are visible to Vite:
 #   new URL("../../orkyo-foundation/frontend", import.meta.url)
 #   → /orkyo-foundation/frontend  (when import.meta.url is /app/vite.config.ts)
-RUN mkdir -p /orkyo-foundation && ln -s /foundation /orkyo-foundation/frontend
+RUN mkdir -p /orkyo-foundation \
+    && ln -s /foundation /orkyo-foundation/frontend \
+    && chown -R node:node /app /orkyo-foundation
 
+USER node
 EXPOSE 5173
 
 ENTRYPOINT ["./docker-entrypoint.sh"]

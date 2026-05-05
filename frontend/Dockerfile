@@ -16,13 +16,14 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY runtime_config.tpl.js /runtime_config.tpl.js
 COPY docker-entrypoint-prod.sh /docker-entrypoint-prod.sh
-RUN chmod +x /docker-entrypoint-prod.sh
-RUN chown -R nginx:nginx /usr/share/nginx/html \
+RUN chmod +x /docker-entrypoint-prod.sh \
+    && chown -R nginx:nginx /usr/share/nginx/html /runtime_config.tpl.js \
     && chmod -R 755 /usr/share/nginx/html
 
-EXPOSE 80
+USER nginx
+EXPOSE 8080
 
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
-  CMD wget -qO- http://localhost/health || exit 1
+  CMD wget -qO- http://localhost:8080/health || exit 1
 
 ENTRYPOINT ["/docker-entrypoint-prod.sh"]
