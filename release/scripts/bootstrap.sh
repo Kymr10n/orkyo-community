@@ -6,6 +6,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUNDLE_DIR="$(dirname "$SCRIPT_DIR")"
+COMPOSE_FILE="${BUNDLE_DIR}/compose.yml"
 
 echo "=== Orkyo Community Bootstrap ==="
 echo ""
@@ -40,26 +41,23 @@ if grep -q "CHANGE_ME_" "$ENV_FILE"; then
   exit 1
 fi
 
-# ── Pull images and start ──────────────────────────────────────────────────────
+# ── Pull images and start ─────────────────────────────────────────────────────
 echo "Pulling images..."
-docker compose -f "${BUNDLE_DIR}/docker-compose.yml" --env-file "$ENV_FILE" pull
-
-echo "Running migrations..."
-docker compose -f "${BUNDLE_DIR}/docker-compose.yml" --env-file "$ENV_FILE" \
-  run --rm migrator migrate --target all
+docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" pull
 
 echo "Starting services..."
-docker compose -f "${BUNDLE_DIR}/docker-compose.yml" --env-file "$ENV_FILE" up -d
+docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
 
 echo ""
 echo "Waiting for API to become healthy..."
-for i in $(seq 1 30); do
-  if curl -sf http://localhost:8080/api/health >/dev/null 2>&1; then
-    echo "Orkyo Community is up and running."
-    exit 0
-  fi
-  sleep 2
-done
-
-echo "ERROR: API did not become healthy. Check logs: docker compose logs api"
-exit 1
+if timeout 120 bash -c "until curl -sf http://localhost:8080/api/health >/dev/null 2>&1; do sleep 3; done"; then
+  echo ""
+  echo "Orkyo Community is up."
+  echo "  Frontend: http://localhost"
+  echo "  Keycloak: http://localhost:9080"
+  echo "  API:      http://localhost:8080"
+else
+  echo "ERROR: API did not become healthy within 120s."
+  echo "Check logs: docker compose -f ${COMPOSE_FILE} logs"
+  exit 1
+fi

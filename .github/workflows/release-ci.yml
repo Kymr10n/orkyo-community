@@ -618,28 +618,33 @@ jobs:
           sed -i 's|^SMTP_PORT=.*|SMTP_PORT=1025|'         "$BUNDLE/.env"
           sed -i 's|^SMTP_USE_SSL=.*|SMTP_USE_SSL=false|'  "$BUNDLE/.env"
 
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
       - name: Start services (db + redis + migrator + api + frontend, no keycloak)
         working-directory: dist/orkyo-community-v${{ steps.version.outputs.VERSION }}
-        run: |
-          docker compose up -d db redis migrator api frontend
-          sleep 15
+        run: docker compose up -d db redis migrator api frontend
 
-      - name: Verify API health
+      - name: Wait for API to be healthy
         run: |
-          for i in $(seq 1 20); do
-            if curl -sf http://localhost:8080/api/health >/dev/null 2>&1; then
-              echo "API healthy"
-              exit 0
-            fi
-            sleep 3
-          done
-          echo "API not healthy"
-          docker compose -f dist/orkyo-community-v${{ steps.version.outputs.VERSION }}/compose.yml logs
-          exit 1
+          echo "Waiting for API (timeout 120s)..."
+          if timeout 120 bash -c \
+            'until curl -sf http://localhost:8080/api/health >/dev/null 2>&1; do sleep 3; done'; then
+            echo "API healthy"
+          else
+            echo "::error::API did not become healthy within 120s"
+            docker compose \
+              -f dist/orkyo-community-v${{ steps.version.outputs.VERSION }}/compose.yml \
+              logs --tail 50
+            exit 1
+          fi
 
       - name: Verify frontend serves
-        run: curl -sf http://localhost/ | grep -q html || (echo "Frontend not responding"; exit 1)
-        continue-on-error: true
+        run: curl -sf http://localhost/ | grep -q html || (echo "::error::Frontend not responding"; exit 1)
 
       - name: Teardown
         if: always()
