@@ -175,7 +175,11 @@ jobs:
   backend-ci:
     name: backend-ci
     runs-on: ubuntu-latest
-    needs: [audit-secrets, audit-nuget, audit-npm]
+    needs: [nightly-change-check, audit-secrets, audit-nuget, audit-npm]
+    if: >-
+      !cancelled() &&
+      (github.event_name != 'schedule' ||
+       needs.nightly-change-check.outputs.has_changes == 'true')
 
     steps:
       - uses: actions/checkout@v4
@@ -228,7 +232,11 @@ jobs:
   frontend-ci:
     name: frontend-ci
     runs-on: ubuntu-latest
-    needs: [audit-secrets, audit-nuget, audit-npm]
+    needs: [nightly-change-check, audit-secrets, audit-nuget, audit-npm]
+    if: >-
+      !cancelled() &&
+      (github.event_name != 'schedule' ||
+       needs.nightly-change-check.outputs.has_changes == 'true')
 
     steps:
       - uses: actions/checkout@v4
