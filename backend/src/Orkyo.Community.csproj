@@ -22,7 +22,7 @@
     </When>
     <Otherwise>
       <ItemGroup>
-        <PackageReference Include="Orkyo.Foundation" Version="0.1.9" />
+        <PackageReference Include="Orkyo.Foundation" Version="0.1.10" />
         <PackageReference Include="Orkyo.Migration.Abstractions" Version="0.1.10" />
         <PackageReference Include="Orkyo.Migrator" Version="0.1.10" />
         <PackageReference Include="Orkyo.Foundation.Migrations" Version="0.1.10" />
