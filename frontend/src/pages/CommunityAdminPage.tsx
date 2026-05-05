@@ -8,21 +8,21 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@foundation/src/components/ui/tabs';
-import { Button } from '@foundation/src/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@kymr10n/foundation/src/components/ui/tabs';
+import { Button } from '@kymr10n/foundation/src/components/ui/button';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@foundation/src/components/ui/popover';
-import { Separator } from '@foundation/src/components/ui/separator';
+} from '@kymr10n/foundation/src/components/ui/popover';
+import { Separator } from '@kymr10n/foundation/src/components/ui/separator';
 import { ArrowLeft, LogOut, Shield, User } from 'lucide-react';
-import { useAuth } from '@foundation/src/contexts/AuthContext';
-import { ThemeToggle } from '@foundation/src/components/layout/ThemeToggle';
+import { useAuth } from '@kymr10n/foundation/src/contexts/AuthContext';
+import { ThemeToggle } from '@kymr10n/foundation/src/components/layout/ThemeToggle';
 import { CommunityConfigurationTab } from '@/components/admin/CommunityConfigurationTab';
-import { SettingsTab } from '@foundation/src/components/admin/SettingsTab';
-import { DiagnosticsTab } from '@foundation/src/components/admin/DiagnosticsTab';
-import { AnnouncementsTab } from '@foundation/src/components/admin/AnnouncementsTab';
+import { SettingsTab } from '@kymr10n/foundation/src/components/admin/SettingsTab';
+import { DiagnosticsTab } from '@kymr10n/foundation/src/components/admin/DiagnosticsTab';
+import { AnnouncementsTab } from '@kymr10n/foundation/src/components/admin/AnnouncementsTab';
 
 export function CommunityAdminPage() {
   const { appUser, logout } = useAuth();

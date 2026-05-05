@@ -16,17 +16,8 @@
     "tsBuildInfoFile": "./.tsbuild/.tsbuildinfo",
     "types": ["vite/client", "vitest/globals", "node"],
     "paths": {
-      "@/*": ["./src/*"],
-      "@foundation/contracts/*": [
-        "./../../orkyo-foundation/frontend/contracts/*",
-        "./node_modules/@kymr10n/foundation/contracts/*"
-      ],
-      "@foundation/src/*": [
-        "./../../orkyo-foundation/frontend/src/*",
-        "./node_modules/@kymr10n/foundation/src/*"
-      ]
+      "@/*": ["./src/*"]
     }
   },
-  "references": [{ "path": "../../orkyo-foundation/frontend" }],
   "include": ["src", "vite.config.ts"]
 }

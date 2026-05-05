@@ -5,7 +5,7 @@
  * but accessible here to the site-admin without needing to be a tenant member first).
  */
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@foundation/src/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@kymr10n/foundation/src/components/ui/card';
 import { Settings2 } from 'lucide-react';
 
 export function CommunityConfigurationTab() {

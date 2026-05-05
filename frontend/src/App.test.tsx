@@ -23,20 +23,20 @@ vi.mock('react-router-dom', async (importOriginal) => {
   };
 });
 
-vi.mock('@foundation/src/contexts/AuthContext', () => ({
+vi.mock('@kymr10n/foundation/src/contexts/AuthContext', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   useAuth: () => mockAuthState,
 }));
 
-vi.mock('@foundation/src/components/auth/ApexGateway', () => ({
+vi.mock('@kymr10n/foundation/src/components/auth/ApexGateway', () => ({
   ApexGateway: () => <div data-testid="apex-gateway" />,
 }));
 
-vi.mock('@foundation/src/components/auth/TenantApp', () => ({
+vi.mock('@kymr10n/foundation/src/components/auth/TenantApp', () => ({
   TenantApp: () => <div data-testid="tenant-app" />,
 }));
 
-vi.mock('@foundation/src/components/layout/ThemeToggle', () => ({
+vi.mock('@kymr10n/foundation/src/components/layout/ThemeToggle', () => ({
   ThemeToggle: () => <div data-testid="theme-toggle" />,
 }));
 

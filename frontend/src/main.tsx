@@ -4,15 +4,15 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
-import { initRUM } from "@foundation/src/lib/core/rum";
+import { initRUM } from "@kymr10n/foundation/src/lib/core/rum";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, staleTime: 30_000 },
   },
 });
-import { STORAGE_KEYS } from "@foundation/src/constants/storage";
-import { COOKIE_NAMES } from "@foundation/src/constants/http";
+import { STORAGE_KEYS } from "@kymr10n/foundation/src/constants/storage";
+import { COOKIE_NAMES } from "@kymr10n/foundation/src/constants/http";
 
 if (typeof document !== "undefined") {
   const stored = localStorage.getItem(STORAGE_KEYS.THEME) || "system";

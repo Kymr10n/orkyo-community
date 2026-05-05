@@ -18,24 +18,24 @@ vi.mock('react-router-dom', async (importOriginal) => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-vi.mock('@foundation/src/contexts/AuthContext', () => ({
+vi.mock('@kymr10n/foundation/src/contexts/AuthContext', () => ({
   useAuth: () => mockAuth,
 }));
 
-vi.mock('@foundation/src/components/layout/ThemeToggle', () => ({
+vi.mock('@kymr10n/foundation/src/components/layout/ThemeToggle', () => ({
   ThemeToggle: () => <div data-testid="theme-toggle" />,
 }));
 
 // Mock tabs that have their own API calls / complex state
-vi.mock('@foundation/src/components/admin/SettingsTab', () => ({
+vi.mock('@kymr10n/foundation/src/components/admin/SettingsTab', () => ({
   SettingsTab: () => <div data-testid="settings-tab">Settings</div>,
 }));
 
-vi.mock('@foundation/src/components/admin/DiagnosticsTab', () => ({
+vi.mock('@kymr10n/foundation/src/components/admin/DiagnosticsTab', () => ({
   DiagnosticsTab: () => <div data-testid="diagnostics-tab">Diagnostics</div>,
 }));
 
-vi.mock('@foundation/src/components/admin/AnnouncementsTab', () => ({
+vi.mock('@kymr10n/foundation/src/components/admin/AnnouncementsTab', () => ({
   AnnouncementsTab: () => <div data-testid="announcements-tab">Announcements</div>,
 }));
 

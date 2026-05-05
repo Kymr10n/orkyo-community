@@ -247,9 +247,9 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Configure npm for GitHub Packages (@orkyo/foundation)
+      - name: Configure npm for GitHub Packages (@kymr10n/foundation)
         run: |
-          echo "@orkyo:registry=https://npm.pkg.github.com" > frontend/.npmrc
+          echo "@kymr10n:registry=https://npm.pkg.github.com" > frontend/.npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GHCR_TOKEN }}" >> frontend/.npmrc
 
       - name: Install dependencies

@@ -1,9 +1,9 @@
 import { BrowserRouter, useLocation } from "react-router-dom";
-import { AuthProvider, useAuth } from "@foundation/src/contexts/AuthContext";
-import { ApexGateway } from "@foundation/src/components/auth/ApexGateway";
-import { TenantApp } from "@foundation/src/components/auth/TenantApp";
-import { ThemeToggle } from "@foundation/src/components/layout/ThemeToggle";
-import { AUTH_STAGES } from "@foundation/src/constants/auth";
+import { AuthProvider, useAuth } from "@kymr10n/foundation/src/contexts/AuthContext";
+import { ApexGateway } from "@kymr10n/foundation/src/components/auth/ApexGateway";
+import { TenantApp } from "@kymr10n/foundation/src/components/auth/TenantApp";
+import { ThemeToggle } from "@kymr10n/foundation/src/components/layout/ThemeToggle";
+import { AUTH_STAGES } from "@kymr10n/foundation/src/constants/auth";
 import { CommunityAdminPage } from "@/pages/CommunityAdminPage";
 
 /**

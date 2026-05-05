@@ -3,12 +3,12 @@ import { existsSync } from "node:fs";
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 
-// Dual-mode foundation consumption (mirrors the .NET `<When Exists>` pattern):
-//   - If the `orkyo-foundation` sibling checkout is present, alias `@foundation/*`
-//     to its source tree for fast local iteration.
-//   - Otherwise, fall back to the published `@kymr10n/foundation` npm package
-//     (resolved via node_modules), so SaaS can build standalone in CI/Docker
-//     without requiring the sibling repo.
+// Foundation consumption strategy:
+//   - Community imports foundation as `@kymr10n/foundation/src/...` and
+//     `@kymr10n/foundation/contracts/...`.
+//   - In sibling-dev mode, alias package paths to sibling source for fast
+//     iteration. The sibling source still uses internal `@foundation/*` imports,
+//     so those aliases are mounted in sibling-dev mode only.
 const foundationSiblingContracts = fileURLToPath(
   new URL("../../orkyo-foundation/frontend/contracts", import.meta.url),
 );
@@ -18,15 +18,14 @@ const foundationSiblingSrc = fileURLToPath(
 const useSiblingFoundation =
   existsSync(foundationSiblingContracts) && existsSync(foundationSiblingSrc);
 
-const foundationAliases = useSiblingFoundation
+const foundationAliases: Record<string, string> = useSiblingFoundation
   ? {
+      "@kymr10n/foundation/contracts": foundationSiblingContracts,
+      "@kymr10n/foundation/src": foundationSiblingSrc,
       "@foundation/contracts": foundationSiblingContracts,
       "@foundation/src": foundationSiblingSrc,
     }
-  : {
-      "@foundation/contracts": "@kymr10n/foundation/contracts",
-      "@foundation/src": "@kymr10n/foundation/src",
-    };
+  : {};
 
 export default defineConfig({
   plugins: [react()],
