@@ -95,6 +95,14 @@ export default defineConfig({
     globals: true,
     setupFiles: "./src/test/setup.ts",
     exclude: ["**/node_modules/**", "**/dist/**", "**/.tsbuild/**"],
+    server: {
+      deps: {
+        // Foundation's .tsbuild output uses extensionless directory imports
+        // (e.g. ../../lib/utils) which Node.js ESM rejects. Inlining through
+        // Vite's bundler resolves them the same way as the production build.
+        inline: [/@kymr10n\/foundation/],
+      },
+    },
     coverage: {
       reporter: ["text", "lcov"],
       include: ["src/**/*.{ts,tsx}"],

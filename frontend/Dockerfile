@@ -1,7 +1,13 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+# GitHub Packages auth is mounted as a BuildKit secret so the token never lands
+# in an image layer. Required to fetch @kymr10n/foundation from npm.pkg.github.com.
+RUN --mount=type=secret,id=ghcr_token \
+    printf '@kymr10n:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=%s\n' \
+      "$(cat /run/secrets/ghcr_token)" > .npmrc && \
+    npm ci && \
+    rm -f .npmrc
 
 FROM node:22-alpine AS builder
 WORKDIR /app
@@ -9,7 +15,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-FROM nginx:alpine AS runtime
+FROM nginx:1.27-alpine AS runtime
 RUN apk upgrade --no-cache
 
 COPY --from=builder /app/dist /usr/share/nginx/html

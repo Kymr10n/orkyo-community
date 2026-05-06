@@ -59,57 +59,32 @@ public class DatabaseFixture : IAsyncLifetime
 
     private async Task CreateAndMigrateDatabasesAsync()
     {
-        await CreateDatabaseAsync("control_plane");
+        // Community uses a single database for everything — no separate control_plane.
         await CreateDatabaseAsync(TestConstants.TenantDatabase);
 
+        var cs = BuildConnectionString(TestConstants.TenantDatabase);
         var runner = BuildRunner();
-        await runner.RunAsync(BuildConnectionString("control_plane"),
-            MigrationTargetDatabase.ControlPlane, "orkyo:control-plane");
-        await runner.RunAsync(BuildConnectionString(TestConstants.TenantDatabase),
-            MigrationTargetDatabase.Tenant, $"orkyo:tenant:{TestConstants.TenantDatabase}");
+        await runner.RunAsync(cs, MigrationTargetDatabase.ControlPlane, "orkyo:community:cp");
+        await runner.RunAsync(cs, MigrationTargetDatabase.Tenant, "orkyo:community:tenant");
 
         await SeedTestDataAsync();
     }
 
     private async Task SeedTestDataAsync()
     {
-        var cpConn = BuildConnectionString("control_plane");
-        await using var seedConn = new NpgsqlConnection(cpConn);
-        await seedConn.OpenAsync();
+        // tenants and tenant_memberships are compat views in community — nothing to seed for those.
+        await using var conn = new NpgsqlConnection(BuildConnectionString(TestConstants.TenantDatabase));
+        await conn.OpenAsync();
 
-        // Seed test tenant at Enterprise tier
-        await using var seedCmd = new NpgsqlCommand(
-            @"INSERT INTO tenants (slug, display_name, status, db_identifier, tier, created_at, updated_at)
-              VALUES (@slug, 'Test Organization', 'active', @db, 2, NOW(), NOW())
-              ON CONFLICT (slug) DO UPDATE SET tier = 2, db_identifier = @db", seedConn);
-        seedCmd.Parameters.AddWithValue("slug", TestConstants.TenantSlug);
-        seedCmd.Parameters.AddWithValue("db", TestConstants.TenantDatabase);
-        await seedCmd.ExecuteNonQueryAsync();
-
-        // Seed test user
         await using var userCmd = new NpgsqlCommand(
             @"INSERT INTO users (id, email, display_name, status, created_at, updated_at)
               VALUES (@id, @email, @name, 'active', NOW(), NOW())
-              ON CONFLICT (id) DO NOTHING", seedConn);
+              ON CONFLICT (id) DO NOTHING", conn);
         userCmd.Parameters.AddWithValue("id", new Guid("11111111-1111-1111-1111-111111111111"));
         userCmd.Parameters.AddWithValue("email", "test@orkyo.example");
         userCmd.Parameters.AddWithValue("name", "Test User");
         await userCmd.ExecuteNonQueryAsync();
 
-        // Seed test user as admin of test tenant
-        await using var memberCmd = new NpgsqlCommand(
-            @"INSERT INTO tenant_memberships (user_id, tenant_id, role, status, created_at, updated_at)
-              SELECT @userId, t.id, 'admin', 'active', NOW(), NOW()
-              FROM tenants t WHERE t.slug = @slug
-              ON CONFLICT DO NOTHING", seedConn);
-        memberCmd.Parameters.AddWithValue("userId", new Guid("11111111-1111-1111-1111-111111111111"));
-        memberCmd.Parameters.AddWithValue("slug", TestConstants.TenantSlug);
-        await memberCmd.ExecuteNonQueryAsync();
-
-        // Seed one criterion of each data type for stable test data
-        var tenantConn = BuildConnectionString(TestConstants.TenantDatabase);
-        await using var tenantSeedConn = new NpgsqlConnection(tenantConn);
-        await tenantSeedConn.OpenAsync();
         await using var criteriaCmd = new NpgsqlCommand(@"
             INSERT INTO criteria (name, description, data_type, enum_values, created_at, updated_at)
             VALUES
@@ -117,7 +92,7 @@ public class DatabaseFixture : IAsyncLifetime
                 ('seed_number',  'Seed Number criterion',  'Number',  NULL,                              NOW(), NOW()),
                 ('seed_string',  'Seed String criterion',  'String',  NULL,                              NOW(), NOW()),
                 ('seed_enum',    'Seed Enum criterion',    'Enum',    '[""Option A"",""Option B""]'::jsonb, NOW(), NOW())
-            ON CONFLICT (name) DO NOTHING", tenantSeedConn);
+            ON CONFLICT (name) DO NOTHING", conn);
         await criteriaCmd.ExecuteNonQueryAsync();
     }
 

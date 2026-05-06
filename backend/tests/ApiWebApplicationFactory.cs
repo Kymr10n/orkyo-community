@@ -35,14 +35,14 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
             config.AddJsonFile("appsettings.Test.json", optional: true);
 
             var port = _databaseFixture.DatabasePort;
+            // Community uses one database for everything — both connection string keys point to it.
             var testConnectionString = $"Host=localhost;Port={port};Database={TestConstants.TenantDatabase};Username=postgres;Password=postgres";
-            var controlPlaneConnectionString = $"Host=localhost;Port={port};Database=control_plane;Username=postgres;Password=postgres";
 
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ASPNETCORE_ENVIRONMENT"] = "Test",
                 ["ConnectionStrings:Postgres"] = testConnectionString,
-                ["ConnectionStrings:ControlPlane"] = controlPlaneConnectionString,
+                ["ConnectionStrings:ControlPlane"] = testConnectionString,
                 ["SMTP_HOST"] = "localhost",
                 ["SMTP_PORT"] = "1025",
                 ["SMTP_USE_SSL"] = "false",

@@ -8,6 +8,9 @@ dotnet format "$REPO_ROOT/Orkyo.Community.slnx" --verify-no-changes --no-restore
 echo "pre-push: backend build..."
 dotnet build "$REPO_ROOT/Orkyo.Community.slnx"
 
+echo "pre-push: backend tests..."
+dotnet test "$REPO_ROOT/Orkyo.Community.slnx" --no-build --verbosity quiet
+
 echo "pre-push: frontend lint..."
 npm run lint --prefix "$REPO_ROOT/frontend"
 

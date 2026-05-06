@@ -23,8 +23,7 @@ concurrency:
   group: release-ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-permissions:
-  contents: read
+permissions: {}
 
 env:
   REGISTRY: ghcr.io/kymr10n
@@ -37,6 +36,7 @@ jobs:
   # ─────────────────────────────────────────────
   nightly-change-check:
     name: Nightly Change Check
+    timeout-minutes: 5
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule'
     permissions:
@@ -47,7 +47,7 @@ jobs:
     steps:
       - name: Check for code changes since last successful nightly
         id: check
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
             const { data: runs } = await github.rest.actions.listWorkflowRuns({
@@ -60,11 +60,30 @@ jobs:
             core.setOutput('has_changes', lastSha !== context.sha ? 'true' : 'false');
             if (lastSha === context.sha) core.notice('No changes since last nightly — skipping');
 
+
+  # ─────────────────────────────────────────────
+  # DEPENDENCY REVIEW — PRs only
+  # ─────────────────────────────────────────────
+  dependency-review:
+    name: dependency-review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/dependency-review-action@38ecb5b593bf0eb19e335c03f97670f792489a8b # v4.7.0
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: always
   # ─────────────────────────────────────────────
   # SECURITY AUDITS — three parallel jobs, all gate downstream builds
   # ─────────────────────────────────────────────
   audit-secrets:
     name: audit / secrets + fs
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     needs: [nightly-change-check]
     if: >-
@@ -72,20 +91,23 @@ jobs:
       (github.event_name != 'schedule' ||
        needs.nightly-change-check.outputs.has_changes == 'true')
 
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - name: Checkout (full history for secret scan)
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 
       - name: Gitleaks secret scan
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_CONFIG: .gitleaks.toml
 
       - name: Trivy — IaC config scan
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: config
           scan-ref: .
@@ -93,7 +115,7 @@ jobs:
           exit-code: '1'
 
       - name: Trivy — filesystem scan
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -106,6 +128,7 @@ jobs:
 
   audit-nuget:
     name: audit / NuGet
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     needs: [nightly-change-check]
     if: >-
@@ -113,10 +136,12 @@ jobs:
       (github.event_name != 'schedule' ||
        needs.nightly-change-check.outputs.has_changes == 'true')
 
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           global-json-file: global.json
 
@@ -126,7 +151,7 @@ jobs:
             --name github --username Kymr10n \
             --password ${{ secrets.GHCR_TOKEN }} \
             --store-password-in-clear-text
-          dotnet restore Orkyo.Community.slnx
+          dotnet restore Orkyo.Community.slnx --locked-mode
 
       - name: Check for vulnerable packages
         run: |
@@ -138,6 +163,7 @@ jobs:
 
   audit-npm:
     name: audit / npm
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     needs: [nightly-change-check]
     if: >-
@@ -145,14 +171,21 @@ jobs:
       (github.event_name != 'schedule' ||
        needs.nightly-change-check.outputs.has_changes == 'true')
 
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+
+      - name: Configure npm for GitHub Packages (@kymr10n/foundation)
+        run: |
+          echo "@kymr10n:registry=https://npm.pkg.github.com" > frontend/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GHCR_TOKEN }}" >> frontend/.npmrc
 
       - name: Install frontend deps
         run: npm ci
@@ -174,6 +207,7 @@ jobs:
   # ─────────────────────────────────────────────
   backend-ci:
     name: backend-ci
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     needs: [nightly-change-check, audit-secrets, audit-nuget, audit-npm]
     if: >-
@@ -181,15 +215,17 @@ jobs:
       (github.event_name != 'schedule' ||
        needs.nightly-change-check.outputs.has_changes == 'true')
 
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           global-json-file: global.json
 
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
           path: ~/.nuget/packages
           key: nuget-community-${{ hashFiles('**/packages.lock.json') }}
@@ -201,7 +237,7 @@ jobs:
             --name github --username Kymr10n \
             --password ${{ secrets.GHCR_TOKEN }} \
             --store-password-in-clear-text
-          dotnet restore Orkyo.Community.slnx
+          dotnet restore Orkyo.Community.slnx --locked-mode
 
       - name: Format check
         run: dotnet format Orkyo.Community.slnx --verify-no-changes --no-restore
@@ -220,7 +256,7 @@ jobs:
 
       - name: Upload backend coverage to Codecov
         if: always()
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d # v5.4.2
         with:
           directory: backend/TestResults
           flags: backend
@@ -231,6 +267,7 @@ jobs:
   # ─────────────────────────────────────────────
   frontend-ci:
     name: frontend-ci
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     needs: [nightly-change-check, audit-secrets, audit-nuget, audit-npm]
     if: >-
@@ -238,10 +275,12 @@ jobs:
       (github.event_name != 'schedule' ||
        needs.nightly-change-check.outputs.has_changes == 'true')
 
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
           cache: npm
@@ -274,7 +313,7 @@ jobs:
 
       - name: Upload frontend coverage to Codecov
         if: always()
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d # v5.4.2
         with:
           files: frontend/coverage/cobertura-coverage.xml
           flags: frontend
@@ -285,6 +324,7 @@ jobs:
   # ─────────────────────────────────────────────
   smoke-tests:
     name: smoke-tests
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     needs: [backend-ci, frontend-ci]
     timeout-minutes: 15
@@ -318,10 +358,12 @@ jobs:
         ports:
           - 6379:6379
 
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           global-json-file: global.json
 
@@ -331,7 +373,7 @@ jobs:
             --name github --username Kymr10n \
             --password ${{ secrets.GHCR_TOKEN }} \
             --store-password-in-clear-text
-          dotnet restore Orkyo.Community.slnx
+          dotnet restore Orkyo.Community.slnx --locked-mode
 
       - name: Build
         run: dotnet build Orkyo.Community.slnx -c Release --no-restore
@@ -400,6 +442,7 @@ jobs:
   # ─────────────────────────────────────────────
   build-images:
     name: Build Images (${{ matrix.service }})
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     needs: [smoke-tests]
     if: >-
@@ -407,6 +450,7 @@ jobs:
       github.event_name == 'push' &&
       (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     permissions:
+      contents: read
       packages: write
     strategy:
       matrix:
@@ -424,12 +468,12 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -437,7 +481,7 @@ jobs:
 
       - name: Build and push (backend)
         if: matrix.no_secret != true
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
           context: .
           file: ${{ matrix.dockerfile }}
@@ -447,14 +491,15 @@ jobs:
           cache-from: type=gha,scope=community-${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=community-${{ matrix.service }}
 
-      - name: Build and push (frontend)
+      - name: Build and push (frontend — needs GHCR_TOKEN for @kymr10n/foundation)
         if: matrix.no_secret == true
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
           push: true
           tags: ${{ env.REGISTRY }}/orkyo-community-${{ matrix.service }}:sha-${{ github.sha }}
+          secrets: ghcr_token=${{ secrets.GHCR_TOKEN }}
           cache-from: type=gha,scope=community-${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=community-${{ matrix.service }}
 
@@ -463,6 +508,7 @@ jobs:
   # ─────────────────────────────────────────────
   container-scan:
     name: Container Scan (${{ matrix.service }})
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     needs: [build-images]
     if: >-
@@ -474,18 +520,20 @@ jobs:
         service: [api, worker, migrator, frontend]
       fail-fast: false
 
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Trivy — image scan
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/orkyo-community-${{ matrix.service }}:sha-${{ github.sha }}
           severity: HIGH,CRITICAL
@@ -504,7 +552,7 @@ jobs:
           fi
 
       - name: Generate SBOM
-        uses: anchore/sbom-action@v0
+        uses: anchore/sbom-action@f325610c9f50a54015d37c8d16cb3b0e2c8f4de0 # v0.18.0
         with:
           image: ${{ env.REGISTRY }}/orkyo-community-${{ matrix.service }}:sha-${{ github.sha }}
           format: spdx-json
@@ -513,7 +561,7 @@ jobs:
           registry-password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Upload SBOM artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: sbom-${{ matrix.service }}-${{ github.sha }}
           path: sbom-${{ matrix.service }}.spdx.json
@@ -524,14 +572,18 @@ jobs:
   # ─────────────────────────────────────────────
   assemble-selfhosted:
     name: Assemble Release Bundle
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     needs: [container-scan]
     if: >-
       !failure() && !cancelled() &&
       startsWith(github.ref, 'refs/tags/v')
 
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Extract version
         id: version
@@ -544,7 +596,7 @@ jobs:
           echo "MINOR=$MINOR" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -581,7 +633,7 @@ jobs:
         run: bash scripts/ci/assemble-release.sh "${{ steps.version.outputs.VERSION }}" dist
 
       - name: Upload bundle artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: release-bundle
           path: dist/
@@ -589,6 +641,7 @@ jobs:
 
   smoke-selfhosted:
     name: Smoke — Self-Hosted Bundle
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     needs: [assemble-selfhosted]
     if: >-
@@ -596,9 +649,11 @@ jobs:
       startsWith(github.ref, 'refs/tags/v')
     timeout-minutes: 10
 
+    permissions:
+      contents: read
     steps:
       - name: Download release bundle
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
         with:
           name: release-bundle
           path: dist/
@@ -630,7 +685,7 @@ jobs:
           sed -i 's|^SMTP_USE_SSL=.*|SMTP_USE_SSL=false|'  "$BUNDLE/.env"
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -664,6 +719,7 @@ jobs:
 
   create-release:
     name: Create GitHub Release
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     needs: [smoke-selfhosted]
     if: >-
@@ -673,20 +729,20 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Extract version
         id: version
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
       - name: Download release bundle
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
         with:
           name: release-bundle
           path: dist/
 
       - name: Download SBOMs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
         with:
           pattern: sbom-*-${{ github.sha }}
           path: sboms/
@@ -708,6 +764,7 @@ jobs:
   # ─────────────────────────────────────────────
   release-evidence-bundle:
     name: Release Evidence
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     needs:
       - nightly-change-check
@@ -724,9 +781,11 @@ jobs:
       - create-release
     if: always()
 
+    permissions:
+      contents: read
     steps:
       - name: Collect job results
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
             const jobs = ${{ toJSON(needs) }};
