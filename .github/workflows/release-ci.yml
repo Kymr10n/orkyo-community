@@ -386,7 +386,7 @@ jobs:
 
       - name: Run migrator
         env:
-          CONNECTION_STRING: "Host=localhost;Port=5432;Database=orkyo_community_ci;Username=postgres;Password=postgres"
+          DEFAULT_CONNECTION_STRING: "Host=localhost;Port=5432;Database=orkyo_community_ci;Username=postgres;Password=postgres"
           APP_VERSION: ci-${{ github.sha }}
         run: |
           dotnet run --no-build -c Release \
