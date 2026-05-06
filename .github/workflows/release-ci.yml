@@ -421,7 +421,7 @@ jobs:
           echo $! > /tmp/api.pid
 
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:5002/api/health >/dev/null 2>&1; then
+            if curl -sf http://localhost:5002/health/live >/dev/null 2>&1; then
               echo "API healthy after ${i}s"
               exit 0
             fi
