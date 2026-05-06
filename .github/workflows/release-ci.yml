@@ -397,6 +397,7 @@ jobs:
         env:
           ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=orkyo_community_ci;Username=postgres;Password=postgres"
           ASPNETCORE_URLS: "http://+:5002"
+          CORS_ALLOWED_ORIGINS: "http://localhost:5002"
           KEYCLOAK_URL: "http://localhost:8082"
           KEYCLOAK_REALM: "orkyo-community"
           KEYCLOAK_BACKEND_CLIENT_ID: "orkyo-backend"
