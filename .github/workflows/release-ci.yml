@@ -326,8 +326,7 @@ jobs:
     name: smoke-tests
     timeout-minutes: 15
     runs-on: ubuntu-latest
-    needs: [backend-ci, frontend-ci]
-    timeout-minutes: 15
+    needs: [backend-ci, frontend-ci, nightly-change-check]
     if: >-
       !failure() && !cancelled() &&
       (github.event_name != 'schedule' ||
