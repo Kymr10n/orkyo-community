@@ -392,13 +392,10 @@ jobs:
           dotnet run --no-build -c Release \
             --project backend/migrator/Orkyo.Community.Migrator.csproj \
             -- migrate --target all
-          dotnet run --no-build -c Release \
-            --project backend/migrator/Orkyo.Community.Migrator.csproj \
-            -- migrate --target all
 
       - name: Start API and verify health
         env:
-          ConnectionStrings__Postgres: "Host=localhost;Port=5432;Database=orkyo_community_ci;Username=postgres;Password=postgres"
+          ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=orkyo_community_ci;Username=postgres;Password=postgres"
           ASPNETCORE_URLS: "http://+:5002"
           KEYCLOAK_URL: "http://localhost:8082"
           KEYCLOAK_REALM: "orkyo-community"
