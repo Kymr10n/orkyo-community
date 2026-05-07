@@ -16,6 +16,7 @@ COPY . .
 RUN npm run build
 
 FROM nginx:1.27-alpine AS runtime
+LABEL org.opencontainers.image.source=https://github.com/Kymr10n/orkyo-community
 RUN apk upgrade --no-cache
 
 COPY --from=builder /app/dist /usr/share/nginx/html

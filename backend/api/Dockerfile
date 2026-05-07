@@ -20,6 +20,7 @@ RUN dotnet publish backend/api/Orkyo.Community.Api.csproj \
     -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+LABEL org.opencontainers.image.source=https://github.com/Kymr10n/orkyo-community
 WORKDIR /app
 COPY --from=build /app/publish .
 
