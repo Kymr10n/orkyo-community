@@ -1,7 +1,7 @@
 import react from "@vitejs/plugin-react";
 import { existsSync } from "node:fs";
 import { fileURLToPath, URL } from "node:url";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 
 // Foundation consumption strategy:
 //   - Community imports foundation as `@kymr10n/foundation/src/...` and

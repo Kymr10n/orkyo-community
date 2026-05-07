@@ -18,14 +18,14 @@
     </When>
     <Otherwise>
       <ItemGroup>
-        <PackageReference Include="Orkyo.Foundation" Version="0.1.17" />
+        <PackageReference Include="Orkyo.Foundation" Version="0.1.18" />
         <ProjectReference Include="..\src\Orkyo.Community.csproj" />
       </ItemGroup>
     </Otherwise>
   </Choose>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.7" />
     <PackageReference Include="Npgsql" Version="9.0.2" />
     <PackageReference Include="MailKit" Version="4.16.0" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
