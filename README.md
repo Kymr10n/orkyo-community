@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/orkyo-logo-dark.png">
+    <img src=".github/orkyo-logo-light.png" alt="Orkyo" width="120">
+  </picture>
+</p>
+
 # Orkyo Community
 
 Self-hosted, single-tenant edition of Orkyo — production space planning and scheduling.
