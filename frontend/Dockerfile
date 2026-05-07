@@ -24,7 +24,11 @@ COPY runtime_config.tpl.js /runtime_config.tpl.js
 COPY docker-entrypoint-prod.sh /docker-entrypoint-prod.sh
 RUN chmod +x /docker-entrypoint-prod.sh \
     && chown -R nginx:nginx /usr/share/nginx/html /runtime_config.tpl.js \
-    && chmod -R 755 /usr/share/nginx/html
+    && chmod -R 755 /usr/share/nginx/html \
+    && mkdir -p /var/cache/nginx/client_temp /var/cache/nginx/proxy_temp /var/cache/nginx/fastcgi_temp /var/cache/nginx/uwsgi_temp /var/cache/nginx/scgi_temp \
+    && chown -R nginx:nginx /var/cache/nginx \
+    && touch /var/run/nginx.pid \
+    && chown nginx:nginx /var/run/nginx.pid
 
 USER nginx
 EXPOSE 8080

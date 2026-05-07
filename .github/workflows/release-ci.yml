@@ -696,7 +696,7 @@ jobs:
         run: |
           echo "Waiting for API (timeout 120s)..."
           if timeout 120 bash -c \
-            'until curl -sf http://localhost:8080/api/health >/dev/null 2>&1; do sleep 3; done'; then
+            'until curl -sf http://localhost:8080/health >/dev/null 2>&1; do sleep 3; done'; then
             echo "API healthy"
           else
             echo "::error::API did not become healthy within 120s"
