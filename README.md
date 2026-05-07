@@ -76,6 +76,16 @@ Copy `.env.template` to `.env` and edit. Key variables:
 - `COMMUNITY__TENANTNAME` — display name for your organisation
 - `OIDC_AUTHORITY` / `KEYCLOAK_URL` — set to your public Keycloak URL in production
 
+## Self-host deployment
+
+Production deployments use the bundle in [release/](release/), which ships as a single `compose.yml` with no host-side scripts or bind mounts.
+
+**Portainer Stacks** — paste [release/compose.yml](release/compose.yml) into Portainer's web editor (or point at this repo as a Git source with `Compose path: release/compose.yml`), fill in the env vars Portainer prompts for, and deploy.
+
+**Docker Compose CLI** — download a release bundle from [Releases](https://github.com/Kymr10n/orkyo-community/releases), `cp .env.template .env`, edit, `docker compose up -d`.
+
+See [release/docs/QUICKSTART.md](release/docs/QUICKSTART.md) for the full required-variable list and [release/docs/OPERATIONS.md](release/docs/OPERATIONS.md) for backup, upgrade, and rollback.
+
 ## Architecture
 
 ```

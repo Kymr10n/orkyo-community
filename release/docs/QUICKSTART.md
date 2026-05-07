@@ -1,115 +1,91 @@
 # Orkyo Community — Quick Start
 
+Two supported deployment paths: **Portainer Stacks** (single-file paste, recommended) and **Docker Compose CLI**. Both consume the same [compose.yml](../compose.yml).
+
 ## Prerequisites
 
-- Docker 24+ with Docker Compose V2 (`docker compose version`)
+- Docker 24+ with Docker Compose V2
 - 2 GB RAM available to Docker
-- Ports 80, 8080, and 9080 free on the host
+- Ports 80, 8080, and 9080 free on the host (or override via `FRONTEND_PORT` / `API_PORT` / `KEYCLOAK_PORT`)
 
-## 1. Configure
+## Required configuration
 
-Copy the environment template and fill in every `CHANGE_ME_*` value:
+These have no defaults — deploy will refuse to start without them:
 
-```bash
-cp .env.template .env
-nano .env          # or your preferred editor
-```
-
-Required values to set:
-
-| Variable | Description |
-|----------|-------------|
+| Variable | Purpose |
+|---|---|
+| `ORKYO_VERSION` | Image tag, e.g. `0.4.2` |
 | `POSTGRES_PASSWORD` | Database password |
 | `REDIS_PASSWORD` | Redis password |
 | `KEYCLOAK_ADMIN_PASSWORD` | Keycloak admin console password |
 | `KEYCLOAK_BACKEND_CLIENT_SECRET` | Secret for the `orkyo-backend` OIDC client |
-| `SMTP_HOST` | Outbound mail server hostname |
+| `APP_BASE_URL` | Public URL where users reach the app, e.g. `https://community.example.com` |
+| `KEYCLOAK_URL` | Public URL for Keycloak, e.g. `https://auth.example.com` |
+| `BFF_COOKIE_DOMAIN` | Cookie domain, e.g. `community.example.com` |
+| `SMTP_HOST` | Outbound mail server |
 | `SMTP_FROM_EMAIL` | Sender address for system emails |
-| `APP_BASE_URL` | Public URL users will access (e.g. `https://community.example.com`) |
-| `KEYCLOAK_URL` | Public URL for Keycloak (e.g. `http://localhost:9080` or `https://auth.example.com`) |
-| `OIDC_AUTHORITY` | `${KEYCLOAK_URL}/realms/orkyo-community` |
 
-## 2. Start
+## Path A — Portainer Stacks (recommended)
+
+1. Open Portainer → **Stacks** → **Add stack**
+2. Name the stack `orkyo-community`
+3. Choose **Repository** and point at the [orkyo-community](https://github.com/Kymr10n/orkyo-community) repo with `Compose path: release/compose.yml`. Or choose **Web editor** and paste the contents of `compose.yml`.
+4. Under **Environment variables**, add the values listed above (Portainer will detect required vars and prompt for them)
+5. Click **Deploy the stack**
+
+On first deploy, Keycloak imports the realm and the migrator runs DB migrations. Allow 2–3 minutes.
+
+## Path B — Docker Compose CLI
 
 ```bash
-bash scripts/bootstrap.sh
-```
+# 1. Get the bundle (or just compose.yml + .env.template from the repo)
+wget https://github.com/Kymr10n/orkyo-community/releases/latest/download/orkyo-community-v<VERSION>.zip
+unzip orkyo-community-v<VERSION>.zip
+cd orkyo-community-v<VERSION>
 
-The script validates your `.env`, pulls images, starts all services, and confirms the API is healthy. On first run this takes 2–3 minutes.
+# 2. Configure
+cp .env.template .env
+# edit .env — fill in every value listed above
 
-To start manually instead:
-
-```bash
+# 3. Deploy
 docker compose up -d
 ```
 
-## 3. Access
+If a required value is missing, compose fails immediately with a message naming the variable.
+
+## Access
 
 | Service | URL |
-|---------|-----|
-| Application | `http://localhost` |
-| Keycloak admin | `http://localhost:9080` — sign in with `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD` |
-| API health | `http://localhost:8080/api/health` |
+|---|---|
+| Application | `${APP_BASE_URL}` (or `http://localhost` for local) |
+| Keycloak admin | `${KEYCLOAK_URL}` — sign in as `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD` |
+| API health | `${APP_BASE_URL}/api/health` |
 
-Default test accounts (change passwords in Keycloak before going to production):
+Default test accounts (pre-imported in the realm — change passwords before going to production):
 
 | Username | Role |
-|----------|------|
+|---|---|
 | `admin` | Site admin |
 | `editor` | Editor |
 | `viewer` | Viewer |
 
-## 4. Portainer
+## HTTPS / Reverse Proxy
 
-To deploy via Portainer Stacks:
+The frontend listens on host port `80` and internally proxies `/api/` to the backend. Place a reverse proxy (nginx, Caddy, Traefik) in front of port 80 to terminate TLS. A reference nginx configuration is in [nginx/community.conf.example](../nginx/community.conf.example).
 
-1. Open Portainer → **Stacks** → **Add stack**
-2. Paste the contents of `compose.yml` into the Web editor
-3. Under **Environment variables**, add each key/value from your `.env` file
-4. Click **Deploy the stack**
-
-## 5. HTTPS / Reverse Proxy
-
-The frontend listens on host port **80** and internally proxies `/api/` to the backend — no external routing split is required.
-
-To add TLS, place a reverse proxy (nginx, Caddy, Traefik) in front of port 80. A reference nginx configuration is provided in `nginx/community.conf.example`.
-
-Alternatively, use Caddy for automatic TLS:
+Caddy example (auto-TLS):
 
 ```
 community.example.com {
     reverse_proxy localhost:80
 }
+
+auth.example.com {
+    reverse_proxy localhost:9080
+}
 ```
 
-## 6. Upgrade
+## Next steps
 
-```bash
-bash scripts/upgrade.sh 1.2.0
-```
-
-The script backs up the database, updates the image version, pulls new images, re-runs migrations, and restarts all services.
-
-## 7. Backup
-
-```bash
-bash scripts/backup.sh
-```
-
-Backups are written to `./backups/` as gzipped SQL dumps.
-
-## Troubleshooting
-
-```bash
-# View logs for all services
-docker compose logs -f
-
-# View logs for a specific service
-docker compose logs -f api
-
-# Check container health
-docker compose ps
-
-# Restart a service
-docker compose restart api
-```
+- [OPERATIONS.md](OPERATIONS.md) — backup, upgrade, restore
+- [GitHub Issues](https://github.com/Kymr10n/orkyo-community/issues) — bugs and questions
