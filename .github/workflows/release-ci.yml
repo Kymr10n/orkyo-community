@@ -463,6 +463,10 @@ jobs:
             dockerfile: frontend/Dockerfile
             context: frontend
             no_secret: true
+          - service: keycloak
+            dockerfile: backend/keycloak/Dockerfile
+            context: .
+            no_secret: true
       fail-fast: false
 
     steps:
@@ -515,7 +519,7 @@ jobs:
       (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     strategy:
       matrix:
-        service: [api, worker, migrator, frontend]
+        service: [api, worker, migrator, frontend, keycloak]
       fail-fast: false
 
     permissions:
@@ -602,7 +606,7 @@ jobs:
 
       - name: Provenance gate — verify all SHA images exist
         run: |
-          for svc in api worker migrator frontend; do
+          for svc in api worker migrator frontend keycloak; do
             IMAGE="${{ env.REGISTRY }}/orkyo-community-${svc}:sha-${{ github.sha }}"
             echo "Checking: $IMAGE"
             if ! docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
@@ -618,7 +622,7 @@ jobs:
           MINOR: ${{ steps.version.outputs.MINOR }}
           MAJOR: ${{ steps.version.outputs.MAJOR }}
         run: |
-          for svc in api worker migrator frontend; do
+          for svc in api worker migrator frontend keycloak; do
             SHA_IMG="${{ env.REGISTRY }}/orkyo-community-${svc}:sha-${{ github.sha }}"
             docker pull "$SHA_IMG"
             for tag in "$V" "$MINOR" "$MAJOR"; do
