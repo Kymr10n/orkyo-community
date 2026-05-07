@@ -676,14 +676,27 @@ jobs:
       - name: Generate test .env
         run: |
           BUNDLE="dist/orkyo-community-v${{ steps.version.outputs.VERSION }}"
-          cp "$BUNDLE/.env.template" "$BUNDLE/.env"
-          sed -i 's/CHANGE_ME_[^ ]*/ci-test-value/g' "$BUNDLE/.env"
-          # Keycloak and SMTP can't start cleanly in CI — set plausible stub values
-          sed -i 's|^KEYCLOAK_URL=.*|KEYCLOAK_URL=http://localhost:9080|' "$BUNDLE/.env"
-          sed -i 's|^OIDC_AUTHORITY=.*|OIDC_AUTHORITY=http://localhost:9080/realms/orkyo-community|' "$BUNDLE/.env"
-          sed -i 's|^SMTP_HOST=.*|SMTP_HOST=localhost|'    "$BUNDLE/.env"
-          sed -i 's|^SMTP_PORT=.*|SMTP_PORT=1025|'         "$BUNDLE/.env"
-          sed -i 's|^SMTP_USE_SSL=.*|SMTP_USE_SSL=false|'  "$BUNDLE/.env"
+          cat > "$BUNDLE/.env" <<'EOF'
+          POSTGRES_USER=orkyo
+          POSTGRES_PASSWORD=ci-postgres-password
+          POSTGRES_DB=orkyo_community
+          KEYCLOAK_DB=keycloak
+          REDIS_PASSWORD=ci-redis-password
+          APP_BASE_URL=http://localhost
+          KEYCLOAK_URL=http://localhost:9080
+          KEYCLOAK_ADMIN=admin
+          KEYCLOAK_ADMIN_PASSWORD=ci-keycloak-admin-password
+          KEYCLOAK_REALM=orkyo-community
+          KEYCLOAK_BACKEND_CLIENT_ID=orkyo-backend
+          KEYCLOAK_BACKEND_CLIENT_SECRET=ci-backend-client-secret
+          BFF_COOKIE_DOMAIN=localhost
+          BFF_COOKIE_SECURE=false
+          SMTP_HOST=localhost
+          SMTP_PORT=1025
+          SMTP_USE_SSL=false
+          SMTP_FROM_EMAIL=noreply@ci.local
+          SMTP_FROM_NAME=Orkyo CI
+          EOF
 
       - name: Log in to GHCR
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
@@ -692,11 +705,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Start services (db + redis + migrator + api + frontend, no keycloak)
+      - name: Start full stack (incl. Keycloak — exercises baked realm import)
         working-directory: dist/orkyo-community-v${{ steps.version.outputs.VERSION }}
-        run: docker compose up -d db redis migrator api frontend
+        run: docker compose up -d
+
+      - name: Wait for Keycloak to import realm and be ready
+        working-directory: dist/orkyo-community-v${{ steps.version.outputs.VERSION }}
+        run: |
+          echo "Waiting for Keycloak (timeout 180s) — exercises baked realm import..."
+          if timeout 180 bash -c \
+            'until curl -sf -o /dev/null http://localhost:9080/realms/orkyo-community; do sleep 3; done'; then
+            echo "Keycloak realm available"
+          else
+            echo "::error::Keycloak failed to start or import realm within 180s"
+            docker compose logs keycloak --tail 100
+            exit 1
+          fi
 
       - name: Wait for API to be healthy
+        working-directory: dist/orkyo-community-v${{ steps.version.outputs.VERSION }}
         run: |
           echo "Waiting for API (timeout 120s)..."
           if timeout 120 bash -c \
@@ -704,9 +731,7 @@ jobs:
             echo "API healthy"
           else
             echo "::error::API did not become healthy within 120s"
-            docker compose \
-              -f dist/orkyo-community-v${{ steps.version.outputs.VERSION }}/compose.yml \
-              logs --tail 50
+            docker compose logs --tail 50
             exit 1
           fi
 

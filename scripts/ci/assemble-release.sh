@@ -22,17 +22,16 @@ echo "Assembling ${BUNDLE_NAME}.zip..."
 cp -r "${REPO_ROOT}/release" "${STAGING_DIR}/${BUNDLE_NAME}"
 
 # ── 2. Stamp version ──────────────────────────────────────────────────────────
-sed -i "s|CHANGE_ME_VERSION|${VERSION}|g" "${STAGING_DIR}/${BUNDLE_NAME}/.env.template"
-sed -i "s|\${ORKYO_VERSION}|${VERSION}|g" "${STAGING_DIR}/${BUNDLE_NAME}/compose.yml" || true
+# Replace any ${ORKYO_VERSION...} reference (with or without :? / :- modifiers)
+# in compose.yml so the bundled file is self-contained without ORKYO_VERSION env.
+sed -i "s|\${ORKYO_VERSION[^}]*}|${VERSION}|g" "${STAGING_DIR}/${BUNDLE_NAME}/compose.yml"
+sed -i "s|^ORKYO_VERSION=.*|ORKYO_VERSION=${VERSION}|" "${STAGING_DIR}/${BUNDLE_NAME}/.env.template"
 
-# ── 3. Copy README ────────────────────────────────────────────────────────────
+# ── 3. Copy README and LICENSE ───────────────────────────────────────────────
 [ -f "${REPO_ROOT}/README.md" ] && cp "${REPO_ROOT}/README.md" "${STAGING_DIR}/${BUNDLE_NAME}/README.md"
 [ -f "${REPO_ROOT}/LICENSE" ]   && cp "${REPO_ROOT}/LICENSE"   "${STAGING_DIR}/${BUNDLE_NAME}/LICENSE"
 
-# ── 4. Ensure scripts are executable ─────────────────────────────────────────
-find "${STAGING_DIR}/${BUNDLE_NAME}" -name "*.sh" -exec chmod +x {} \;
-
-# ── 5. Package ────────────────────────────────────────────────────────────────
+# ── 4. Package ────────────────────────────────────────────────────────────────
 mkdir -p "$OUTDIR"
 (cd "$STAGING_DIR" && zip -rq "${BUNDLE_NAME}.zip" "${BUNDLE_NAME}")
 cp "${STAGING_DIR}/${BUNDLE_NAME}.zip" "${OUTDIR}/${BUNDLE_NAME}.zip"
