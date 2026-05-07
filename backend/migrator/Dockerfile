@@ -29,3 +29,4 @@ RUN useradd -r -u 999 -s /bin/false appuser \
 USER appuser
 
 ENTRYPOINT ["dotnet", "Orkyo.Community.Migrator.dll"]
+CMD ["migrate", "--target", "all"]
