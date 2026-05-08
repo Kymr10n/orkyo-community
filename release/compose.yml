@@ -182,6 +182,7 @@ services:
       KC_DB_URL: jdbc:postgresql://db:5432/${KEYCLOAK_DB:-keycloak}
       KC_DB_USERNAME: ${POSTGRES_USER:-orkyo}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_HTTP_ENABLED: "true"
       KC_HOSTNAME: ${KEYCLOAK_URL}
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       # Permissive by default — typical self-hosted setups put a reverse proxy
