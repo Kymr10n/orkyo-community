@@ -24,6 +24,9 @@ LABEL org.opencontainers.image.source=https://github.com/Kymr10n/orkyo-community
 
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 
+# Run as the non-root keycloak user (UID 1000) — matches the upstream image default.
+USER 1000
+
 # `--optimized` skips re-running build (stage 1 already did it).
 # `--import-realm` is idempotent: skipped if the realm already exists.
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start", "--optimized", "--import-realm"]
