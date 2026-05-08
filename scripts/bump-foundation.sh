@@ -12,7 +12,7 @@ cd "$(dirname "$0")/.."
 
 # ── Load .env if present (provides auth token for GitHub Packages) ────────────
 if [[ -f .env ]]; then
-  while IFS= read -r _line; do
+  while IFS= read -r _line || [[ -n "$_line" ]]; do
     [[ "$_line" =~ ^[[:space:]]*# ]] && continue
     [[ -z "${_line// }" ]] && continue
     [[ "$_line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] || continue
