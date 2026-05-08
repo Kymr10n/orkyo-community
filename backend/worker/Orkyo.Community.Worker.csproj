@@ -18,7 +18,7 @@
     </When>
     <Otherwise>
       <ItemGroup>
-        <PackageReference Include="Orkyo.Foundation" Version="0.1.18" />
+        <PackageReference Include="Orkyo.Foundation" Version="0.1.19" />
         <ProjectReference Include="..\src\Orkyo.Community.csproj" />
       </ItemGroup>
     </Otherwise>
