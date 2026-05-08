@@ -6,7 +6,7 @@
 # Build context: repo root (so release/config/keycloak/realm.json is reachable).
 
 # ── Stage 1: build (config baking) ────────────────────────────────────────────
-FROM quay.io/keycloak/keycloak:26.1 AS builder
+FROM quay.io/keycloak/keycloak:26.6.1 AS builder
 
 ENV KC_DB=postgres \
     KC_HEALTH_ENABLED=true \
@@ -19,8 +19,13 @@ COPY release/config/keycloak/realm.json /opt/keycloak/data/import/realm.json
 RUN /opt/keycloak/bin/kc.sh build
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
-FROM quay.io/keycloak/keycloak:26.1
+FROM quay.io/keycloak/keycloak:26.6.1
 LABEL org.opencontainers.image.source=https://github.com/Kymr10n/orkyo-community
+
+# Upgrade OS packages to patch CVEs in openjdk-headless, libcap, and sqlite-libs
+# that are not yet fixed in the upstream base image layer.
+USER root
+RUN microdnf upgrade -y --nodocs && microdnf clean all
 
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 
