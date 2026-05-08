@@ -1,3 +1,25 @@
 # Trivy CVE exceptions for orkyo-community
 # Format: CVE-YYYY-NNNNN  # Impact | Reason | Added: YYYY-MM-DD | Review: YYYY-MM-DD
 # (no exceptions at initial setup)
+
+# ── Keycloak base image (quay.io/keycloak/keycloak:26.6.1 / ubi9) ────────────
+# The Keycloak image ships without a package manager; OS packages cannot be
+# upgraded from within the Dockerfile. These CVEs are in the upstream ubi9 base
+# and require Keycloak to publish a new image with an updated base.
+# Review when keycloak > 26.6.1 is available.
+
+# java-21-openjdk-headless — Oracle CPU 2025-07 / 2026-01 / 2026-04 patches
+CVE-2025-30749  # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01
+CVE-2025-50059  # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01
+CVE-2025-50106  # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01
+CVE-2025-64720  # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01
+CVE-2025-65018  # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01
+CVE-2026-21945  # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01
+CVE-2026-22016  # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01
+CVE-2026-34282  # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01
+
+# libcap — privilege escalation via TOCTOU in cap_set_file()
+CVE-2026-4878   # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01
+
+# sqlite-libs — integer truncation
+CVE-2025-6965   # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01

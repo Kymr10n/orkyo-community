@@ -22,11 +22,6 @@ RUN /opt/keycloak/bin/kc.sh build
 FROM quay.io/keycloak/keycloak:26.6.1
 LABEL org.opencontainers.image.source=https://github.com/Kymr10n/orkyo-community
 
-# Upgrade OS packages to patch CVEs in openjdk-headless, libcap, and sqlite-libs
-# that are not yet fixed in the upstream base image layer.
-USER root
-RUN microdnf upgrade -y --nodocs && microdnf clean all
-
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 
 # Run as the non-root keycloak user (UID 1000) — matches the upstream image default.
