@@ -1,25 +1,54 @@
 # Trivy CVE exceptions for orkyo-community
-# Format: CVE-YYYY-NNNNN  # Impact | Reason | Added: YYYY-MM-DD | Review: YYYY-MM-DD
-# (no exceptions at initial setup)
+#
+# Format:
+#   CVE-YYYY-NNNNN  # Impact | Reason | Added: YYYY-MM-DD | Review: YYYY-MM-DD
+#
+# Policy: time-bound only. Review date must be within 14 days of added date.
+# Remove entries once the upstream fix is available.
 
-# ── Keycloak base image (quay.io/keycloak/keycloak:26.6.1 / ubi9) ────────────
-# The Keycloak image ships without a package manager; OS packages cannot be
-# upgraded from within the Dockerfile. These CVEs are in the upstream ubi9 base
-# and require Keycloak to publish a new image with an updated base.
-# Review when keycloak > 26.6.1 is available.
+# ── Keycloak base image JDK (quay.io/keycloak/keycloak:26.6.1 / ubi9) ────────
+# The Keycloak image ships without a package manager (microdnf absent in 26.x).
+# OS packages cannot be upgraded from within the Dockerfile.
+# Fix requires Keycloak to ship a new base image with updated ubi9 packages.
 
 # java-21-openjdk-headless — Oracle CPU 2025-07 / 2026-01 / 2026-04 patches
-CVE-2025-30749  # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01
-CVE-2025-50059  # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01
-CVE-2025-50106  # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01
-CVE-2025-64720  # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01
-CVE-2025-65018  # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01
-CVE-2026-21945  # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01
-CVE-2026-22016  # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01
-CVE-2026-34282  # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01
+CVE-2025-30749  # HIGH | openjdk: fix not yet in KC 26.6.1 base image, no package manager | Added: 2026-05-08 | Review: 2026-05-22
+CVE-2025-50059  # HIGH | openjdk: fix not yet in KC 26.6.1 base image, no package manager | Added: 2026-05-08 | Review: 2026-05-22
+CVE-2025-50106  # HIGH | openjdk: fix not yet in KC 26.6.1 base image, no package manager | Added: 2026-05-08 | Review: 2026-05-22
+CVE-2025-64720  # HIGH | openjdk: fix not yet in KC 26.6.1 base image, no package manager | Added: 2026-05-08 | Review: 2026-05-22
+CVE-2025-65018  # HIGH | openjdk: fix not yet in KC 26.6.1 base image, no package manager | Added: 2026-05-08 | Review: 2026-05-22
+CVE-2026-21945  # HIGH | openjdk: fix not yet in KC 26.6.1 base image, no package manager | Added: 2026-05-08 | Review: 2026-05-22
+CVE-2026-22016  # HIGH | openjdk: Enhance Path Factories Redux — fix in JDK 21.0.11, not yet in KC 26.6.1 base image | Added: 2026-05-08 | Review: 2026-05-22
+CVE-2026-34282  # HIGH | openjdk: Enhance TLS connection handling — fix not yet in KC 26.6.1 base image | Added: 2026-05-08 | Review: 2026-05-22
 
 # libcap — privilege escalation via TOCTOU in cap_set_file()
-CVE-2026-4878   # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01
+CVE-2026-4878   # HIGH | libcap: fix not yet in KC 26.6.1 base image, no package manager | Added: 2026-05-08 | Review: 2026-05-22
 
 # sqlite-libs — integer truncation
-CVE-2025-6965   # HIGH | keycloak base ubi9, no package manager | Added: 2026-05-08 | Review: 2026-08-01
+CVE-2025-6965   # HIGH | sqlite-libs: fix not yet in KC 26.6.1 base image, no package manager | Added: 2026-05-08 | Review: 2026-05-22
+
+# ── Keycloak embedded JARs (quay.io/keycloak/keycloak:26.6.1) ────────────────
+# Fixed versions exist upstream but Keycloak must ship a new release to include them.
+# Cannot patch independently without rebuilding Keycloak from source.
+
+# io.netty 4.1.130.Final — fixed in 4.1.132–4.1.133.Final
+CVE-2026-33870  # HIGH | netty-codec-http: request smuggling — embedded in KC 26.6.1 JARs; fix requires KC to ship netty 4.1.132 | Added: 2026-05-08 | Review: 2026-05-22
+CVE-2026-33871  # HIGH | netty-codec-http2: DoS via HTTP/2 CONTINUATION — embedded in KC 26.6.1 JARs; fix requires KC to ship netty 4.1.132 | Added: 2026-05-08 | Review: 2026-05-22
+CVE-2026-42577  # HIGH | netty-transport-native-epoll: DoS via RST on half-closed TCP — embedded in KC 26.6.1 JARs; fix requires KC to ship netty 4.2.13 | Added: 2026-05-08 | Review: 2026-05-22
+CVE-2026-42579  # HIGH | netty-codec-dns: input validation bypass — embedded in KC 26.6.1 JARs; fix requires KC to ship netty 4.1.133 | Added: 2026-05-08 | Review: 2026-05-22
+CVE-2026-42583  # HIGH | netty-codec: Lz4FrameDecoder resource exhaustion — embedded in KC 26.6.1 JARs; fix requires KC to ship netty 4.1.133 | Added: 2026-05-08 | Review: 2026-05-22
+CVE-2026-42584  # HIGH | netty-codec-http: HttpClientCodec desync — embedded in KC 26.6.1 JARs; fix requires KC to ship netty 4.1.133 | Added: 2026-05-08 | Review: 2026-05-22
+CVE-2026-42587  # HIGH | netty-codec-http/http2: decompression bypass — embedded in KC 26.6.1 JARs; fix requires KC to ship netty 4.1.133 | Added: 2026-05-08 | Review: 2026-05-22
+
+# io.quarkus:quarkus-vertx-http 3.33.1 — fixed in 3.33.1.1 (authorization bypass via semicolons)
+CVE-2026-39852  # HIGH | quarkus-vertx-http: authz bypass via semicolons — embedded in KC 26.6.1; fix requires KC to ship quarkus 3.33.1.1 | Added: 2026-05-08 | Review: 2026-05-22
+
+# org.bouncycastle:bcprov-jdk18on 1.83 — fixed in 1.84 (private key timing leak)
+CVE-2026-5598   # HIGH | bcprov-jdk18on: private key leakage via non-constant time comparison — embedded in KC 26.6.1; fix requires KC to ship BC 1.84 | Added: 2026-05-08 | Review: 2026-05-22
+
+# org.postgresql:postgresql 42.7.10 — fixed in 42.7.11 (SCRAM-SHA-256 DoS)
+CVE-2026-42198  # HIGH | postgresql jdbc: client-side DoS via malicious SCRAM auth — embedded in KC 26.6.1; fix requires KC to ship pgjdbc 42.7.11 | Added: 2026-05-08 | Review: 2026-05-22
+
+# ── Trivy false positive ───────────────────────────────────────────────────────
+# Trivy reports fix as 12.6.5 but KC 26.6.1 ships mssql-jdbc 13.2.1 (newer); false positive.
+CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy lists fix as 12.6.5 but KC ships 13.2.1 (newer); false positive | Added: 2026-05-08 | Review: 2026-05-22
