@@ -22,10 +22,10 @@
     </When>
     <Otherwise>
       <ItemGroup>
-        <PackageReference Include="Orkyo.Foundation" Version="0.1.19" />
-        <PackageReference Include="Orkyo.Migration.Abstractions" Version="0.1.19" />
-        <PackageReference Include="Orkyo.Migrator" Version="0.1.19" />
-        <PackageReference Include="Orkyo.Foundation.Migrations" Version="0.1.19" />
+        <PackageReference Include="Orkyo.Foundation" Version="0.1.20" />
+        <PackageReference Include="Orkyo.Migration.Abstractions" Version="0.1.20" />
+        <PackageReference Include="Orkyo.Migrator" Version="0.1.20" />
+        <PackageReference Include="Orkyo.Foundation.Migrations" Version="0.1.20" />
         <ProjectReference Include="..\migrations\Orkyo.Community.Migrations.csproj" />
       </ItemGroup>
     </Otherwise>
