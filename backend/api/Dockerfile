@@ -12,7 +12,7 @@ RUN --mount=type=secret,id=nuget_token,required=true \
       --name github --username Kymr10n \
       --password "$(cat /run/secrets/nuget_token)" \
       --store-password-in-clear-text \
-    && dotnet restore backend/api/Orkyo.Community.Api.csproj -r linux-musl-x64
+    && dotnet restore backend/api/Orkyo.Community.Api.csproj -r linux-musl-x64 /p:PublishReadyToRun=true
 
 COPY backend/ backend/
 
