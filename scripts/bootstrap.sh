@@ -54,7 +54,7 @@ docker compose -f "${BUNDLE_DIR}/docker-compose.yml" --env-file "$ENV_FILE" up -
 echo ""
 echo "Waiting for API to become healthy..."
 for i in $(seq 1 30); do
-  if curl -sf http://localhost:8080/api/health >/dev/null 2>&1; then
+  if curl -sf http://localhost:8080/health >/dev/null 2>&1; then
     echo "Orkyo Community is up and running."
     exit 0
   fi

@@ -35,6 +35,6 @@ EXPOSE 8080
 USER appuser
 
 HEALTHCHECK --interval=10s --timeout=3s --retries=5 \
-  CMD curl -sf http://localhost:8080/api/health || exit 1
+  CMD curl -sf http://localhost:8080/health || exit 1
 
 ENTRYPOINT ["dotnet", "Orkyo.Community.Api.dll"]

@@ -59,7 +59,7 @@ If a required value is missing, compose fails immediately with a message naming 
 |---|---|
 | Application | `${APP_BASE_URL}` (or `http://localhost` for local) |
 | Keycloak admin | `${KEYCLOAK_URL}` — sign in as `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD` |
-| API health | `${APP_BASE_URL}/api/health` |
+| API health | `${APP_BASE_URL}/health` |
 
 Default test accounts (pre-imported in the realm — change passwords before going to production):
 
