@@ -26,7 +26,7 @@ LABEL org.opencontainers.image.source=https://github.com/Kymr10n/orkyo-community
 WORKDIR /app
 COPY --from=build /app/publish .
 
-RUN adduser -D -u 999 -s /sbin/nologin appuser \
+RUN adduser -D -u 1001 -s /sbin/nologin appuser \
     && chown -R appuser:appuser /app
 USER appuser
 
