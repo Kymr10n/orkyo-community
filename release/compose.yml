@@ -123,7 +123,7 @@ services:
       redis: { condition: service_healthy }
       migrator: { condition: service_completed_successfully }
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 6
