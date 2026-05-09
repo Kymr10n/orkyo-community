@@ -372,6 +372,32 @@ jobs:
       - name: Build
         run: dotnet build Orkyo.Community.slnx -c Release --no-restore
 
+      - name: Validate config contract
+        env:
+          ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=orkyo_community_ci;Username=postgres;Password=postgres"
+          ASPNETCORE_URLS: "http://+:5002"
+          CORS_ALLOWED_ORIGINS: "http://localhost:5002"
+          KEYCLOAK_URL: "http://localhost:8082"
+          KEYCLOAK_REALM: "orkyo-community"
+          KEYCLOAK_BACKEND_CLIENT_ID: "orkyo-backend"
+          KEYCLOAK_BACKEND_CLIENT_SECRET: "ci-secret"
+          OIDC_AUTHORITY: "http://localhost:8082/realms/orkyo-community"
+          JWT_ISSUER: "orkyo-api"
+          JWT_AUDIENCE: "orkyo-app"
+          JWT_SECRET: "ci-test-secret-at-least-32-characters-long"
+          SMTP_HOST: "localhost"
+          SMTP_PORT: "1025"
+          SMTP_USE_SSL: "false"
+          SMTP_FROM_EMAIL: "noreply@ci.local"
+          SMTP_FROM_NAME: "Orkyo CI"
+          FILE_STORAGE_PATH: "/tmp/orkyo-ci-storage"
+          APP_BASE_URL: "http://localhost:5002"
+          REDIS_CONNECTION: "localhost:6379,abortConnect=false"
+        run: |
+          dotnet run --no-build -c Release \
+            --project backend/api/Orkyo.Community.Api.csproj \
+            -- --validate
+
       - name: Create tenant database
         env:
           PGPASSWORD: postgres

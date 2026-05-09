@@ -41,15 +41,21 @@ if grep -q "CHANGE_ME_" "$ENV_FILE"; then
 fi
 
 # ── Pull images and start ──────────────────────────────────────────────────────
+COMPOSE_FILE="${BUNDLE_DIR}/compose.yml"
+
 echo "Pulling images..."
-docker compose -f "${BUNDLE_DIR}/docker-compose.yml" --env-file "$ENV_FILE" pull
+docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" pull
 
 echo "Running migrations..."
-docker compose -f "${BUNDLE_DIR}/docker-compose.yml" --env-file "$ENV_FILE" \
+docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" \
   run --rm migrator migrate --target all
 
+echo "Validating configuration..."
+docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" \
+  run --rm --no-deps api --validate
+
 echo "Starting services..."
-docker compose -f "${BUNDLE_DIR}/docker-compose.yml" --env-file "$ENV_FILE" up -d
+docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
 
 echo ""
 echo "Waiting for API to become healthy..."
