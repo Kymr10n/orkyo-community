@@ -31,6 +31,10 @@ VERSION="${1:-}"
 [[ -n "$VERSION" ]] || die "Usage: scripts/bump-foundation.sh <version>  (e.g. 0.1.19)"
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "Version must be X.Y.Z semver (got: '$VERSION')"
 
+# ── Pre-flight: require auth token before touching any files ──────────────────
+_NPM_AUTH_TOKEN="${NODE_AUTH_TOKEN:-${GITHUB_TOKEN:-${GHCR_TOKEN:-}}}"
+[[ -n "$_NPM_AUTH_TOKEN" ]] || die "No auth token found. Set NODE_AUTH_TOKEN, GITHUB_TOKEN, or GHCR_TOKEN (or add it to .env) — required to pull @kymr10n/foundation from GitHub Packages."
+
 # ── Bump .csproj references ───────────────────────────────────────────────────
 log "Bumping NuGet references to ${BOLD}${VERSION}${NC}..."
 BUMPED=()
@@ -62,13 +66,10 @@ dotnet restore Orkyo.Community.slnx --verbosity quiet
 # ── Regenerate npm lock file ──────────────────────────────────────────────────
 log "Installing npm packages..."
 command -v npm > /dev/null 2>&1 || die "npm not found"
-_NPM_AUTH_TOKEN="${NODE_AUTH_TOKEN:-${GITHUB_TOKEN:-${GHCR_TOKEN:-}}}"
-if [[ -n "$_NPM_AUTH_TOKEN" ]]; then
-  NPMRC_FILE="frontend/.npmrc"
-  trap 'rm -f "$NPMRC_FILE"' EXIT
-  { echo "@kymr10n:registry=https://npm.pkg.github.com"
-    echo "//npm.pkg.github.com/:_authToken=${_NPM_AUTH_TOKEN}"; } > "$NPMRC_FILE"
-fi
+NPMRC_FILE="frontend/.npmrc"
+trap 'rm -f "$NPMRC_FILE"' EXIT
+{ echo "@kymr10n:registry=https://npm.pkg.github.com"
+  echo "//npm.pkg.github.com/:_authToken=${_NPM_AUTH_TOKEN}"; } > "$NPMRC_FILE"
 npm install --prefix frontend --silent
 
 # ── Summary ───────────────────────────────────────────────────────────────────
