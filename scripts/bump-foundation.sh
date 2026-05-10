@@ -70,7 +70,7 @@ NPMRC_FILE="frontend/.npmrc"
 trap 'rm -f "$NPMRC_FILE"' EXIT
 { echo "@kymr10n:registry=https://npm.pkg.github.com"
   echo "//npm.pkg.github.com/:_authToken=${_NPM_AUTH_TOKEN}"; } > "$NPMRC_FILE"
-npm install --prefix frontend --silent
+npm install --prefix frontend --include=optional --silent
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 echo ""
