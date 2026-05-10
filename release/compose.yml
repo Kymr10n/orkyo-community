@@ -137,6 +137,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB:-orkyo_community};Username=${POSTGRES_USER:-orkyo};Password=${POSTGRES_PASSWORD}"
+      KEYCLOAK_URL: ${KEYCLOAK_URL}
       KEYCLOAK_INTERNAL_URL: http://keycloak:8080
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-orkyo-community}
       KEYCLOAK_BACKEND_CLIENT_ID: ${KEYCLOAK_BACKEND_CLIENT_ID:-orkyo-backend}
