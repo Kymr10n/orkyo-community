@@ -1,10 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using Orkyo.Community.Migrations;
 using Orkyo.Foundation.Migrations;
 using Orkyo.Migrations.Abstractions;
 using Orkyo.Migrator;
-using Orkyo.Community.Migrations;
 using Testcontainers.PostgreSql;
 
 namespace Orkyo.Community.Tests;

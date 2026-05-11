@@ -3,8 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Orkyo.Community.Migrations;
 using Orkyo.Foundation.Migrations;
-using Orkyo.Migrator;
 using Orkyo.Migrations.Abstractions;
+using Orkyo.Migrator;
 
 namespace Orkyo.Community.Migrator;
 

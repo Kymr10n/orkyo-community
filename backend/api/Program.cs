@@ -1,4 +1,6 @@
 using Api.Configuration;
+using Api.Endpoints;
+using Api.Endpoints.Admin;
 using Api.Integrations.Keycloak;
 using Api.Middleware;
 using Api.Models;
@@ -7,19 +9,17 @@ using Api.Security;
 using Api.Security.Quotas;
 using Api.Services;
 using Api.Services.AutoSchedule;
-using Api.Endpoints;
-using Api.Endpoints.Admin;
+using FluentValidation;
 using Orkyo.Community.Api.Endpoints;
 using Orkyo.Community.Middleware;
 using Orkyo.Community.Migrations;
 using Orkyo.Community.Services;
 using Orkyo.Community.Tenant;
 using Orkyo.Foundation.Migrations;
+using Orkyo.Foundation.Observability;
 using Orkyo.Migrator;
 using Orkyo.Shared;
 using Orkyo.Shared.Keycloak;
-using FluentValidation;
-using Orkyo.Foundation.Observability;
 using Serilog;
 
 OrkyoObservability.InitBootstrapLogger();
