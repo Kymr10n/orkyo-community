@@ -18,8 +18,8 @@
     </When>
     <Otherwise>
       <ItemGroup>
-        <PackageReference Include="Orkyo.Migration.Abstractions" Version="0.1.23" />
-        <PackageReference Include="Orkyo.Migrator" Version="0.1.23" />
+        <PackageReference Include="Orkyo.Migration.Abstractions" Version="0.1.24" />
+        <PackageReference Include="Orkyo.Migrator" Version="0.1.24" />
       </ItemGroup>
     </Otherwise>
   </Choose>

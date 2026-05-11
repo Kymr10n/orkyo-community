@@ -19,8 +19,8 @@
     </When>
     <Otherwise>
       <ItemGroup>
-        <PackageReference Include="Orkyo.Migrator" Version="0.1.23" />
-        <PackageReference Include="Orkyo.Foundation.Migrations" Version="0.1.23" />
+        <PackageReference Include="Orkyo.Migrator" Version="0.1.24" />
+        <PackageReference Include="Orkyo.Foundation.Migrations" Version="0.1.24" />
         <ProjectReference Include="..\migrations\Orkyo.Community.Migrations.csproj" />
       </ItemGroup>
     </Otherwise>
