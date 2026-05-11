@@ -13,11 +13,13 @@ When in doubt, check the foundation README's placement rule.
 ## Local dev
 
 ```
-./dev.sh up      # bring up postgres + keycloak + api + frontend
-./dev.sh down    # tear down
-./dev.sh logs    # follow container logs
-./dev.sh test    # run backend + frontend tests
-./dev.sh psql    # psql shell into the local db
+./dev.sh up         # full stack in containers
+./dev.sh infra      # infra only (db/keycloak/mailhog) — pair with host processes below
+./dev.sh api        # API on host (hot reload)
+./dev.sh frontend   # Vite dev server on host
+./dev.sh logs api   # stream a service's logs
+./dev.sh doctor     # startup sequence + runtime URLs
+./dev.sh help       # full list
 ```
 
 Local ports: API `5002` · Keycloak `8082` · Postgres `5433` · Frontend `5174` (different from SaaS to allow both stacks side-by-side).

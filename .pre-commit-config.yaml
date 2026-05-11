@@ -1,0 +1,44 @@
+# Run before commit: pre-commit run --all-files
+# Install: pip install pre-commit && pre-commit install
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '\.md$'
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ['--maxkb=512']
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
+
+  - repo: local
+    hooks:
+      - id: dotnet-format
+        name: dotnet format (verify-no-changes)
+        entry: dotnet format Orkyo.Community.slnx --verify-no-changes --no-restore
+        language: system
+        pass_filenames: false
+        files: '\.cs$|\.csproj$|\.slnx$'
+
+      - id: frontend-lint
+        name: frontend eslint
+        entry: bash -c 'cd frontend && npm run lint'
+        language: system
+        pass_filenames: false
+        files: '^frontend/.*\.(ts|tsx|js|jsx)$'
+
+      - id: frontend-typecheck
+        name: frontend tsc --noEmit
+        entry: bash -c 'cd frontend && npm run typecheck'
+        language: system
+        pass_filenames: false
+        files: '^frontend/.*\.(ts|tsx)$'
