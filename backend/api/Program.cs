@@ -19,14 +19,10 @@ using Orkyo.Migrator;
 using Orkyo.Shared;
 using Orkyo.Shared.Keycloak;
 using FluentValidation;
+using Orkyo.Foundation.Observability;
 using Serilog;
 
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
-    .Enrich.FromLogContext()
-    .WriteTo.Console()
-    .CreateBootstrapLogger();
+OrkyoObservability.InitBootstrapLogger();
 
 try
 {
@@ -49,9 +45,7 @@ try
 
     ConfigurationValidator.ValidateOrThrow(builder.Configuration, builder.Environment.EnvironmentName);
 
-    builder.Host.UseSerilog((ctx, services, cfg) => cfg
-        .ReadFrom.Configuration(ctx.Configuration)
-        .WriteTo.Console());
+    builder.UseOrkyoLogging("orkyo-community-api");
 
     // ── Core services ─────────────────────────────────────────────────────────
     builder.Services.ConfigureHttpJsonOptions(options =>
