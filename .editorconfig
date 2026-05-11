@@ -1,0 +1,39 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# .NET / C#
+[*.{cs,csx,vb,vbx}]
+indent_size = 4
+
+[*.{csproj,vbproj,xproj,proj,projitems,shproj,props,targets,slnx,sln}]
+indent_size = 2
+
+# JSON / YAML / TS / JS / TSX / JSX
+[*.{json,yml,yaml,ts,tsx,js,jsx,mjs,cjs}]
+indent_size = 2
+
+# Shell
+[*.{sh,bash}]
+indent_size = 2
+
+# Dockerfiles
+[{Dockerfile,*.dockerfile}]
+indent_size = 2
+
+# Markdown
+[*.md]
+trim_trailing_whitespace = false
+
+# C# style — minimal, matches `dotnet format` defaults
+[*.cs]
+csharp_new_line_before_open_brace = all
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+dotnet_sort_system_directives_first = true
