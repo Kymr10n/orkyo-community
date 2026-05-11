@@ -6,7 +6,7 @@
 # Build context: repo root (so release/config/keycloak/realm.json is reachable).
 
 # ── Stage 1: build (config baking) ────────────────────────────────────────────
-FROM quay.io/keycloak/keycloak:26.6.1 AS builder
+FROM quay.io/keycloak/keycloak:26.6.1@sha256:dea26401d06341095cc4ea9d66896200b55de5ca1daa1d2fcbe58493afa6e0ad AS builder
 
 ENV KC_DB=postgres \
     KC_HEALTH_ENABLED=true \
@@ -19,7 +19,7 @@ COPY release/config/keycloak/realm.json /opt/keycloak/data/import/realm.json
 RUN /opt/keycloak/bin/kc.sh build
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
-FROM quay.io/keycloak/keycloak:26.6.1
+FROM quay.io/keycloak/keycloak:26.6.1@sha256:dea26401d06341095cc4ea9d66896200b55de5ca1daa1d2fcbe58493afa6e0ad
 LABEL org.opencontainers.image.source=https://github.com/Kymr10n/orkyo-community
 
 COPY --from=builder /opt/keycloak/ /opt/keycloak/

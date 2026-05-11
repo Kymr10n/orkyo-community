@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.4
 # Migrator is a one-shot CLI — no HEALTHCHECK.
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:8a90a473da5205a16979de99d2fc20975e922c68304f5c79d564e666dc3982fc AS build
 WORKDIR /src
 
 COPY backend/migrations/Orkyo.Community.Migrations.csproj backend/migrations/
@@ -21,7 +21,7 @@ RUN dotnet publish backend/migrator/Orkyo.Community.Migrator.csproj \
     -c Release -o /app/publish --no-restore \
     -r linux-musl-x64 --no-self-contained /p:PublishReadyToRun=true
 
-FROM mcr.microsoft.com/dotnet/runtime:10.0-alpine AS runtime
+FROM mcr.microsoft.com/dotnet/runtime:10.0-alpine@sha256:405a4e86f50ab5fd78c65bab461499913088d1702da4faf6236426653cc052c4 AS runtime
 LABEL org.opencontainers.image.source=https://github.com/Kymr10n/orkyo-community
 WORKDIR /app
 COPY --from=build /app/publish .
