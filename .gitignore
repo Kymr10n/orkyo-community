@@ -6,6 +6,7 @@
 **/coverage/
 **/TestResults/
 .env
+frontend/.npmrc
 .local/
 **/.vs/
 **/.idea/
