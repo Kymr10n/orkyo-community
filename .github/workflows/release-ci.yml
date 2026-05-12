@@ -4,8 +4,10 @@ name: CI
 #   pull_request to main     — security audits + build + test + smoke (no push)
 #   push to main             — + build images (sha) + container scan
 #   push to v* tags          — + assemble release bundle + smoke-selfhosted + GH Release
-#   nightly 04:00 UTC        — security audits + build + test (if code changed)
 #   workflow_dispatch        — manual run
+#   repository_dispatch      — fired by orkyo-foundation when a new package is published.
+#                              channel=nightly: validate-only (floating OrkyoFoundationVersion).
+#                              channel=stable:  open auto-bump PR with regenerated lock files.
 
 on:
   pull_request:
@@ -15,8 +17,6 @@ on:
     branches: [main]
     tags: ['v*']
     paths-ignore: ['**.md', 'docs/**']
-  schedule:
-    - cron: '0 4 * * *'
   workflow_dispatch:
   repository_dispatch:
     types: [foundation_updated]
@@ -32,6 +32,10 @@ env:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  # Nightly dispatches from orkyo-foundation override the pinned OrkyoFoundationVersion
+  # at restore time and regenerate the lock in memory (no commit). All other runs use
+  # the pinned version from Directory.Build.props with --locked-mode.
+  DOTNET_RESTORE_FLAGS: ${{ (github.event_name == 'repository_dispatch' && github.event.client_payload.channel == 'nightly') && format('--force-evaluate -p:OrkyoFoundationVersion={0}', github.event.client_payload.version) || '--locked-mode' }}
 
 jobs:
   # ─────────────────────────────────────────────
@@ -41,7 +45,6 @@ jobs:
     name: Nightly Change Check
     timeout-minutes: 5
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule'
     permissions:
       actions: read
       contents: read
@@ -91,7 +94,6 @@ jobs:
     needs: [nightly-change-check]
     if: >-
       !cancelled() &&
-      github.event_name != 'repository_dispatch' &&
       (github.event_name != 'schedule' ||
        needs.nightly-change-check.outputs.has_changes == 'true')
 
@@ -137,7 +139,6 @@ jobs:
     needs: [nightly-change-check]
     if: >-
       !cancelled() &&
-      github.event_name != 'repository_dispatch' &&
       (github.event_name != 'schedule' ||
        needs.nightly-change-check.outputs.has_changes == 'true')
 
@@ -154,7 +155,7 @@ jobs:
           NUGET_AUTH_TOKEN: ${{ secrets.GHCR_TOKEN }}
 
       - name: Restore
-        run: dotnet restore Orkyo.Community.slnx --locked-mode
+        run: dotnet restore Orkyo.Community.slnx ${{ env.DOTNET_RESTORE_FLAGS }}
 
       - name: Check for vulnerable packages
         run: |
@@ -171,7 +172,6 @@ jobs:
     needs: [nightly-change-check]
     if: >-
       !cancelled() &&
-      github.event_name != 'repository_dispatch' &&
       (github.event_name != 'schedule' ||
        needs.nightly-change-check.outputs.has_changes == 'true')
 
@@ -216,7 +216,6 @@ jobs:
     needs: [nightly-change-check, audit-secrets, audit-nuget, audit-npm]
     if: >-
       !cancelled() &&
-      github.event_name != 'repository_dispatch' &&
       (github.event_name != 'schedule' ||
        needs.nightly-change-check.outputs.has_changes == 'true')
 
@@ -240,7 +239,7 @@ jobs:
           restore-keys: nuget-community-
 
       - name: Restore
-        run: dotnet restore Orkyo.Community.slnx --locked-mode
+        run: dotnet restore Orkyo.Community.slnx ${{ env.DOTNET_RESTORE_FLAGS }}
 
       - name: Format check
         run: dotnet format Orkyo.Community.slnx --verify-no-changes --no-restore
@@ -275,7 +274,6 @@ jobs:
     needs: [nightly-change-check, audit-secrets, audit-nuget, audit-npm]
     if: >-
       !cancelled() &&
-      github.event_name != 'repository_dispatch' &&
       (github.event_name != 'schedule' ||
        needs.nightly-change-check.outputs.has_changes == 'true')
 
@@ -333,7 +331,6 @@ jobs:
     needs: [backend-ci, frontend-ci, nightly-change-check]
     if: >-
       !failure() && !cancelled() &&
-      github.event_name != 'repository_dispatch' &&
       (github.event_name != 'schedule' ||
        needs.nightly-change-check.outputs.has_changes == 'true')
 
@@ -375,7 +372,7 @@ jobs:
           NUGET_AUTH_TOKEN: ${{ secrets.GHCR_TOKEN }}
 
       - name: Restore
-        run: dotnet restore Orkyo.Community.slnx --locked-mode
+        run: dotnet restore Orkyo.Community.slnx ${{ env.DOTNET_RESTORE_FLAGS }}
 
       - name: Build
         run: dotnet build Orkyo.Community.slnx -c Release --no-restore
@@ -814,15 +811,24 @@ jobs:
             --title "Orkyo Community ${{ github.ref_name }}"
 
   # ─────────────────────────────────────────────
-  # AUTO-BUMP — repository_dispatch from foundation only
-  # Bumps all foundation version refs, regenerates lock files in CI,
-  # then pushes a branch / opens a PR. Mirrors the saas auto-bump job.
+  # AUTO-BUMP — stable foundation releases only
+  #
+  # Nightly foundation publishes do NOT run this job: the audit/build/test chain
+  # above already validates this commit against the latest foundation nightly via
+  # DOTNET_RESTORE_FLAGS overriding OrkyoFoundationVersion at restore time. No
+  # commit, no branch, no PR — green = consumable, red = foundation broke us.
+  #
+  # Stable foundation releases bump the pinned OrkyoFoundationVersion in
+  # Directory.Build.props, the @kymr10n/foundation version in package.json,
+  # regenerate the lock files, and open a PR for human review.
   # ─────────────────────────────────────────────
   auto-bump:
-    name: Auto-bump Foundation (${{ github.event.client_payload.channel }})
+    name: Auto-bump Foundation (stable)
     timeout-minutes: 15
     runs-on: ubuntu-latest
-    if: github.event_name == 'repository_dispatch'
+    if: >-
+      github.event_name == 'repository_dispatch' &&
+      github.event.client_payload.channel == 'stable'
     permissions:
       contents: write
       pull-requests: write
@@ -830,7 +836,6 @@ jobs:
 
     env:
       FOUNDATION_VERSION: ${{ github.event.client_payload.version }}
-      CHANNEL: ${{ github.event.client_payload.channel }}
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -844,6 +849,9 @@ jobs:
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           global-json-file: global.json
+          source-url: https://nuget.pkg.github.com/Kymr10n/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.GHCR_TOKEN }}
 
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -857,27 +865,18 @@ jobs:
           echo "@kymr10n:registry=https://npm.pkg.github.com" > frontend/.npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GHCR_TOKEN }}" >> frontend/.npmrc
 
-      - name: Bump foundation version in .csproj files
+      - name: Bump OrkyoFoundationVersion in Directory.Build.props
         run: |
-          find backend -name "*.csproj" -print0 | while IFS= read -r -d '' f; do
-            if grep -qE 'Include="Orkyo\.(Foundation|Foundation\.Migrations|Migration\.Abstractions|Migrator|Shared)"' "$f"; then
-              sed -i -E \
-                "s@(Include=\"Orkyo\.(Foundation|Foundation\.Migrations|Migration\.Abstractions|Migrator|Shared)\" Version=\")[^\"]*\"@\1${FOUNDATION_VERSION}\"@g" \
-                "$f"
-            fi
-          done
+          sed -i -E \
+            "s|(<OrkyoFoundationVersion[^>]*>)[^<]*(</OrkyoFoundationVersion>)|\1${FOUNDATION_VERSION}\2|" \
+            Directory.Build.props
+          grep -q "${FOUNDATION_VERSION}" Directory.Build.props || {
+            echo "::error::Directory.Build.props was not updated"; exit 1; }
 
       - name: Bump @kymr10n/foundation in package.json
         run: |
           sed -i "s|\"@kymr10n/foundation\": \"[^\"]*\"|\"@kymr10n/foundation\": \"${FOUNDATION_VERSION}\"|" \
             frontend/package.json
-
-      - name: Add GitHub Packages NuGet source
-        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
-        with:
-          source-url: https://nuget.pkg.github.com/Kymr10n/index.json
-        env:
-          NUGET_AUTH_TOKEN: ${{ secrets.GHCR_TOKEN }}
 
       - name: Regenerate NuGet lock files
         run: dotnet restore Orkyo.Community.slnx --force-evaluate
@@ -899,12 +898,12 @@ jobs:
             echo "No changes to commit (version already pinned to ${FOUNDATION_VERSION})"
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
-            git commit -m "chore: bump @kymr10n/foundation to ${FOUNDATION_VERSION}"
+            git commit -m "chore: bump foundation to ${FOUNDATION_VERSION}"
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Push branch and open PR (stable)
-        if: steps.commit.outputs.changed == 'true' && env.CHANNEL == 'stable'
+      - name: Push branch and open PR
+        if: steps.commit.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GHCR_TOKEN }}
         run: |
@@ -914,29 +913,22 @@ jobs:
           if [ -n "$EXISTING" ]; then
             echo "PR #${EXISTING} already exists for ${BRANCH}"
           else
-            printf 'Auto-generated by `foundation_updated` dispatch.\nBumps foundation packages to `%s`. Review and merge into `main`.\n' \
+            printf 'Auto-generated by `foundation_updated` dispatch.\nBumps foundation to `%s` (Directory.Build.props + frontend/package.json + lock files). Review and merge into `main` to promote.\n' \
               "${FOUNDATION_VERSION}" > /tmp/pr-body.txt
             gh pr create \
-              --title "chore: bump @kymr10n/foundation to ${FOUNDATION_VERSION}" \
+              --title "chore: bump foundation to ${FOUNDATION_VERSION}" \
               --body-file /tmp/pr-body.txt \
               --base main \
               --head "${BRANCH}"
           fi
-
-      - name: Push nightly bump branch
-        if: steps.commit.outputs.changed == 'true' && env.CHANNEL == 'nightly'
-        run: |
-          BRANCH="bump/foundation-nightly-${FOUNDATION_VERSION}"
-          git push origin "HEAD:refs/heads/${BRANCH}" --force
-          echo "Pushed ${BRANCH}"
 
       - name: Create failure issue if auto-bump fails
         if: failure()
         env:
           GH_TOKEN: ${{ secrets.GHCR_TOKEN }}
         run: |
-          TITLE="Auto-bump failed: foundation ${FOUNDATION_VERSION} (${CHANNEL})"
-          BODY="The \`auto-bump\` job failed for foundation version \`${FOUNDATION_VERSION}\` on channel \`${CHANNEL}\`.
+          TITLE="Auto-bump failed: foundation ${FOUNDATION_VERSION} (stable)"
+          BODY="The \`auto-bump\` job failed for foundation version \`${FOUNDATION_VERSION}\` (stable).
 
           **Workflow run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
