@@ -32,10 +32,6 @@ env:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  # Nightly dispatches from orkyo-foundation override the pinned OrkyoFoundationVersion
-  # at restore time and regenerate the lock in memory (no commit). All other runs use
-  # the pinned version from Directory.Build.props with --locked-mode.
-  DOTNET_RESTORE_FLAGS: ${{ (github.event_name == 'repository_dispatch' && github.event.client_payload.channel == 'nightly') && format('--force-evaluate -p:OrkyoFoundationVersion={0}', github.event.client_payload.version) || '--locked-mode' }}
 
 jobs:
   # ─────────────────────────────────────────────
@@ -155,7 +151,7 @@ jobs:
           NUGET_AUTH_TOKEN: ${{ secrets.GHCR_TOKEN }}
 
       - name: Restore
-        run: dotnet restore Orkyo.Community.slnx ${{ env.DOTNET_RESTORE_FLAGS }}
+        run: dotnet restore Orkyo.Community.slnx --locked-mode
 
       - name: Check for vulnerable packages
         run: |
@@ -239,7 +235,7 @@ jobs:
           restore-keys: nuget-community-
 
       - name: Restore
-        run: dotnet restore Orkyo.Community.slnx ${{ env.DOTNET_RESTORE_FLAGS }}
+        run: dotnet restore Orkyo.Community.slnx --locked-mode
 
       - name: Format check
         run: dotnet format Orkyo.Community.slnx --verify-no-changes --no-restore
@@ -372,7 +368,7 @@ jobs:
           NUGET_AUTH_TOKEN: ${{ secrets.GHCR_TOKEN }}
 
       - name: Restore
-        run: dotnet restore Orkyo.Community.slnx ${{ env.DOTNET_RESTORE_FLAGS }}
+        run: dotnet restore Orkyo.Community.slnx --locked-mode
 
       - name: Build
         run: dotnet build Orkyo.Community.slnx -c Release --no-restore
@@ -811,47 +807,33 @@ jobs:
             --title "Orkyo Community ${{ github.ref_name }}"
 
   # ─────────────────────────────────────────────
-  # AUTO-BUMP — stable foundation releases only
+  # AUTO-BUMP — fires on every foundation publish (nightly + stable)
   #
-  # Nightly foundation publishes do NOT run this job: the audit/build/test chain
-  # above already validates this commit against the latest foundation nightly via
-  # DOTNET_RESTORE_FLAGS overriding OrkyoFoundationVersion at restore time. No
-  # commit, no branch, no PR — green = consumable, red = foundation broke us.
-  #
-  # Stable foundation releases bump the pinned OrkyoFoundationVersion in
-  # Directory.Build.props, the @kymr10n/foundation version in package.json,
-  # regenerate the lock files, and open a PR for human review.
+  # Main always reflects the latest foundation publish. The bump commits
+  # directly to main (no PR); the resulting push: main triggers the full
+  # audit/build/test chain as the validation gate. If foundation broke us,
+  # main goes red — visible, immediate, actionable.
   # ─────────────────────────────────────────────
   auto-bump:
-    name: Auto-bump Foundation (stable)
+    name: Auto-bump Foundation (${{ github.event.client_payload.channel }})
     timeout-minutes: 15
     runs-on: ubuntu-latest
-    if: >-
-      github.event_name == 'repository_dispatch' &&
-      github.event.client_payload.channel == 'stable'
+    if: github.event_name == 'repository_dispatch'
     permissions:
       contents: write
-      pull-requests: write
       issues: write
 
     env:
       FOUNDATION_VERSION: ${{ github.event.client_payload.version }}
+      CHANNEL: ${{ github.event.client_payload.channel }}
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          # Use GHCR_TOKEN so the push triggers downstream workflow runs
-          # (GITHUB_TOKEN pushes are ignored by Actions to prevent loops)
+          # GHCR_TOKEN so the resulting commit triggers downstream CI
+          # (commits from GITHUB_TOKEN do not, by design).
           token: ${{ secrets.GHCR_TOKEN }}
           fetch-depth: 0
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
-        with:
-          global-json-file: global.json
-          source-url: https://nuget.pkg.github.com/Kymr10n/index.json
-        env:
-          NUGET_AUTH_TOKEN: ${{ secrets.GHCR_TOKEN }}
 
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -860,75 +842,33 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Configure npm for GitHub Packages
-        run: |
-          echo "@kymr10n:registry=https://npm.pkg.github.com" > frontend/.npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GHCR_TOKEN }}" >> frontend/.npmrc
-
-      - name: Bump OrkyoFoundationVersion in Directory.Build.props
-        run: |
-          sed -i -E \
-            "s|(<OrkyoFoundationVersion[^>]*>)[^<]*(</OrkyoFoundationVersion>)|\1${FOUNDATION_VERSION}\2|" \
-            Directory.Build.props
-          grep -q "${FOUNDATION_VERSION}" Directory.Build.props || {
-            echo "::error::Directory.Build.props was not updated"; exit 1; }
-
-      - name: Bump @kymr10n/foundation in package.json
-        run: |
-          sed -i "s|\"@kymr10n/foundation\": \"[^\"]*\"|\"@kymr10n/foundation\": \"${FOUNDATION_VERSION}\"|" \
-            frontend/package.json
-
-      - name: Regenerate NuGet lock files
-        run: dotnet restore Orkyo.Community.slnx --force-evaluate
-
-      - name: Regenerate npm lock file
-        run: npm install --package-lock-only --include=optional --silent
-        working-directory: frontend
-
       - name: Configure git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Commit version bump
-        id: commit
+      - name: Bump foundation pin
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: scripts/bump-foundation.sh "${FOUNDATION_VERSION}"
+
+      - name: Commit and push to main
         run: |
           git add -A
           if git diff --cached --quiet; then
-            echo "No changes to commit (version already pinned to ${FOUNDATION_VERSION})"
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            git commit -m "chore: bump foundation to ${FOUNDATION_VERSION}"
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "No changes — foundation pin already at ${FOUNDATION_VERSION}"
+            exit 0
           fi
-
-      - name: Push branch and open PR
-        if: steps.commit.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GHCR_TOKEN }}
-        run: |
-          BRANCH="bump/foundation-${FOUNDATION_VERSION}"
-          git push origin "HEAD:refs/heads/${BRANCH}" --force
-          EXISTING=$(gh pr list --head "${BRANCH}" --json number --jq '.[0].number // ""')
-          if [ -n "$EXISTING" ]; then
-            echo "PR #${EXISTING} already exists for ${BRANCH}"
-          else
-            printf 'Auto-generated by `foundation_updated` dispatch.\nBumps foundation to `%s` (Directory.Build.props + frontend/package.json + lock files). Review and merge into `main` to promote.\n' \
-              "${FOUNDATION_VERSION}" > /tmp/pr-body.txt
-            gh pr create \
-              --title "chore: bump foundation to ${FOUNDATION_VERSION}" \
-              --body-file /tmp/pr-body.txt \
-              --base main \
-              --head "${BRANCH}"
-          fi
+          git commit -m "chore: bump foundation to ${FOUNDATION_VERSION} (${CHANNEL})"
+          git push origin HEAD:main
 
       - name: Create failure issue if auto-bump fails
         if: failure()
         env:
           GH_TOKEN: ${{ secrets.GHCR_TOKEN }}
         run: |
-          TITLE="Auto-bump failed: foundation ${FOUNDATION_VERSION} (stable)"
-          BODY="The \`auto-bump\` job failed for foundation version \`${FOUNDATION_VERSION}\` (stable).
+          TITLE="Auto-bump failed: foundation ${FOUNDATION_VERSION} (${CHANNEL})"
+          BODY="The \`auto-bump\` job failed for foundation version \`${FOUNDATION_VERSION}\` on channel \`${CHANNEL}\`.
 
           **Workflow run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
