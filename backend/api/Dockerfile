@@ -2,6 +2,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:8a90a473da5205a16979de99d2fc20975e922c68304f5c79d564e666dc3982fc AS build
 WORKDIR /src
 
+COPY Directory.Build.props ./
 COPY backend/migrations/Orkyo.Community.Migrations.csproj backend/migrations/
 COPY backend/src/Orkyo.Community.csproj backend/src/
 COPY backend/api/Orkyo.Community.Api.csproj backend/api/
