@@ -146,6 +146,7 @@ jobs:
 
     permissions:
       contents: read
+      packages: read
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
@@ -154,7 +155,7 @@ jobs:
           global-json-file: global.json
           source-url: https://nuget.pkg.github.com/Kymr10n/index.json
         env:
-          NUGET_AUTH_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Restore
         run: dotnet restore Orkyo.Community.slnx --locked-mode
@@ -223,6 +224,7 @@ jobs:
 
     permissions:
       contents: read
+      packages: read
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
@@ -231,7 +233,7 @@ jobs:
           global-json-file: global.json
           source-url: https://nuget.pkg.github.com/Kymr10n/index.json
         env:
-          NUGET_AUTH_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cache NuGet packages
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
@@ -363,6 +365,7 @@ jobs:
 
     permissions:
       contents: read
+      packages: read
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
@@ -371,7 +374,7 @@ jobs:
           global-json-file: global.json
           source-url: https://nuget.pkg.github.com/Kymr10n/index.json
         env:
-          NUGET_AUTH_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Restore
         run: dotnet restore Orkyo.Community.slnx --locked-mode
