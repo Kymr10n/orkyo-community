@@ -37,7 +37,7 @@ jobs:
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: frontend
-          file: frontend/Dockerfile.prod
+          file: frontend/Dockerfile
           push: true
           tags: ${{ env.REGISTRY }}/orkyo-community-frontend:security-refresh
           no-cache: true
