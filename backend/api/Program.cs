@@ -21,6 +21,7 @@ using Orkyo.Migrator;
 using Orkyo.Shared;
 using Orkyo.Shared.Keycloak;
 using Serilog;
+using StackExchange.Redis;
 
 OrkyoObservability.InitBootstrapLogger();
 
@@ -114,6 +115,10 @@ try
     builder.Services.AddScoped<IQuotaEnforcer, CommunityQuotaEnforcer>();
 
     builder.Services.AddScoped<IAdminAuditService, CommunityAuditService>();
+    var redisCs = builder.Configuration[ConfigKeys.RedisConnection]
+        ?? throw new InvalidOperationException($"Redis connection string is required. Set {ConfigKeys.RedisConnection}.");
+    builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisCs));
+
     builder.Services.AddSingleton<IBreakGlassSessionStore, NullBreakGlassSessionStore>();
     builder.Services.AddScoped<CommunityJitProvisioningMiddleware>();
 
@@ -171,7 +176,12 @@ try
     builder.Services.AddScoped<ISchedulingRepository, SchedulingRepository>();
     builder.Services.AddScoped<ISiteRepository, SiteRepository>();
     builder.Services.AddScoped<ISiteSettingsRepository, SiteSettingsRepository>();
-    builder.Services.AddScoped<ISpaceCapabilityRepository, SpaceCapabilityRepository>();
+    builder.Services.AddScoped<IResourceCapabilityRepository, ResourceCapabilityRepository>();
+    builder.Services.AddScoped<IResourceRepository, ResourceRepository>();
+    builder.Services.AddScoped<IResourceTypeRepository, ResourceTypeRepository>();
+    builder.Services.AddScoped<IResourceAssignmentRepository, ResourceAssignmentRepository>();
+    builder.Services.AddScoped<IResourceGroupMemberRepository, ResourceGroupMemberRepository>();
+    builder.Services.AddScoped<ICriterionApplicabilityRepository, CriterionApplicabilityRepository>();
     builder.Services.AddScoped<ISpaceGroupRepository, SpaceGroupRepository>();
     builder.Services.AddScoped<ISpaceRepository, SpaceRepository>();
     builder.Services.AddScoped<ITemplateRepository, TemplateRepository>();
@@ -189,6 +199,10 @@ try
     builder.Services.AddScoped<ISiteService, SiteService>();
     builder.Services.AddScoped<ISiteSettingsService, SiteSettingsService>();
     builder.Services.AddScoped<ISpaceService, SpaceService>();
+    builder.Services.AddScoped<IResourceService, ResourceService>();
+    builder.Services.AddScoped<IResourceAssignmentService, ResourceAssignmentService>();
+    builder.Services.AddScoped<IUtilizationService, UtilizationService>();
+    builder.Services.AddScoped<ICapabilityMatcher, CapabilityMatcher>();
     builder.Services.AddScoped<IRequestService, RequestService>();
     builder.Services.AddScoped<ISchedulingService, SchedulingService>();
     builder.Services.AddScoped<ITenantSettingsService, TenantSettingsService>();
@@ -260,7 +274,7 @@ try
     app.MapSpaceEndpoints();
     app.MapSpaceGroupEndpoints();
     app.MapGroupCapabilityEndpoints();
-    app.MapSpaceCapabilityEndpoints();
+    app.MapResourceEndpoints();
     app.MapCriteriaEndpoints();
     app.MapRequestEndpoints();
     app.MapSchedulingEndpoints();
