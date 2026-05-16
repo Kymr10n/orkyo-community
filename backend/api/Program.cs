@@ -181,6 +181,7 @@ try
     builder.Services.AddScoped<IResourceTypeRepository, ResourceTypeRepository>();
     builder.Services.AddScoped<IResourceAssignmentRepository, ResourceAssignmentRepository>();
     builder.Services.AddScoped<IResourceGroupMemberRepository, ResourceGroupMemberRepository>();
+    builder.Services.AddScoped<IResourceGroupRepository, ResourceGroupRepository>();
     builder.Services.AddScoped<ICriterionApplicabilityRepository, CriterionApplicabilityRepository>();
     builder.Services.AddScoped<ISpaceGroupRepository, SpaceGroupRepository>();
     builder.Services.AddScoped<ISpaceRepository, SpaceRepository>();
@@ -284,6 +285,7 @@ try
     app.MapResourceAssignmentEndpoints();
     app.MapCriterionApplicabilityEndpoints();
     app.MapResourceGroupMemberEndpoints();
+    app.MapResourceGroupEndpoints();
     app.MapUtilizationEndpoints();
     app.MapPersonProfileEndpoints();
     app.MapJobTitleEndpoints();
