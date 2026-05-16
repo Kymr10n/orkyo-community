@@ -51,6 +51,17 @@ public class DatabaseFixture : IAsyncLifetime
 
         DatabaseTestUtils.SetDatabasePort(DatabasePort);
         await CreateAndMigrateDatabasesAsync();
+
+        // Program.cs reads several config values directly from builder.Configuration
+        // BEFORE WebApplicationFactory's ConfigureAppConfiguration callback runs.
+        // For those, the only timing-safe override is the process environment.
+        // Set placeholder values for the runtime-required keys here so the host
+        // builds; the actual integration-test behaviour is unaffected because
+        // the corresponding services are lazy-resolved and never used by the
+        // tests we run today (health checks + endpoint routing).
+        Environment.SetEnvironmentVariable("REDIS_CONNECTION",
+            "localhost:6379,abortConnect=false");
+
         Factory = new ApiWebApplicationFactory(this);
     }
 

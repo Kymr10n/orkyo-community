@@ -89,6 +89,18 @@ export default defineConfig({
     host: true,
     port: 5173,
     strictPort: true,
+    fs: {
+      // Foundation source lands outside the Vite root (/app) in the dev
+      // container: the compose volume mounts it at /foundation, and
+      // Dockerfile.dev symlinks /orkyo-foundation/frontend → /foundation so the
+      // vite.config alias path resolves correctly. Vite 5 follows symlinks to
+      // the real path before evaluating fs.allow, so /foundation/* would be
+      // blocked without an explicit entry. We allow both the symlink target and
+      // the real path so Vite accepts either form at build and HMR time.
+      allow: useSiblingFoundation
+        ? [".", foundationSiblingSrc, foundationSiblingContracts]
+        : ["."],
+    },
   },
   test: {
     environment: "happy-dom",

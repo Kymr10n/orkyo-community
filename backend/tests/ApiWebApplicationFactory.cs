@@ -59,7 +59,14 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
                 ["BFF_ENABLED"] = "true",
                 ["BFF_REDIRECT_URI"] = "http://localhost/api/auth/bff/callback",
                 ["BFF_ALLOWED_HOSTS"] = "orkyo.com,*.orkyo.com,localhost",
-                ["BFF_COOKIE_SECURE"] = "false"
+                ["BFF_COOKIE_SECURE"] = "false",
+                // Program.cs requires REDIS_CONNECTION at startup. The Singleton
+                // ConnectionMultiplexer factory only resolves when something
+                // actually uses Redis — health/live does not, and integration
+                // tests in this fixture don't exercise Redis-backed code paths.
+                // A non-functional placeholder is enough to pass the presence check.
+                ["REDIS_CONNECTION"] = "localhost:6379,abortConnect=false"
+
             });
         });
 
