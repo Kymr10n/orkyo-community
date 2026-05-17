@@ -49,7 +49,7 @@ public class RouteInventoryTests
     [InlineData("/api/sites", "MapSiteEndpoints")]
     [InlineData("/api/criteria", "MapCriteriaEndpoints")]
     [InlineData("/api/requests", "MapRequestEndpoints")]
-    [InlineData("/api/groups", "MapSpaceGroupEndpoints")]
+    [InlineData("/api/resource-groups", "MapResourceGroupEndpoints")]
     public async Task ExpectedRoute_IsRegistered(string path, string expectedMapCall)
     {
         var response = await _client.GetAsync(path);

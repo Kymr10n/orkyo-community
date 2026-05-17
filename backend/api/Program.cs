@@ -183,7 +183,6 @@ try
     builder.Services.AddScoped<IResourceGroupMemberRepository, ResourceGroupMemberRepository>();
     builder.Services.AddScoped<IResourceGroupRepository, ResourceGroupRepository>();
     builder.Services.AddScoped<ICriterionApplicabilityRepository, CriterionApplicabilityRepository>();
-    builder.Services.AddScoped<ISpaceGroupRepository, SpaceGroupRepository>();
     builder.Services.AddScoped<ISpaceRepository, SpaceRepository>();
     builder.Services.AddScoped<ITemplateRepository, TemplateRepository>();
     builder.Services.AddScoped<ITenantSettingsRepository, TenantSettingsRepository>();
@@ -278,14 +277,13 @@ try
     app.MapSiteEndpoints();
     app.MapFloorplanEndpoints();
     app.MapSpaceEndpoints();
-    app.MapSpaceGroupEndpoints();
+    app.MapResourceGroupEndpoints();
     app.MapGroupCapabilityEndpoints();
     app.MapResourceTypeEndpoints();
     app.MapResourceEndpoints();
     app.MapResourceAssignmentEndpoints();
     app.MapCriterionApplicabilityEndpoints();
     app.MapResourceGroupMemberEndpoints();
-    app.MapResourceGroupEndpoints();
     app.MapUtilizationEndpoints();
     app.MapPersonProfileEndpoints();
     app.MapJobTitleEndpoints();
