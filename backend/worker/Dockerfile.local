@@ -19,7 +19,7 @@ RUN dotnet restore Orkyo.Community.Worker.csproj
 RUN dotnet publish Orkyo.Community.Worker.csproj -c Release -o /app/publish --no-restore
 
 # Runtime stage — identical to Dockerfile (production)
-FROM mcr.microsoft.com/dotnet/runtime:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .
 

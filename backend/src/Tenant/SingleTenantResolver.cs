@@ -29,7 +29,7 @@ public sealed class SingleTenantResolver : ITenantResolver
         };
     }
 
-    public Task<TenantContext?> ResolveTenantAsync(string? subdomain, string? tenantHeader)
+    public Task<TenantContext?> ResolveTenantAsync(string? subdomain, string? tenantHeader, CancellationToken ct = default)
         => Task.FromResult<TenantContext?>(_fixed);
 
     public void InvalidateCache(string slug) { }
