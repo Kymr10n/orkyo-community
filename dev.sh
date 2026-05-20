@@ -39,6 +39,9 @@ Host processes (fast hot-reload, run after ./dev.sh infra):
   migrator  Run the database migrator on the host
   api       Run the API on the host
   frontend  Run the Vite dev server on the host
+  seed      Seed the database with realistic data
+            e.g.: ./dev.sh seed --profile manufacturing --scale medium
+                  ./dev.sh seed --profile camping --scale tiny --random
 
 Other:
   doctor    Show startup sequences and runtime URLs
@@ -221,6 +224,12 @@ cmd_api() {
   dotnet run
 }
 
+cmd_seed() {
+  load_env
+  cd "$ROOT_DIR/backend/cli/Orkyo.Community.Seed"
+  dotnet run -- "$@"
+}
+
 cmd_frontend() {
   load_env
   if [[ ! -f "$FRONTEND_ROOT/package.json" ]]; then
@@ -264,6 +273,7 @@ case "$command" in
   infra) cmd_infra ;;
   migrator) cmd_migrator ;;
   api) cmd_api ;;
+  seed) shift; cmd_seed "$@" ;;
   frontend) cmd_frontend ;;
   doctor) cmd_doctor ;;
   help|-h|--help) show_help ;;

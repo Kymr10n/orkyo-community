@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>Orkyo.Community.Seed</RootNamespace>
+    <AssemblyName>Orkyo.Community.Seed</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.*" />
+    <PackageReference Include="Npgsql" Version="8.0.5" />
+  </ItemGroup>
+
+  <!-- Foundation Seed library: project reference locally, NuGet when sibling not present. -->
+  <Choose>
+    <When Condition="Exists('..\..\..\..\orkyo-foundation\backend\seeding\Orkyo.Foundation.Seed.csproj')">
+      <ItemGroup>
+        <ProjectReference Include="..\..\..\..\orkyo-foundation\backend\seeding\Orkyo.Foundation.Seed.csproj" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <PackageReference Include="Orkyo.Foundation.Seed" Version="$(OrkyoFoundationVersion)" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+</Project>
