@@ -63,6 +63,7 @@ public class DatabaseFixture : IAsyncLifetime
             "localhost:6379,abortConnect=false");
 
         Factory = new ApiWebApplicationFactory(this);
+        _ = Factory.Services; // Eagerly start the server; CreateClient() no longer does this lazily in MvcTesting 10.x
     }
 
     private string BuildConnectionString(string database) =>
