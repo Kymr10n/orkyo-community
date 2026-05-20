@@ -29,6 +29,13 @@ repos:
         pass_filenames: false
         files: '\.cs$|\.csproj$|\.slnx$'
 
+      - id: dotnet-build
+        name: dotnet build (Release, warnaserror)
+        entry: dotnet build Orkyo.Community.slnx -c Release --no-restore -warnaserror
+        language: system
+        pass_filenames: false
+        files: '\.cs$|\.csproj$|\.slnx$'
+
       - id: frontend-lint
         name: frontend eslint
         entry: bash -c 'cd frontend && npm run lint'
