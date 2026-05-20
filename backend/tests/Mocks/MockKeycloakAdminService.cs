@@ -11,7 +11,7 @@ public class MockKeycloakAdminService : IKeycloakAdminService
     public int ChangePasswordCallCount { get; private set; }
     public (string? keycloakSub, string? currentPassword, string? newPassword) LastChangePasswordCall { get; private set; }
 
-    public Task ChangePasswordAsync(string keycloakSub, string currentPassword, string newPassword)
+    public Task ChangePasswordAsync(string keycloakSub, string currentPassword, string newPassword, CancellationToken ct = default)
     {
         ChangePasswordCallCount++;
         LastChangePasswordCall = (keycloakSub, currentPassword, newPassword);
@@ -27,13 +27,13 @@ public class MockKeycloakAdminService : IKeycloakAdminService
     public int LogoutAllCallCount { get; private set; }
     public string? LastRevokedSessionId { get; private set; }
 
-    public Task<List<KeycloakSession>> GetUserSessionsAsync(string keycloakSub)
+    public Task<List<KeycloakSession>> GetUserSessionsAsync(string keycloakSub, CancellationToken ct = default)
     {
         GetSessionsCallCount++;
         return Task.FromResult(MockSessions);
     }
 
-    public Task RevokeSessionAsync(string sessionId)
+    public Task RevokeSessionAsync(string sessionId, CancellationToken ct = default)
     {
         RevokeSessionCallCount++;
         LastRevokedSessionId = sessionId;
@@ -41,7 +41,7 @@ public class MockKeycloakAdminService : IKeycloakAdminService
         return Task.CompletedTask;
     }
 
-    public Task LogoutAllSessionsAsync(string keycloakSub)
+    public Task LogoutAllSessionsAsync(string keycloakSub, CancellationToken ct = default)
     {
         LogoutAllCallCount++;
         MockSessions.Clear();
@@ -52,7 +52,7 @@ public class MockKeycloakAdminService : IKeycloakAdminService
     public bool IsFederatedUser { get; set; } = false;
     public string? FederatedIdentityProvider { get; set; }
 
-    public Task<FederationStatus> GetUserFederationStatusAsync(string keycloakSub) =>
+    public Task<FederationStatus> GetUserFederationStatusAsync(string keycloakSub, CancellationToken ct = default) =>
         Task.FromResult(new FederationStatus(IsFederatedUser, FederatedIdentityProvider));
 
     // ── Create user ───────────────────────────────────────────────
@@ -61,7 +61,7 @@ public class MockKeycloakAdminService : IKeycloakAdminService
     public int CreateUserCallCount { get; private set; }
     public (string? email, string? password, string? firstName, string? lastName, bool emailVerified) LastCreateUserCall { get; private set; }
 
-    public Task CreateUserAsync(string email, string password, string? firstName = null, string? lastName = null, bool emailVerified = false)
+    public Task CreateUserAsync(string email, string password, string? firstName = null, string? lastName = null, bool emailVerified = false, CancellationToken ct = default)
     {
         CreateUserCallCount++;
         LastCreateUserCall = (email, password, firstName, lastName, emailVerified);
@@ -80,7 +80,7 @@ public class MockKeycloakAdminService : IKeycloakAdminService
     public bool UserExistsResult { get; set; } = false;
     public int UserExistsCallCount { get; private set; }
 
-    public Task<bool> UserExistsAsync(string email)
+    public Task<bool> UserExistsAsync(string email, CancellationToken ct = default)
     {
         UserExistsCallCount++;
         return Task.FromResult(UserExistsResult);
@@ -92,7 +92,7 @@ public class MockKeycloakAdminService : IKeycloakAdminService
     public int DisableUserCallCount { get; private set; }
     public string? LastDisabledKeycloakId { get; private set; }
 
-    public Task DisableUserAsync(string keycloakId)
+    public Task DisableUserAsync(string keycloakId, CancellationToken ct = default)
     {
         DisableUserCallCount++;
         LastDisabledKeycloakId = keycloakId;
@@ -107,7 +107,7 @@ public class MockKeycloakAdminService : IKeycloakAdminService
     public int EnableUserCallCount { get; private set; }
     public string? LastEnabledKeycloakId { get; private set; }
 
-    public Task EnableUserAsync(string keycloakId)
+    public Task EnableUserAsync(string keycloakId, CancellationToken ct = default)
     {
         EnableUserCallCount++;
         LastEnabledKeycloakId = keycloakId;
@@ -122,7 +122,7 @@ public class MockKeycloakAdminService : IKeycloakAdminService
     public int DeleteUserCallCount { get; private set; }
     public string? LastDeletedKeycloakId { get; private set; }
 
-    public Task DeleteUserAsync(string keycloakId)
+    public Task DeleteUserAsync(string keycloakId, CancellationToken ct = default)
     {
         DeleteUserCallCount++;
         LastDeletedKeycloakId = keycloakId;
@@ -136,7 +136,7 @@ public class MockKeycloakAdminService : IKeycloakAdminService
     public string? GetMfaStatusError { get; set; }
     public int GetMfaStatusCallCount { get; private set; }
 
-    public Task<MfaStatus> GetMfaStatusAsync(string keycloakSub)
+    public Task<MfaStatus> GetMfaStatusAsync(string keycloakSub, CancellationToken ct = default)
     {
         GetMfaStatusCallCount++;
         if (GetMfaStatusError != null)
@@ -150,7 +150,7 @@ public class MockKeycloakAdminService : IKeycloakAdminService
     public int DeleteCredentialCallCount { get; private set; }
     public string? LastDeletedCredentialId { get; private set; }
 
-    public Task DeleteUserCredentialAsync(string keycloakSub, string credentialId)
+    public Task DeleteUserCredentialAsync(string keycloakSub, string credentialId, CancellationToken ct = default)
     {
         DeleteCredentialCallCount++;
         LastDeletedCredentialId = credentialId;
@@ -164,7 +164,7 @@ public class MockKeycloakAdminService : IKeycloakAdminService
     public string? GetUserProfileError { get; set; }
     public int GetUserProfileCallCount { get; private set; }
 
-    public Task<UserProfile> GetUserProfileAsync(string keycloakSub)
+    public Task<UserProfile> GetUserProfileAsync(string keycloakSub, CancellationToken ct = default)
     {
         GetUserProfileCallCount++;
         if (GetUserProfileError != null)
@@ -178,7 +178,7 @@ public class MockKeycloakAdminService : IKeycloakAdminService
     public int UpdateProfileCallCount { get; private set; }
     public (string? firstName, string? lastName) LastUpdateProfileCall { get; private set; }
 
-    public Task UpdateUserProfileAsync(string keycloakSub, string firstName, string lastName)
+    public Task UpdateUserProfileAsync(string keycloakSub, string firstName, string lastName, CancellationToken ct = default)
     {
         UpdateProfileCallCount++;
         LastUpdateProfileCall = (firstName, lastName);
@@ -192,7 +192,7 @@ public class MockKeycloakAdminService : IKeycloakAdminService
     public string? EnableMfaError { get; set; }
     public int EnableMfaCallCount { get; private set; }
 
-    public Task EnableMfaAsync(string keycloakSub)
+    public Task EnableMfaAsync(string keycloakSub, CancellationToken ct = default)
     {
         EnableMfaCallCount++;
         if (!EnableMfaSuccess)
@@ -214,7 +214,7 @@ public class MockKeycloakAdminService : IKeycloakAdminService
     public (string? keycloakId, string? roleName) LastAssignRealmRoleCall { get; private set; }
     public (string? keycloakId, string? roleName) LastRevokeRealmRoleCall { get; private set; }
 
-    public Task<bool> HasRealmRoleAsync(string keycloakId, string roleName)
+    public Task<bool> HasRealmRoleAsync(string keycloakId, string roleName, CancellationToken ct = default)
     {
         HasRealmRoleCallCount++;
         if (HasRealmRoleError_)
@@ -222,7 +222,7 @@ public class MockKeycloakAdminService : IKeycloakAdminService
         return Task.FromResult(MockRealmRoles.Contains(roleName));
     }
 
-    public Task AssignRealmRoleAsync(string keycloakId, string roleName)
+    public Task AssignRealmRoleAsync(string keycloakId, string roleName, CancellationToken ct = default)
     {
         AssignRealmRoleCallCount++;
         LastAssignRealmRoleCall = (keycloakId, roleName);
@@ -232,7 +232,7 @@ public class MockKeycloakAdminService : IKeycloakAdminService
         return Task.CompletedTask;
     }
 
-    public Task RevokeRealmRoleAsync(string keycloakId, string roleName)
+    public Task RevokeRealmRoleAsync(string keycloakId, string roleName, CancellationToken ct = default)
     {
         RevokeRealmRoleCallCount++;
         LastRevokeRealmRoleCall = (keycloakId, roleName);
@@ -245,7 +245,7 @@ public class MockKeycloakAdminService : IKeycloakAdminService
     public int CountRealmRoleMembersResult { get; set; } = 2;
     public string? CountRealmRoleMembersError { get; set; }
 
-    public Task<int> CountRealmRoleMembersAsync(string roleName)
+    public Task<int> CountRealmRoleMembersAsync(string roleName, CancellationToken ct = default)
     {
         if (CountRealmRoleMembersError != null)
             throw new KeycloakAdminException(CountRealmRoleMembersError);
