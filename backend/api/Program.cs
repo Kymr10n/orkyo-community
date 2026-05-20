@@ -1,15 +1,8 @@
 using Api.Configuration;
-using Api.Endpoints;
-using Api.Endpoints.Admin;
-using Api.Integrations.Keycloak;
 using Api.Middleware;
 using Api.Models;
-using Api.Repositories;
-using Api.Security;
 using Api.Security.Quotas;
 using Api.Services;
-using Api.Services.AutoSchedule;
-using FluentValidation;
 using Orkyo.Community.Api.Endpoints;
 using Orkyo.Community.Middleware;
 using Orkyo.Community.Migrations;
@@ -19,7 +12,6 @@ using Orkyo.Foundation.Migrations;
 using Orkyo.Foundation.Observability;
 using Orkyo.Migrator;
 using Orkyo.Shared;
-using Orkyo.Shared.Keycloak;
 using Serilog;
 using StackExchange.Redis;
 
@@ -48,21 +40,9 @@ try
 
     builder.UseOrkyoLogging("orkyo-community-api");
 
-    // ── Core services ─────────────────────────────────────────────────────────
-    builder.Services.ConfigureHttpJsonOptions(options =>
-    {
-        options.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
-        options.SerializerOptions.Converters.Add(
-            new System.Text.Json.Serialization.JsonStringEnumConverter(allowIntegerValues: false));
-    });
-    builder.Services.AddExceptionHandler<Api.Helpers.AppExceptionHandler>();
-    builder.Services.AddProblemDetails();
-    builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddHttpContextAccessor();
-    builder.Services.AddHttpClient();
+    // ── Foundation services ───────────────────────────────────────────────────
+    builder.Services.AddFoundationServices(builder.Configuration);
     builder.Services.AddResponseCompression();
-    builder.Services.AddValidatorsFromAssemblyContaining<Api.Validators.CreateCriterionRequestValidator>(
-        ServiceLifetime.Scoped);
 
     // ── CORS ──────────────────────────────────────────────────────────────────
     builder.Services.AddCors(options =>
@@ -109,19 +89,16 @@ try
         builder.Configuration.GetSection(SingleTenantOptions.SectionKey));
     builder.Services.AddSingleton<ITenantResolver, SingleTenantResolver>();
 
-    // Keycloak
-    builder.Services.AddSingleton(KeycloakOptions.FromConfiguration(builder.Configuration));
-    builder.Services.AddHttpClient<IKeycloakAdminService, KeycloakAdminService>();
-
     // Community quota: all resources unlimited
     builder.Services.AddScoped<IQuotaEnforcer, CommunityQuotaEnforcer>();
 
     builder.Services.AddScoped<IAdminAuditService, CommunityAuditService>();
+
     var redisCs = builder.Configuration[ConfigKeys.RedisConnection]
         ?? throw new InvalidOperationException($"Redis connection string is required. Set {ConfigKeys.RedisConnection}.");
     builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisCs));
-
     builder.Services.AddSingleton<IBreakGlassSessionStore, NullBreakGlassSessionStore>();
+
     builder.Services.AddScoped<CommunityJitProvisioningMiddleware>();
 
     // Tenant + org contexts (resolved per-request by ContextEnrichmentMiddleware using SingleTenantResolver)
@@ -157,74 +134,6 @@ try
     builder.Services.AddFoundationMigrations();
     builder.Services.AddCommunityMigrations();
 
-    // ── Auth (JWT + BFF) ──────────────────────────────────────────────────────
-    builder.Services.AddOrkyoAuthentication(builder.Configuration);
-    builder.Services.AddBffAuthentication(builder.Configuration);
-
-    // ── Security context (per-request, populated by ContextEnrichmentMiddleware)
-    builder.Services.AddScoped<CurrentPrincipal>();
-    builder.Services.AddScoped<ICurrentPrincipal>(sp => sp.GetRequiredService<CurrentPrincipal>());
-    builder.Services.AddScoped<CurrentTenant>();
-    builder.Services.AddScoped<ICurrentTenant>(sp => sp.GetRequiredService<CurrentTenant>());
-    builder.Services.AddScoped<CurrentAuthorizationContext>();
-    builder.Services.AddScoped<IAuthorizationContext>(
-        sp => sp.GetRequiredService<CurrentAuthorizationContext>());
-
-    // ── Foundation repositories ───────────────────────────────────────────────
-    builder.Services.AddScoped<ICriteriaRepository, CriteriaRepository>();
-    builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
-    builder.Services.AddScoped<IGroupCapabilityRepository, GroupCapabilityRepository>();
-    builder.Services.AddScoped<IRequestRepository, RequestRepository>();
-    builder.Services.AddScoped<ISchedulingRepository, SchedulingRepository>();
-    builder.Services.AddScoped<ISiteRepository, SiteRepository>();
-    builder.Services.AddScoped<ISiteSettingsRepository, SiteSettingsRepository>();
-    builder.Services.AddScoped<IResourceCapabilityRepository, ResourceCapabilityRepository>();
-    builder.Services.AddScoped<IResourceRepository, ResourceRepository>();
-    builder.Services.AddScoped<IResourceTypeRepository, ResourceTypeRepository>();
-    builder.Services.AddScoped<IResourceAssignmentRepository, ResourceAssignmentRepository>();
-    builder.Services.AddScoped<IResourceGroupMemberRepository, ResourceGroupMemberRepository>();
-    builder.Services.AddScoped<IResourceGroupRepository, ResourceGroupRepository>();
-    builder.Services.AddScoped<ICriterionApplicabilityRepository, CriterionApplicabilityRepository>();
-    builder.Services.AddScoped<ISpaceRepository, SpaceRepository>();
-    builder.Services.AddScoped<ITemplateRepository, TemplateRepository>();
-    builder.Services.AddScoped<ITenantSettingsRepository, TenantSettingsRepository>();
-    builder.Services.AddScoped<IUserPreferencesRepository, UserPreferencesRepository>();
-    builder.Services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
-    builder.Services.AddScoped<ISearchRepository, SearchRepository>();
-
-    // ── Foundation domain services ────────────────────────────────────────────
-    builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
-    builder.Services.AddScoped<IEmailService, EmailService>();
-    builder.Services.AddScoped<IIdentityLinkService, KeycloakIdentityLinkService>();
-    builder.Services.AddScoped<IUserManagementService, UserManagementService>();
-    builder.Services.AddScoped<ICriteriaService, CriteriaService>();
-    builder.Services.AddScoped<ISiteService, SiteService>();
-    builder.Services.AddScoped<ISiteSettingsService, SiteSettingsService>();
-    builder.Services.AddScoped<ISpaceService, SpaceService>();
-    builder.Services.AddScoped<IResourceService, ResourceService>();
-    builder.Services.AddScoped<IOffTimeResourceQuery, OffTimeResourceQuery>();
-    builder.Services.AddScoped<IResourceAssignmentValidator, ResourceAssignmentValidator>();
-    builder.Services.AddScoped<IResourceAssignmentService, ResourceAssignmentService>();
-    builder.Services.AddScoped<IUtilizationService, UtilizationService>();
-    builder.Services.AddScoped<ICapabilityMatcher, CapabilityMatcher>();
-    builder.Services.AddScoped<IPersonProfileRepository, PersonProfileRepository>();
-    builder.Services.AddScoped<IJobTitleRepository, JobTitleRepository>();
-    builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
-    builder.Services.AddScoped<IRequestService, RequestService>();
-    builder.Services.AddScoped<ISchedulingService, SchedulingService>();
-    builder.Services.AddScoped<ITenantSettingsService, TenantSettingsService>();
-    builder.Services.AddScoped<ISessionService, SessionService>();
-    builder.Services.AddScoped<IAnnouncementService, AnnouncementService>();
-    builder.Services.AddScoped<IExportService, ExportService>();
-    builder.Services.AddScoped<IPresetService, PresetService>();
-    builder.Services.AddScoped<IStarterTemplateService, StarterTemplateService>();
-    builder.Services.AddScoped<ITenantUserService, TenantUserService>();
-    builder.Services.AddScoped<SchedulingProblemBuilder>();
-    builder.Services.AddSingleton<SchedulingFeasibilityAnalyzer>();
-    builder.Services.AddSingleton<ISchedulingSolver, OrToolsSchedulingSolver>();
-    builder.Services.AddSingleton<ISchedulingSolver, GreedySchedulingSolver>();
-    builder.Services.AddScoped<IAutoScheduleService, AutoScheduleService>();
-
     // ── Health checks ─────────────────────────────────────────────────────────
     var dbCs = builder.Configuration.GetConnectionString("DefaultConnection")
         ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is required");
@@ -234,13 +143,10 @@ try
     var app = builder.Build();
 
     // ── Middleware pipeline ───────────────────────────────────────────────────
-    app.UseExceptionHandler();
+    app.UseFoundationMiddleware();
     app.UseResponseCompression();
     app.UseCors();
     app.UseMiddleware<SecurityHeadersMiddleware>();
-    app.UseCorrelationId();
-    app.UseRequestLogging();
-    app.UseMiddleware<CacheControlMiddleware>();
     app.UseRouting();
     app.UseAuthentication();
     app.UseMiddleware<CsrfMiddleware>();
@@ -261,47 +167,11 @@ try
         Predicate = check => check.Tags.Contains("ready")
     }).AsInfrastructureEndpoint();
 
-    app.MapBffAuthEndpoints();
-    app.MapSessionEndpoints();
-    app.MapAccountLifecycleEndpoints();
+    // Foundation endpoints
+    app.MapFoundationEndpoints();
 
-    // Admin
-    app.MapAuditEndpoints();
-    app.MapDiagnosticsAdminEndpoints();
-    app.MapSettingsAdminEndpoints();
-    app.MapUserAdminEndpoints();
-
-    // Domain
+    // Community-specific endpoints
     app.MapCommunityTenantEndpoints();
-    app.MapSettingsEndpoints();
-    app.MapAnnouncementEndpoints();
-    app.MapUserAnnouncementEndpoints();
-    app.MapSecurityEndpoints();
-    app.MapSiteEndpoints();
-    app.MapFloorplanEndpoints();
-    app.MapSpaceEndpoints();
-    app.MapResourceGroupEndpoints();
-    app.MapGroupCapabilityEndpoints();
-    app.MapResourceTypeEndpoints();
-    app.MapResourceEndpoints();
-    app.MapResourceAssignmentEndpoints();
-    app.MapCriterionApplicabilityEndpoints();
-    app.MapResourceGroupMemberEndpoints();
-    app.MapUtilizationEndpoints();
-    app.MapPersonProfileEndpoints();
-    app.MapJobTitleEndpoints();
-    app.MapDepartmentEndpoints();
-    app.MapCriteriaEndpoints();
-    app.MapRequestEndpoints();
-    app.MapSchedulingEndpoints();
-    app.MapAutoScheduleEndpoints();
-    app.MapTemplateEndpoints();
-    app.MapPresetEndpoints();
-    app.MapExportEndpoints();
-    app.MapUserPreferencesEndpoints();
-    app.MapContactEndpoints();
-    app.MapFeedbackEndpoints();
-    app.MapSearchEndpoints();
 
     app.Run();
     return 0;
