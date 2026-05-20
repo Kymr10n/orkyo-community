@@ -55,6 +55,8 @@ try
         options.SerializerOptions.Converters.Add(
             new System.Text.Json.Serialization.JsonStringEnumConverter(allowIntegerValues: false));
     });
+    builder.Services.AddExceptionHandler<Api.Helpers.AppExceptionHandler>();
+    builder.Services.AddProblemDetails();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddHttpClient();
@@ -232,6 +234,7 @@ try
     var app = builder.Build();
 
     // ── Middleware pipeline ───────────────────────────────────────────────────
+    app.UseExceptionHandler();
     app.UseResponseCompression();
     app.UseCors();
     app.UseMiddleware<SecurityHeadersMiddleware>();
