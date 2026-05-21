@@ -56,8 +56,12 @@ CVE-2026-4878   # HIGH | libcap: fix not yet in KC 26.6.2 base image, no package
 CVE-2025-6965   # HIGH | sqlite-libs: fix not yet in KC 26.6.2 base image, no package manager | Added: 2026-05-21 | Review: 2026-06-04
 
 # ── Keycloak embedded JARs (quay.io/keycloak/keycloak:26.6.2) ────────────────
-# netty-transport-native-epoll: CVE fix requires 4.2.13; KC 26.6.2 ships 4.1.132.
-CVE-2026-42577  # HIGH | netty-transport-native-epoll: DoS via RST on half-closed TCP — KC 26.6.2 ships netty 4.1.132; fix requires 4.2.13 | Added: 2026-05-21 | Review: 2026-06-04
+# netty 4.1.132.Final shipped by KC 26.6.2; these CVEs require 4.1.133 or 4.2.13.
+CVE-2026-42577  # HIGH | netty-transport-native-epoll: DoS via RST on half-closed TCP — KC 26.6.2 ships 4.1.132; fix requires 4.2.13 | Added: 2026-05-21 | Review: 2026-06-04
+CVE-2026-42579  # HIGH | netty-codec-dns: input validation bypass — KC 26.6.2 ships 4.1.132; fix requires 4.1.133 | Added: 2026-05-21 | Review: 2026-06-04
+CVE-2026-42583  # HIGH | netty-codec: Lz4FrameDecoder resource exhaustion — KC 26.6.2 ships 4.1.132; fix requires 4.1.133 | Added: 2026-05-21 | Review: 2026-06-04
+CVE-2026-42584  # HIGH | netty-codec-http: HttpClientCodec desync — KC 26.6.2 ships 4.1.132; fix requires 4.1.133 | Added: 2026-05-21 | Review: 2026-06-04
+CVE-2026-42587  # HIGH | netty-codec-http/http2: decompression bypass — KC 26.6.2 ships 4.1.132; fix requires 4.1.133 | Added: 2026-05-21 | Review: 2026-06-04
 
 # ── Trivy false positive ───────────────────────────────────────────────────────
 # Trivy reports fix as 12.6.5 but KC 26.6.2 ships mssql-jdbc 13.2.1 (newer); false positive.
