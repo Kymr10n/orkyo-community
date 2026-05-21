@@ -90,7 +90,8 @@ try
     builder.Services.AddSingleton<ITenantResolver, SingleTenantResolver>();
 
     // Community quota: all resources unlimited
-    builder.Services.AddScoped<IQuotaEnforcer, CommunityQuotaEnforcer>();
+    // Foundation provides the no-op enforcer — community has no tier-based limits.
+    builder.Services.AddScoped<IQuotaEnforcer, NoOpQuotaEnforcer>();
 
     builder.Services.AddScoped<IAdminAuditService, CommunityAuditService>();
 
