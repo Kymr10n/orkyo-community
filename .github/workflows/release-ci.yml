@@ -23,7 +23,7 @@ on:
 
 concurrency:
   group: release-ci-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 permissions: {}
 
@@ -81,6 +81,40 @@ jobs:
           fail-on-severity: high
           comment-summary-in-pr: always
   # ─────────────────────────────────────────────
+  # CHANGE DETECTION — gates backend-ci / frontend-ci on PRs
+  # ─────────────────────────────────────────────
+  detect-changes:
+    name: detect-changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [nightly-change-check]
+    if: >-
+      !cancelled() &&
+      (github.event_name != 'schedule' ||
+       needs.nightly-change-check.outputs.has_changes == 'true')
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend || 'true' }}
+      frontend: ${{ steps.filter.outputs.frontend || 'true' }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Path filter (PR only — push/dispatch always run both)
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'Directory.Build.props'
+              - 'global.json'
+              - 'nuget.config'
+            frontend:
+              - 'frontend/**'
+
+  # ─────────────────────────────────────────────
   # SECURITY AUDITS — three parallel jobs, all gate downstream builds
   # ─────────────────────────────────────────────
   audit-secrets:
@@ -130,6 +164,8 @@ jobs:
           severity: HIGH,CRITICAL
           exit-code: '1'
           ignore-unfixed: true
+        env:
+          TRIVY_SKIP_JAVA_DB_UPDATE: "true"
 
       - name: Migration header lint
         run: bash scripts/ci/lint-migration-headers.sh backend/migrations/sql
@@ -216,9 +252,10 @@ jobs:
     name: backend-ci
     timeout-minutes: 20
     runs-on: ubuntu-latest
-    needs: [nightly-change-check, audit-secrets, audit-nuget, audit-npm]
+    needs: [nightly-change-check, audit-secrets, audit-nuget, audit-npm, detect-changes]
     if: >-
       !cancelled() &&
+      needs.detect-changes.outputs.backend == 'true' &&
       (github.event_name != 'schedule' ||
        needs.nightly-change-check.outputs.has_changes == 'true')
 
@@ -275,9 +312,10 @@ jobs:
     name: frontend-ci
     timeout-minutes: 20
     runs-on: ubuntu-latest
-    needs: [nightly-change-check, audit-secrets, audit-nuget, audit-npm]
+    needs: [nightly-change-check, audit-secrets, audit-nuget, audit-npm, detect-changes]
     if: >-
       !cancelled() &&
+      needs.detect-changes.outputs.frontend == 'true' &&
       (github.event_name != 'schedule' ||
        needs.nightly-change-check.outputs.has_changes == 'true')
 
@@ -572,6 +610,9 @@ jobs:
           exit-code: '1'
           ignore-unfixed: true
           trivyignores: .trivyignore
+        env:
+          # .NET/nginx images contain no JARs — skip the 869 MB Java DB download
+          TRIVY_SKIP_JAVA_DB_UPDATE: "true"
 
       - name: Verify non-root container
         if: matrix.service != 'frontend'
@@ -868,7 +909,10 @@ jobs:
             echo "No changes — foundation pin already at ${FOUNDATION_VERSION}"
             exit 0
           fi
-          git commit -m "chore: bump foundation to ${FOUNDATION_VERSION} (${CHANNEL})"
+          # Nightly bumps skip CI — they were already validated by the dispatch run.
+          # Stable bumps keep CI so the PR/merge is properly gated.
+          CI_SKIP=$( [ "${CHANNEL}" = "nightly" ] && echo " [skip ci]" || true )
+          git commit -m "chore: bump foundation to ${FOUNDATION_VERSION} (${CHANNEL})${CI_SKIP}"
           git push origin HEAD:main
 
       - name: Create failure issue if auto-bump fails
