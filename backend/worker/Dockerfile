@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:8a90a473da5205a16979de99d2fc20975e922c68304f5c79d564e666dc3982fc AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:c0790639332692a0d56cdd81ed581cfd24d040d9839764c138994866df89a3b6 AS build
 WORKDIR /src
 
 COPY Directory.Build.props ./
@@ -21,7 +21,7 @@ RUN dotnet publish backend/worker/Orkyo.Community.Worker.csproj \
     -c Release -o /app/publish --no-restore \
     -r linux-musl-x64 --no-self-contained /p:PublishReadyToRun=true
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine@sha256:60eb031b554df75a4b9f358290a2fa15d8961a3bc79b47bb34a00e31f7b78c69 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine@sha256:1e37a8236c558ae31bd6bc8144e38e6036b73cf1b0616fe56d79e60babb9d93b AS runtime
 LABEL org.opencontainers.image.source=https://github.com/Kymr10n/orkyo-community
 WORKDIR /app
 COPY --from=build /app/publish .
