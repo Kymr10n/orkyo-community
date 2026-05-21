@@ -1,5 +1,5 @@
 <Project>
   <PropertyGroup>
-    <OrkyoFoundationVersion Condition="'$(OrkyoFoundationVersion)' == ''">0.1.25-nightly.20260521.eb84a83</OrkyoFoundationVersion>
+    <OrkyoFoundationVersion Condition="'$(OrkyoFoundationVersion)' == ''">0.1.25-nightly.20260521.55fd89b</OrkyoFoundationVersion>
   </PropertyGroup>
 </Project>
