@@ -27,7 +27,6 @@ WORKDIR /app
 COPY --from=build /app/publish .
 
 RUN adduser -D -u 1001 -s /sbin/nologin appuser \
-    && mkdir -p /app/storage \
     && chown -R appuser:appuser /app
 
 ENV ASPNETCORE_URLS=http://+:8080

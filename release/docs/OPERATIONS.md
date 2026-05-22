@@ -4,7 +4,7 @@ Day-2 operations for self-hosted deployments. All commands assume you're running
 
 ## Backup
 
-The database is the single source of truth. File storage (`api_storage` volume) holds uploaded media and is backed up separately.
+The database is the single source of truth, including uploaded floorplan assets.
 
 ### Database dump
 
@@ -18,15 +18,6 @@ This dumps both the application database and the Keycloak database. Schedule it 
 
 ```
 0 3 * * * docker exec orkyo_community_db pg_dumpall -U orkyo --clean --if-exists | gzip > /var/backups/orkyo/$(date -u +\%Y\%m\%dT\%H\%M\%SZ).sql.gz
-```
-
-### File storage
-
-```bash
-docker run --rm \
-  -v orkyo_community_storage:/data:ro \
-  -v "$(pwd)":/backup \
-  alpine tar -czf "/backup/orkyo-storage-$(date -u +%Y%m%dT%H%M%SZ).tar.gz" -C /data .
 ```
 
 ## Restore
@@ -44,15 +35,6 @@ docker exec -i orkyo_community_db psql -U orkyo postgres < orkyo-backup-<timesta
 
 # 3. Restart
 docker compose up -d
-```
-
-For file storage, untar into the volume:
-
-```bash
-docker run --rm \
-  -v orkyo_community_storage:/data \
-  -v "$(pwd)":/backup \
-  alpine sh -c "cd /data && tar -xzf /backup/orkyo-storage-<timestamp>.tar.gz"
 ```
 
 ## Upgrade

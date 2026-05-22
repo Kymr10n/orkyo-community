@@ -93,7 +93,6 @@ services:
       OIDC_AUTHORITY: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM:-orkyo-community}
       OIDC_INTERNAL_AUTHORITY: http://keycloak:8080/realms/${KEYCLOAK_REALM:-orkyo-community}
       REDIS_CONNECTION: "redis:6379,password=${REDIS_PASSWORD},abortConnect=false"
-      FILE_STORAGE_PATH: /app/storage
       APP_BASE_URL: ${APP_BASE_URL:?public app URL, e.g. https://community.example.com}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-${APP_BASE_URL}}
       BFF_ENABLED: "true"
@@ -115,8 +114,6 @@ services:
     # traffic through the frontend.
     ports:
       - "${API_PORT:-8080}:8080"
-    volumes:
-      - api_storage:/app/storage
     networks: [orkyo-internal, orkyo-public]
     depends_on:
       db: { condition: service_healthy }
@@ -218,7 +215,5 @@ networks:
 volumes:
   postgres_data:
     name: orkyo_community_postgres
-  api_storage:
-    name: orkyo_community_storage
   keycloak_data:
     name: orkyo_community_keycloak

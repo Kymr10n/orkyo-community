@@ -88,7 +88,6 @@ load_env() {
   local _cs="Host=localhost;Port=${POSTGRES_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
   export ConnectionStrings__DefaultConnection="$_cs"
   export ConnectionStrings__Postgres="$_cs"
-  export FILE_STORAGE_PATH="${FILE_STORAGE_PATH:-$ROOT_DIR/.local/storage}"
   export VITE_API_BASE_URL="http://localhost:${API_PORT}"
 
   # Redis — used by API for BFF sessions and Data Protection keys
@@ -101,7 +100,7 @@ load_env() {
   export BFF_REDIRECT_URI="http://localhost:${API_PORT}/api/auth/bff/callback"
   export BFF_ALLOWED_HOSTS="localhost,*.localhost"
 
-  mkdir -p "${FILE_STORAGE_PATH}" "$ROOT_DIR/.local/logs"
+  mkdir -p "$ROOT_DIR/.local/logs"
 }
 
 check_env_or_confirm() {

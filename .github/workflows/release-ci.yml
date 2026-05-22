@@ -438,7 +438,6 @@ jobs:
           SMTP_USE_SSL: "false"
           SMTP_FROM_EMAIL: "noreply@ci.local"
           SMTP_FROM_NAME: "Orkyo CI"
-          FILE_STORAGE_PATH: "/tmp/orkyo-ci-storage"
           APP_BASE_URL: "http://localhost:5002"
           REDIS_CONNECTION: "localhost:6379,abortConnect=false"
         run: |
@@ -480,7 +479,6 @@ jobs:
           SMTP_USE_SSL: "false"
           SMTP_FROM_EMAIL: "noreply@ci.local"
           SMTP_FROM_NAME: "Orkyo CI"
-          FILE_STORAGE_PATH: "/tmp/orkyo-ci-storage"
           APP_BASE_URL: "http://localhost:5002"
           REDIS_CONNECTION: "localhost:6379,abortConnect=false"
         run: |

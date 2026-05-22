@@ -123,7 +123,6 @@ Note: `tenant-account-api.ts` and `tenant-management-api.ts` exist in foundation
 | `KEYCLOAK_*` / `OIDC_*` | ✅ | ✅ | Already implemented |
 | `BFF_*` | ✅ | ✅ | Already implemented |
 | `SMTP_*` | ✅ | ✅ | Already implemented |
-| `FILE_STORAGE_PATH` | ✅ | ✅ | Already implemented |
 | `COMMUNITY__*` (tenant identity) | N/A | ✅ | Community-specific addition |
 | `REDIS_*` / `REDIS_CONNECTION` | ✅ | ❌ | SaaS-only (no Redis needed in community) |
 | `METRICS_TOKEN` | ✅ | ❌ | Deferred — add when observability is implemented |

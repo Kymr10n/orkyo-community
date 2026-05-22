@@ -106,7 +106,6 @@ services:
       KEYCLOAK_BACKEND_CLIENT_SECRET: ${KEYCLOAK_BACKEND_CLIENT_SECRET}
       OIDC_AUTHORITY: ${OIDC_AUTHORITY}
       OIDC_INTERNAL_AUTHORITY: http://keycloak:8080/realms/${KEYCLOAK_REALM}
-      FILE_STORAGE_PATH: /app/storage
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
       SMTP_USE_SSL: "false"
@@ -120,8 +119,6 @@ services:
       REDIS_CONNECTION: "redis:6379,password=${REDIS_PASSWORD},abortConnect=false"
     ports:
       - "${API_PORT}:8080"
-    volumes:
-      - api_storage:/app/storage
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
       interval: 5s
@@ -182,4 +179,3 @@ secrets:
 
 volumes:
   postgres_data:
-  api_storage:

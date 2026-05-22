@@ -30,7 +30,6 @@ These identify the single-tenant context. You can leave `TENANTID` at its defaul
 | `API_PORT` | Host port for the API | 
 | `APP_BASE_URL` | Public base URL of the API (used in email links) |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated allowed frontend origins |
-| `FILE_STORAGE_PATH` | Directory for uploaded files (floorplans) |
 
 ## Authentication (Keycloak)
 

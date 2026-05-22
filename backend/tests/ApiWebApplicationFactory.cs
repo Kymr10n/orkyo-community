@@ -50,7 +50,6 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
                 ["SMTP_FROM_NAME"] = "Test",
                 ["APP_BASE_URL"] = "http://localhost:5173",
                 ["CORS_ALLOWED_ORIGINS"] = "http://localhost:5173",
-                ["FILE_STORAGE_PATH"] = "/tmp/orkyo-test-storage",
                 ["OIDC_AUTHORITY"] = "http://test-keycloak.local/realms/test",
                 ["KEYCLOAK_URL"] = "http://test-keycloak.local",
                 ["KEYCLOAK_REALM"] = "test",
