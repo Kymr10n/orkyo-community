@@ -609,8 +609,8 @@ jobs:
           ignore-unfixed: true
           trivyignores: .trivyignore
         env:
-          # .NET/nginx images contain no JARs — skip the 869 MB Java DB download
-          TRIVY_SKIP_JAVA_DB_UPDATE: "true"
+          # Keycloak ships JARs and requires the Java DB. All other images (.NET/nginx) do not.
+          TRIVY_SKIP_JAVA_DB_UPDATE: ${{ matrix.service != 'keycloak' && 'true' || 'false' }}
 
       - name: Verify non-root container
         if: matrix.service != 'frontend'
