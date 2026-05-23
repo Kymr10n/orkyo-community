@@ -11,9 +11,9 @@
 
   <!-- Foundation: project reference locally, NuGet in CI/Docker -->
   <Choose>
-    <When Condition="Exists('..\..\..\orkyo-foundation\backend\src\Orkyo.Foundation.csproj')">
+    <When Condition="Exists('..\..\..\orkyo-foundation\backend\src\Orkyo.Foundation.Web.csproj')">
       <ItemGroup>
-        <ProjectReference Include="..\..\..\orkyo-foundation\backend\src\Orkyo.Foundation.csproj" />
+        <ProjectReference Include="..\..\..\orkyo-foundation\backend\src\Orkyo.Foundation.Web.csproj" />
         <ProjectReference Include="..\..\..\orkyo-foundation\backend\migration-abstractions\Orkyo.Migration.Abstractions.csproj" />
         <ProjectReference Include="..\..\..\orkyo-foundation\backend\migrator-runtime\Orkyo.Migrator.csproj" />
         <ProjectReference Include="..\..\..\orkyo-foundation\backend\migrations-foundation\Orkyo.Foundation.Migrations.csproj" />
@@ -22,7 +22,7 @@
     </When>
     <Otherwise>
       <ItemGroup>
-        <PackageReference Include="Orkyo.Foundation" Version="$(OrkyoFoundationVersion)" />
+        <PackageReference Include="Orkyo.Foundation.Web" Version="$(OrkyoFoundationVersion)" />
         <PackageReference Include="Orkyo.Migration.Abstractions" Version="$(OrkyoFoundationVersion)" />
         <PackageReference Include="Orkyo.Migrator" Version="$(OrkyoFoundationVersion)" />
         <PackageReference Include="Orkyo.Foundation.Migrations" Version="$(OrkyoFoundationVersion)" />

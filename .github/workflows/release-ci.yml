@@ -622,6 +622,25 @@ jobs:
             echo "::error::${{ matrix.service }} runs as root"; exit 1
           fi
 
+      - name: Verify .NET runtime can load app
+        # Twin: orkyo-saas/.github/workflows/release-ci.yml — keep in sync.
+        if: matrix.service != 'frontend'
+        run: |
+          # Boot the image briefly; the dotnet host fails fast with a clear
+          # message if the app's runtimeconfig references a framework the
+          # image doesn't have. Any startup error other than missing-framework
+          # is fine (env vars missing etc) — we only fail on the specific
+          # framework-resolution error.
+          set +e
+          output=$(timeout 5 docker run --rm \
+            ${{ env.REGISTRY }}/orkyo-community-${{ matrix.service }}:sha-${{ github.sha }} 2>&1)
+          set -e
+          if echo "$output" | grep -qE "No frameworks were found|framework.*was not found|To install missing framework"; then
+            echo "::error::${{ matrix.service }} image is missing a required .NET framework — runtimeconfig/base-image mismatch"
+            echo "$output" | tail -20
+            exit 1
+          fi
+
       - name: Generate SBOM
         uses: anchore/sbom-action@f325610c9f50a54015d37c8d16cb3b0e2c8f4de0 # v0.18.0
         with:
@@ -806,6 +825,24 @@ jobs:
 
       - name: Verify frontend serves
         run: curl -sf http://localhost/ | grep -q html || (echo "::error::Frontend not responding"; exit 1)
+
+      - name: Verify worker is running
+        working-directory: dist/orkyo-community-v${{ steps.version.outputs.VERSION }}
+        run: |
+          echo "Waiting for worker to stabilise (timeout 60s)..."
+          deadline=$((SECONDS + 60))
+          while [ $SECONDS -lt $deadline ]; do
+            state=$(docker inspect --format '{{.State.Status}}' \
+              "$(docker compose ps -q worker)" 2>/dev/null)
+            if [ "$state" = "running" ]; then
+              echo "Worker running"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "::error::Worker is not running — likely a startup crash (state: $state)"
+          docker compose logs worker --tail 50
+          exit 1
 
       - name: Teardown
         if: always()

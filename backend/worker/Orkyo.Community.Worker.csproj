@@ -11,14 +11,14 @@
 
   <!-- Foundation: project reference locally, NuGet in CI/Docker -->
   <Choose>
-    <When Condition="Exists('..\..\..\orkyo-foundation\backend\src\Orkyo.Foundation.csproj')">
+    <When Condition="Exists('..\..\..\orkyo-foundation\backend\core\Orkyo.Foundation.Core.csproj')">
       <ItemGroup>
-        <ProjectReference Include="..\..\..\orkyo-foundation\backend\src\Orkyo.Foundation.csproj" />
+        <ProjectReference Include="..\..\..\orkyo-foundation\backend\core\Orkyo.Foundation.Core.csproj" />
       </ItemGroup>
     </When>
     <Otherwise>
       <ItemGroup>
-        <PackageReference Include="Orkyo.Foundation" Version="$(OrkyoFoundationVersion)" />
+        <PackageReference Include="Orkyo.Foundation.Core" Version="$(OrkyoFoundationVersion)" />
       </ItemGroup>
     </Otherwise>
   </Choose>
