@@ -67,7 +67,7 @@ services:
 
   # ── Database Migrator (runs once per deploy, then exits) ─────────────────────
   migrator:
-    image: ghcr.io/kymr10n/orkyo-community-migrator:${ORKYO_VERSION:?pin a version, e.g. 0.4.2}
+    image: ghcr.io/kymr10n/orkyo-community-migrator:${ORKYO_VERSION:?pin a version, e.g. 0.2.3}
     container_name: orkyo_community_migrator
     restart: "no"
     environment:
@@ -79,7 +79,7 @@ services:
 
   # ── API ───────────────────────────────────────────────────────────────────────
   api:
-    image: ghcr.io/kymr10n/orkyo-community-api:${ORKYO_VERSION:?pin a version, e.g. 0.2.2}
+    image: ghcr.io/kymr10n/orkyo-community-api:${ORKYO_VERSION:?pin a version, e.g. 0.2.3}
     container_name: orkyo_community_api
     restart: unless-stopped
     environment:
@@ -128,7 +128,7 @@ services:
 
   # ── Worker (background jobs) ──────────────────────────────────────────────────
   worker:
-    image: ghcr.io/kymr10n/orkyo-community-worker:${ORKYO_VERSION:?pin a version, e.g. 0.2.2}
+    image: ghcr.io/kymr10n/orkyo-community-worker:${ORKYO_VERSION:?pin a version, e.g. 0.2.3}
     container_name: orkyo_community_worker
     restart: unless-stopped
     environment:
@@ -155,7 +155,7 @@ services:
 
   # ── Frontend (nginx SPA + API proxy) ─────────────────────────────────────────
   frontend:
-    image: ghcr.io/kymr10n/orkyo-community-frontend:${ORKYO_VERSION:?pin a version, e.g. 0.2.2}
+    image: ghcr.io/kymr10n/orkyo-community-frontend:${ORKYO_VERSION:?pin a version, e.g. 0.2.3}
     container_name: orkyo_community_frontend
     restart: unless-stopped
     environment:
@@ -174,7 +174,7 @@ services:
 
   # ── Keycloak (identity provider, realm baked into image) ─────────────────────
   keycloak:
-    image: ghcr.io/kymr10n/orkyo-community-keycloak:${ORKYO_VERSION:?pin a version, e.g. 0.2.2}
+    image: ghcr.io/kymr10n/orkyo-community-keycloak:${ORKYO_VERSION:?pin a version, e.g. 0.2.3}
     container_name: orkyo_community_keycloak
     restart: unless-stopped
     environment:
