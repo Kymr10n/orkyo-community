@@ -3,8 +3,6 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:c0790639332692a0d56cdd81ed581cfd24
 WORKDIR /src
 
 COPY Directory.Build.props ./
-COPY backend/migrations/Orkyo.Community.Migrations.csproj backend/migrations/
-COPY backend/src/Orkyo.Community.csproj backend/src/
 COPY backend/worker/Orkyo.Community.Worker.csproj backend/worker/
 COPY nuget.config ./
 

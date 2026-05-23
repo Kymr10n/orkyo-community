@@ -1,7 +1,7 @@
 using Api.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Orkyo.Community.Services;
+using Microsoft.Extensions.Logging;
 using Orkyo.Shared.Keycloak;
 using Serilog;
 
@@ -21,8 +21,9 @@ try
         {
             services.AddHttpClient();
             services.AddSingleton(KeycloakOptions.FromConfiguration(context.Configuration));
-            // Community DB factory: CreateControlPlaneConnection() → single community database
-            services.AddSingleton<IDbConnectionFactory, CommunityDbConnectionFactory>();
+            // Single-tenant DB factory: all connection types map to the single community database.
+            services.AddSingleton<IDbConnectionFactory>(
+                _ => SingleTenantDbConnectionFactory.FromConfiguration(context.Configuration));
             services.AddSingleton<IOrgDbConnectionFactory>(sp =>
                 sp.GetRequiredService<IDbConnectionFactory>());
             services.AddSingleton<UserLifecycleService>();

@@ -80,7 +80,8 @@ try
     builder.Services.AddSingleton(DeploymentConfig.FromConfiguration(builder.Configuration));
 
     // Single-tenant DB factory — all connections map to the one community database
-    builder.Services.AddSingleton<IDbConnectionFactory, CommunityDbConnectionFactory>();
+    builder.Services.AddSingleton<IDbConnectionFactory>(
+        _ => SingleTenantDbConnectionFactory.FromConfiguration(builder.Configuration));
     builder.Services.AddSingleton<IOrgDbConnectionFactory>(
         sp => sp.GetRequiredService<IDbConnectionFactory>());
 

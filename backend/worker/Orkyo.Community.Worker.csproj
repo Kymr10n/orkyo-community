@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Worker">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
@@ -9,17 +9,16 @@
     <RootNamespace>Orkyo.Community.Worker</RootNamespace>
   </PropertyGroup>
 
+  <!-- Foundation: project reference locally, NuGet in CI/Docker -->
   <Choose>
     <When Condition="Exists('..\..\..\orkyo-foundation\backend\src\Orkyo.Foundation.csproj')">
       <ItemGroup>
         <ProjectReference Include="..\..\..\orkyo-foundation\backend\src\Orkyo.Foundation.csproj" />
-        <ProjectReference Include="..\src\Orkyo.Community.csproj" />
       </ItemGroup>
     </When>
     <Otherwise>
       <ItemGroup>
         <PackageReference Include="Orkyo.Foundation" Version="$(OrkyoFoundationVersion)" />
-        <ProjectReference Include="..\src\Orkyo.Community.csproj" />
       </ItemGroup>
     </Otherwise>
   </Choose>
