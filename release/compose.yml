@@ -110,6 +110,7 @@ services:
       COMMUNITY__TENANTID: ${COMMUNITY__TENANTID:-00000000-0000-0000-0000-000000000001}
       COMMUNITY__TENANTSLUG: ${COMMUNITY__TENANTSLUG:-community}
       COMMUNITY__TENANTNAME: ${COMMUNITY__TENANTNAME:-Orkyo Community}
+      ORKYO_VERSION: ${ORKYO_VERSION}
     # Operators behind a reverse proxy may remove this port and route all
     # traffic through the frontend.
     ports:
