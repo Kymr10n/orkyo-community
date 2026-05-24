@@ -1,32 +1,41 @@
 # syntax=docker/dockerfile:1.7
 #
-# Custom Keycloak image with the Orkyo Community realm pre-imported.
-# Bakes config at image-build time so operators don't bind-mount realm.json.
+# Custom Keycloak image for Orkyo Community.
+# Layers on top of the foundation Keycloak image (which bakes in the Orkyo theme)
+# and adds the token-exchange feature required by Community.
 #
 # Build context: repo root (so release/config/keycloak/realm.json is reachable).
 
-# ── Stage 1: build (config baking) ────────────────────────────────────────────
-FROM quay.io/keycloak/keycloak:26.6.2@sha256:5afd40414096432903a5374ba4ba70b931dcca598a6bd9f44239fe66ef8d9737 AS builder
+ARG FOUNDATION_KC_IMAGE=ghcr.io/kymr10n/keycloak:26.6-orkyo-0.2.2
 
-ENV KC_DB=postgres \
-    KC_HEALTH_ENABLED=true \
-    KC_METRICS_ENABLED=true \
-    KC_HTTP_ENABLED=true \
-    KC_FEATURES=token-exchange
+# ── Stage 1: build (add token-exchange to foundation's pre-built server) ──────
+# Foundation already includes: recovery-codes, postgres, health, and the Orkyo theme.
+# Community also requires token-exchange for BFF ↔ Keycloak service accounts.
+FROM ${FOUNDATION_KC_IMAGE} AS builder
 
-COPY release/config/keycloak/realm.json /opt/keycloak/data/import/realm.json
+ENV KC_FEATURES=token-exchange,recovery-codes
 
 RUN /opt/keycloak/bin/kc.sh build
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
-FROM quay.io/keycloak/keycloak:26.6.2@sha256:5afd40414096432903a5374ba4ba70b931dcca598a6bd9f44239fe66ef8d9737
+ARG FOUNDATION_KC_IMAGE
+FROM ${FOUNDATION_KC_IMAGE}
 LABEL org.opencontainers.image.source=https://github.com/Kymr10n/orkyo-community
 
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 
+# Store the realm as a template; docker-entrypoint.sh runs envsubst at startup
+# to inject APP_BASE_URL before Keycloak imports it.
+COPY release/config/keycloak/realm.json /opt/keycloak/data/import/realm.json.template
+COPY backend/keycloak/docker-entrypoint.sh /docker-entrypoint.sh
+
+USER root
+RUN chmod +x /docker-entrypoint.sh
+
 # Run as the non-root keycloak user (UID 1000) — matches the upstream image default.
 USER 1000
 
+# Entrypoint substitutes APP_BASE_URL into the realm template, then starts Keycloak.
 # `--optimized` skips re-running build (stage 1 already did it).
 # `--import-realm` is idempotent: skipped if the realm already exists.
-ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start", "--optimized", "--import-realm"]
+ENTRYPOINT ["/docker-entrypoint.sh"]

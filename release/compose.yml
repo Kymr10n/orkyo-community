@@ -191,6 +191,8 @@ services:
       KC_PROXY_HEADERS: ${KC_PROXY_HEADERS:-xforwarded}
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set a strong Keycloak admin password}
+      APP_BASE_URL: ${APP_BASE_URL:?public app URL, e.g. https://community.example.com}
+      KEYCLOAK_BACKEND_CLIENT_SECRET: ${KEYCLOAK_BACKEND_CLIENT_SECRET:?set the orkyo-backend OIDC client secret}
     ports:
       - "${KEYCLOAK_PORT:-9080}:8080"
     volumes:

@@ -5,10 +5,12 @@ export default {
     "./index.html",
     "./src/**/*.{ts,tsx,js,jsx}",
     // Foundation components are consumed directly — their classes must be
-    // included so Tailwind doesn't purge them from the saas build.
-    // Resolves via the /orkyo-foundation/frontend symlink in Docker and the
-    // sibling repo path on the host.
+    // included so Tailwind doesn't purge them from the community build.
+    // In sibling-dev mode (local checkout), scan the source tsx files.
+    // In production Docker builds, scan the compiled .js files from the
+    // installed npm package — className strings are preserved verbatim by tsc.
     "../../orkyo-foundation/frontend/src/**/*.{ts,tsx,js,jsx}",
+    "./node_modules/@kymr10n/foundation/.tsbuild/**/*.js",
   ],
   theme: {
     extend: {

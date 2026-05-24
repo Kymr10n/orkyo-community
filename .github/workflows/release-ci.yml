@@ -826,6 +826,54 @@ jobs:
       - name: Verify frontend serves
         run: curl -sf http://localhost/ | grep -q html || (echo "::error::Frontend not responding"; exit 1)
 
+      - name: Verify CSS is not Tailwind-purged
+        # Catches the bug where the npm-dist Tailwind content path is missing from tailwind.config.js,
+        # causing all foundation component classes to be purged during Docker build (12KB stub vs ≥30KB full).
+        run: |
+          INDEX=$(curl -sf http://localhost/)
+          CSS_FILE=$(echo "$INDEX" | grep -oP '(?<=/assets/)[^"]+\.css' | head -1)
+          if [ -z "$CSS_FILE" ]; then
+            echo "::error::No CSS file referenced in index.html"; exit 1
+          fi
+          CSS_SIZE=$(curl -sf "http://localhost/assets/$CSS_FILE" | wc -c)
+          if [ "$CSS_SIZE" -lt 30000 ]; then
+            echo "::error::CSS too small (${CSS_SIZE}B < 30KB) — foundation Tailwind classes were purged from the build"
+            exit 1
+          fi
+          echo "CSS OK: $CSS_FILE (${CSS_SIZE}B)"
+
+      - name: Verify Keycloak Orkyo theme is present
+        # Catches the bug where the KC image doesn't include the Orkyo theme
+        # (bare upstream image used instead of the foundation-based one).
+        run: |
+          LOGIN_URL="http://localhost:9080/realms/orkyo-community/protocol/openid-connect/auth?client_id=orkyo-backend&response_type=code&scope=openid&redirect_uri=http%3A%2F%2Flocalhost"
+          LOGIN_HTML=$(curl -sf "$LOGIN_URL" || true)
+          THEME_CSS=$(echo "$LOGIN_HTML" | grep -oP '(?<=href=")[^"]*orkyo[^"]*\.css' | head -1)
+          if [ -z "$THEME_CSS" ]; then
+            echo "::error::No Orkyo theme CSS found in Keycloak login page — theme missing from image"
+            echo "Page excerpt:"; echo "$LOGIN_HTML" | head -30
+            exit 1
+          fi
+          echo "Theme CSS URL: $THEME_CSS"
+          HTTP=$(curl -sk -o /dev/null -w "%{http_code}" "$THEME_CSS")
+          if [ "$HTTP" != "200" ]; then
+            echo "::error::Keycloak theme CSS returned HTTP $HTTP: $THEME_CSS"; exit 1
+          fi
+          echo "Keycloak theme CSS: OK ($HTTP)"
+
+      - name: Verify nginx /auth/ proxy path
+        # Catches the bug where the nginx location ^~ /auth/ rule is missing,
+        # causing the regex .css/.js location to intercept Keycloak theme assets.
+        # Also catches any keycloak routing misconfiguration.
+        run: |
+          HTTP=$(curl -sk -o /dev/null -w "%{http_code}" \
+            "http://localhost/auth/realms/orkyo-community/.well-known/openid-configuration")
+          if [ "$HTTP" != "200" ]; then
+            echo "::error::nginx /auth/ proxy returned HTTP $HTTP — check ^~ location rule and keycloak routing"
+            exit 1
+          fi
+          echo "/auth/ proxy path: OK ($HTTP)"
+
       - name: Verify worker is running
         working-directory: dist/orkyo-community-v${{ steps.version.outputs.VERSION }}
         run: |

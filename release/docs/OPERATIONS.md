@@ -99,3 +99,26 @@ docker exec -it orkyo_community_db \    # SQL shell
 | Keycloak fails healthcheck | First start can take 60–90s on slow hosts. Check `docker compose logs keycloak` for realm-import errors. |
 | API returns 503 from `/health` | Database migrations not applied yet. Check `docker logs orkyo_community_migrator`. |
 | BFF login redirect fails | `BFF_COOKIE_DOMAIN` doesn't match the host the user reaches the app on, or `BFF_COOKIE_SECURE=true` over HTTP. |
+| API returns 401 at login after client secret change | Realm import is one-shot — see below. |
+
+## Rotating `KEYCLOAK_BACKEND_CLIENT_SECRET` after first boot
+
+Keycloak only imports the realm on first boot (it skips import if the realm already exists). Changing `KEYCLOAK_BACKEND_CLIENT_SECRET` in `.env` and restarting is not enough — the new value is never written to the Keycloak database.
+
+**Option A — wipe and reimport (recommended if no user data to preserve):**
+
+```bash
+docker compose stop keycloak
+docker volume rm orkyo_community_keycloak_data   # or the volume name from docker volume ls
+docker compose up -d keycloak                    # reimports realm with new secret
+```
+
+**Option B — update via admin console (preserves existing users and data):**
+
+1. Log in to the Keycloak admin console at `${KEYCLOAK_URL}/admin`.
+2. Realm: `orkyo-community` → Clients → `orkyo-backend` → Credentials tab.
+3. Click **Regenerate** (or enter the new secret and save).
+4. Update `KEYCLOAK_BACKEND_CLIENT_SECRET` in `.env` to match and restart the API:
+   ```bash
+   docker compose up -d api worker
+   ```
