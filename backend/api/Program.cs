@@ -3,6 +3,7 @@ using Api.Middleware;
 using Api.Models;
 using Api.Security.Quotas;
 using Api.Services;
+using Microsoft.Extensions.Options;
 using Orkyo.Community.Api.Endpoints;
 using Orkyo.Community.Middleware;
 using Orkyo.Community.Migrations;
@@ -103,31 +104,34 @@ try
 
     builder.Services.AddScoped<CommunityJitProvisioningMiddleware>();
 
-    // Tenant + org contexts (resolved per-request by ContextEnrichmentMiddleware using SingleTenantResolver)
+    // Tenant + org contexts — community always has exactly one fixed tenant.
+    // Read directly from SingleTenantOptions so resolution is never affected by
+    // middleware ordering (avoids caching Guid.Empty sentinel when something before
+    // SingleTenantMiddleware triggers the scoped factory for the first time).
     builder.Services.AddScoped<TenantContext>(sp =>
     {
-        var httpContext = sp.GetRequiredService<IHttpContextAccessor>().HttpContext!;
-        return httpContext.Items.TryGetValue("TenantContext", out var ctx) && ctx is TenantContext tc
-            ? tc
-            : new TenantContext
-            {
-                TenantId = Guid.Empty,
-                TenantSlug = "",
-                TenantDbConnectionString = "",
-                Tier = ServiceTier.Enterprise,
-                Status = "active",
-            };
+        var opts = sp.GetRequiredService<IOptions<SingleTenantOptions>>().Value;
+        var connStr = sp.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is required");
+        return new TenantContext
+        {
+            TenantId = opts.TenantId,
+            TenantSlug = opts.TenantSlug,
+            TenantDbConnectionString = connStr,
+            Tier = ServiceTier.Enterprise,
+            Status = "active",
+        };
     });
     builder.Services.AddScoped<OrgContext>(sp =>
     {
-        var httpContext = sp.GetRequiredService<IHttpContextAccessor>().HttpContext!;
-        if (!httpContext.Items.TryGetValue("TenantContext", out var ctx) || ctx is not TenantContext tenant)
-            return new OrgContext { OrgId = Guid.Empty, OrgSlug = "", DbConnectionString = "" };
+        var opts = sp.GetRequiredService<IOptions<SingleTenantOptions>>().Value;
+        var connStr = sp.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is required");
         return new OrgContext
         {
-            OrgId = tenant.TenantId,
-            OrgSlug = tenant.TenantSlug,
-            DbConnectionString = tenant.TenantDbConnectionString,
+            OrgId = opts.TenantId,
+            OrgSlug = opts.TenantSlug,
+            DbConnectionString = connStr,
         };
     });
 
