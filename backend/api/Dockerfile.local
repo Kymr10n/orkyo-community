@@ -8,6 +8,7 @@ WORKDIR /src
 # Foundation source — satisfies Exists() condition in Orkyo.Community.csproj,
 # activating project references instead of NuGet packages.
 COPY orkyo-foundation/backend/shared                  orkyo-foundation/backend/shared/
+COPY orkyo-foundation/backend/core                    orkyo-foundation/backend/core/
 COPY orkyo-foundation/backend/src                     orkyo-foundation/backend/src/
 COPY orkyo-foundation/backend/migration-abstractions  orkyo-foundation/backend/migration-abstractions/
 COPY orkyo-foundation/backend/migrator-runtime        orkyo-foundation/backend/migrator-runtime/
