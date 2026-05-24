@@ -81,13 +81,15 @@ public static class Program
             var report = await SeedRunner.RunAsync(conn, seedOpts);
             Console.WriteLine();
             Console.WriteLine($"Seeded in {report.Duration.TotalSeconds:F1}s:");
-            Console.WriteLine($"  Sites:       {report.Sites,8}");
-            Console.WriteLine($"  Spaces:      {report.Spaces,8}");
-            Console.WriteLine($"  Job titles:  {report.JobTitles,8}");
-            Console.WriteLine($"  Departments: {report.Departments,8}");
-            Console.WriteLine($"  People:      {report.People,8}");
-            Console.WriteLine($"  Requests:    {report.Requests,8}");
-            Console.WriteLine($"  Assignments: {report.Assignments,8}");
+            Console.WriteLine($"  Sites:              {report.Sites,8}");
+            Console.WriteLine($"  Spaces:             {report.Spaces,8}");
+            Console.WriteLine($"  Job titles:         {report.JobTitles,8}");
+            Console.WriteLine($"  Departments:        {report.Departments,8}");
+            Console.WriteLine($"  People:             {report.People,8}");
+            Console.WriteLine($"  Person groups:      {report.PersonGroups,8}");
+            Console.WriteLine($"  Group members:      {report.PersonGroupMembers,8}");
+            Console.WriteLine($"  Requests:           {report.Requests,8}");
+            Console.WriteLine($"  Assignments:        {report.Assignments,8}");
             return 0;
         }
         catch (InvalidOperationException ex)
