@@ -6,7 +6,7 @@
 #
 # Build context: repo root (so release/config/keycloak/realm.json is reachable).
 
-ARG FOUNDATION_KC_IMAGE=ghcr.io/kymr10n/keycloak:26.6-orkyo-0.2.2
+ARG FOUNDATION_KC_IMAGE=ghcr.io/kymr10n/keycloak:26.6-orkyo-security-refresh
 
 # ── Stage 1: build (add token-exchange to foundation's pre-built server) ──────
 # Foundation already includes: recovery-codes, postgres, health, and the Orkyo theme.

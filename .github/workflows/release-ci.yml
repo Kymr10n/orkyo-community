@@ -533,6 +533,7 @@ jobs:
             dockerfile: backend/keycloak/Dockerfile
             context: .
             no_secret: true
+            build_args: "FOUNDATION_KC_IMAGE=ghcr.io/kymr10n/keycloak:26.6-orkyo-security-refresh"
       fail-fast: false
 
     steps:
@@ -559,7 +560,7 @@ jobs:
           cache-from: type=gha,scope=community-${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=community-${{ matrix.service }}
 
-      - name: Build and push (frontend — needs GHCR_TOKEN for @kymr10n/foundation)
+      - name: Build and push (frontend/keycloak — needs GHCR_TOKEN)
         if: matrix.no_secret == true
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
@@ -567,6 +568,7 @@ jobs:
           file: ${{ matrix.dockerfile }}
           push: true
           tags: ${{ env.REGISTRY }}/orkyo-community-${{ matrix.service }}:sha-${{ github.sha }}
+          build-args: ${{ matrix.build_args }}
           secrets: ghcr_token=${{ secrets.GHCR_TOKEN }}
           cache-from: type=gha,scope=community-${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=community-${{ matrix.service }}
