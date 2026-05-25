@@ -68,6 +68,7 @@ export default defineConfig({
       "zustand",
       "xstate",
       "@xstate/react",
+      "sonner",
       "react-day-picker",
       "@dnd-kit/core",
       "@dnd-kit/sortable",
