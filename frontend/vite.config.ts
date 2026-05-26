@@ -49,6 +49,7 @@ export default defineConfig({
       "react-dom",
       "react-router-dom",
       "@tanstack/react-query",
+      "@tanstack/react-table",
       "@tanstack/react-virtual",
       "@radix-ui/react-alert-dialog",
       "@radix-ui/react-checkbox",
