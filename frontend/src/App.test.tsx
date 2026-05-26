@@ -86,18 +86,18 @@ describe('App / CommunityShell routing', () => {
 
   // ── Admin route ───────────────────────────────────────────────────────────────
 
-  it('shows CommunityAdminPage on /admin when canAccessAdminPage is true', () => {
+  it('shows CommunityAdminPage on /admin when canAccessAdminPage is true', async () => {
     mockLocation.pathname = '/admin';
     mockAuthState.canAccessAdminPage = true;
     render(<App />);
-    expect(screen.getByTestId('community-admin-page')).toBeInTheDocument();
+    expect(await screen.findByTestId('community-admin-page')).toBeInTheDocument();
   });
 
-  it('shows CommunityAdminPage on /admin/* when canAccessAdminPage is true', () => {
+  it('shows CommunityAdminPage on /admin/* when canAccessAdminPage is true', async () => {
     mockLocation.pathname = '/admin/settings';
     mockAuthState.canAccessAdminPage = true;
     render(<App />);
-    expect(screen.getByTestId('community-admin-page')).toBeInTheDocument();
+    expect(await screen.findByTestId('community-admin-page')).toBeInTheDocument();
   });
 
   it('does not show CommunityAdminPage on /admin when canAccessAdminPage is false', () => {
@@ -116,12 +116,12 @@ describe('App / CommunityShell routing', () => {
     expect(screen.getByTestId('tenant-app')).toBeInTheDocument();
   });
 
-  it('shows CommunityAdminPage regardless of auth stage when on /admin with access', () => {
+  it('shows CommunityAdminPage regardless of auth stage when on /admin with access', async () => {
     mockLocation.pathname = '/admin';
     mockAuthState.canAccessAdminPage = true;
     mockAuthState.authStage = 'ready'; // even when ready, admin takes priority
     render(<App />);
-    expect(screen.getByTestId('community-admin-page')).toBeInTheDocument();
+    expect(await screen.findByTestId('community-admin-page')).toBeInTheDocument();
     expect(screen.queryByTestId('tenant-app')).not.toBeInTheDocument();
   });
 });

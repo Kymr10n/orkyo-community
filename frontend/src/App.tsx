@@ -1,10 +1,16 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@kymr10n/foundation/src/contexts/AuthContext";
 import { ApexGateway } from "@kymr10n/foundation/src/components/auth/ApexGateway";
 import { TenantApp } from "@kymr10n/foundation/src/components/auth/TenantApp";
 import { ThemeToggle } from "@kymr10n/foundation/src/components/layout/ThemeToggle";
+import { LoadingSpinner } from "@kymr10n/foundation/src/components/ui/LoadingSpinner";
 import { AUTH_STAGES } from "@kymr10n/foundation/src/constants/auth";
-import { CommunityAdminPage } from "@/pages/CommunityAdminPage";
+
+// Admin page is admin-only — code-split out of the initial bundle.
+const CommunityAdminPage = lazy(() =>
+  import("@/pages/CommunityAdminPage").then((m) => ({ default: m.CommunityAdminPage })),
+);
 
 /**
  * Community shell — single-tenant, no subdomain routing.
@@ -21,7 +27,11 @@ function CommunityShell() {
   const isAdminRoute = pathname === '/admin' || pathname.startsWith('/admin/');
 
   if (isAdminRoute && canAccessAdminPage) {
-    return <CommunityAdminPage />;
+    return (
+      <Suspense fallback={<LoadingSpinner />}>
+        <CommunityAdminPage />
+      </Suspense>
+    );
   }
 
   if (authStage !== AUTH_STAGES.READY) {
