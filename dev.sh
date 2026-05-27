@@ -32,7 +32,7 @@ Usage: ./dev.sh <command>
   status    Show container status
   reset     Remove local Docker volumes (destroys all local data)
 
-  infra     Start infrastructure only: db, keycloak, mailhog
+  infra     Start infrastructure only: db, redis, keycloak, mailhog, superset
             (use with host-process commands below for active development)
 
 Host processes (fast hot-reload, run after ./dev.sh infra):
@@ -100,6 +100,21 @@ load_env() {
   export BFF_REDIRECT_URI="http://localhost:${API_PORT}/api/auth/bff/callback"
   export BFF_ALLOWED_HOSTS="localhost,*.localhost"
 
+  # Reporting — Superset running in Docker (started by ./dev.sh infra)
+  export Reporting__Enabled=true
+  export Reporting__BaseUrl="http://localhost:${SUPERSET_PORT}"
+  export Reporting__AdminUsername="${SUPERSET_ADMIN_USERNAME}"
+  export Reporting__AdminPassword="${SUPERSET_ADMIN_PASSWORD}"
+  export Reporting__GuestTokenJwtSecret="${SUPERSET_GUEST_TOKEN_JWT_SECRET}"
+  export Reporting__ReaderCredentialMasterSecret="${SUPERSET_READER_CREDENTIAL_MASTER_SECRET}"
+  # Host-mode: Postgres is exposed on localhost at the mapped port
+  export Reporting__PostgresHost=localhost
+  export Reporting__PostgresPort="${POSTGRES_PORT}"
+  # Template dashboard UUIDs — populated from .env after first Superset bootstrap
+  export "Reporting__TemplateDashboardIds__space_utilization=${Reporting__TemplateDashboardIds__space_utilization:-}"
+  export "Reporting__TemplateDashboardIds__request_pipeline=${Reporting__TemplateDashboardIds__request_pipeline:-}"
+  export "Reporting__TemplateDashboardIds__allocation_conflicts=${Reporting__TemplateDashboardIds__allocation_conflicts:-}"
+
   mkdir -p "$ROOT_DIR/.local/logs"
 }
 
@@ -117,7 +132,7 @@ check_env_or_confirm() {
 wait_for_url() {
   local url="$1"
   local description="$2"
-  local retries=45
+  local retries="${3:-45}"
 
   log "Waiting for ${description}: ${url}"
   until curl -sf "$url" >/dev/null 2>&1; do
@@ -148,7 +163,7 @@ cmd_up() {
   success "Full stack is up"
   echo "Frontend: http://localhost:${FRONTEND_PORT}  (Community)"
   echo "API:      http://localhost:${API_PORT}"
-  echo "Swagger:  http://localhost:${API_PORT}/swagger"
+  echo "OpenAPI:  http://localhost:${API_PORT}/openapi/v1.json"
   echo "Keycloak: http://localhost:${KEYCLOAK_PORT}"
   echo "MailHog:  http://localhost:${MAILHOG_UI_PORT}"
 }
@@ -164,8 +179,8 @@ cmd_restart() { cmd_down; cmd_up; }
 cmd_rebuild() {
   ensure_local_compose
   load_env
-  log "Rebuilding containers..."
-  "${COMPOSE_CMD[@]}" build
+  log "Rebuilding containers (--no-cache to guarantee fresh binaries)..."
+  "${COMPOSE_CMD[@]}" build --no-cache
   cmd_up
 }
 
@@ -197,16 +212,18 @@ cmd_infra() {
   sync_assets
   check_env_or_confirm
 
-  log "Starting infrastructure (db, redis, keycloak, mailhog)"
-  "${COMPOSE_CMD[@]}" up -d --remove-orphans db redis keycloak mailhog
+  log "Starting infrastructure (db, redis, keycloak, mailhog, superset)"
+  "${COMPOSE_CMD[@]}" up -d --remove-orphans db redis keycloak mailhog superset-init superset
 
   wait_for_url "http://localhost:9001/health/ready" "Keycloak"
+  wait_for_url "http://localhost:${SUPERSET_PORT}/health" "Superset" 90
 
   success "Infrastructure is up"
   echo "Postgres: localhost:${POSTGRES_PORT}"
   echo "Redis:    localhost:${REDIS_PORT}"
   echo "Keycloak: http://localhost:${KEYCLOAK_PORT}"
   echo "MailHog:  http://localhost:${MAILHOG_UI_PORT}"
+  echo "Superset: http://localhost:${SUPERSET_PORT}"
   echo ""
   cmd_doctor
 }
@@ -253,9 +270,10 @@ cmd_doctor() {
 ── Runtime URLs ─────────────────────────────────────────────────────────────
   Frontend: http://localhost:${FRONTEND_PORT}
   API:      http://localhost:${API_PORT}
-  Swagger:  http://localhost:${API_PORT}/swagger
+  OpenAPI:  http://localhost:${API_PORT}/openapi/v1.json
   Keycloak: http://localhost:${KEYCLOAK_PORT}  (admin: admin / changeme)
   MailHog:  http://localhost:${MAILHOG_UI_PORT}
+  Superset: http://localhost:${SUPERSET_PORT}  (admin: ${SUPERSET_ADMIN_USERNAME} / ${SUPERSET_ADMIN_PASSWORD})
 EOF
 }
 

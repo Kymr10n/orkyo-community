@@ -4,6 +4,7 @@ using Api.Models;
 using Api.Security.Quotas;
 using Api.Services;
 using Microsoft.Extensions.Options;
+using Orkyo.Community.Api;
 using Orkyo.Community.Api.Endpoints;
 using Orkyo.Community.Middleware;
 using Orkyo.Community.Migrations;
@@ -103,6 +104,7 @@ try
     builder.Services.AddSingleton<IBreakGlassSessionStore, NullBreakGlassSessionStore>();
 
     builder.Services.AddScoped<CommunityJitProvisioningMiddleware>();
+    builder.Services.AddHostedService<ReportingProvisioningStartupTask>();
 
     // Tenant + org contexts — community always has exactly one fixed tenant.
     // Read directly from SingleTenantOptions so resolution is never affected by

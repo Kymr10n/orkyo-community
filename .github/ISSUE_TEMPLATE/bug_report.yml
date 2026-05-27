@@ -1,0 +1,96 @@
+name: Bug Report
+description: Report broken or unexpected behaviour
+title: "[Bug]: "
+labels:
+  - type:bug
+  - edition:community
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please provide enough detail to reproduce and investigate the issue.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Scheduler
+        - Resources
+        - Utilization
+        - Deployment
+        - Authentication
+        - Multi-Tenancy
+        - UI/UX
+        - API
+        - Database
+        - Foundation
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version / Commit
+      placeholder: "e.g. 0.1.8 or commit SHA"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Runtime Context
+      options:
+        - SaaS
+        - Docker Compose
+        - Local Development
+        - Portainer
+        - Library / Package Usage
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behaviour
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Screenshots
+      description: Paste relevant logs or screenshots here. Remove secrets before posting.
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical - data loss, tenant leakage, or unusable core flow
+        - High - major feature broken
+        - Medium - degraded behaviour with workaround
+        - Low - minor issue
+    validations:
+      required: true

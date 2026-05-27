@@ -1,0 +1,74 @@
+name: Deployment Support
+description: Get help with installation, upgrades or infrastructure
+title: "[Deployment]: "
+labels:
+  - type:support
+  - area:deployment
+  - edition:community
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please provide detailed deployment information. Remove secrets before posting.
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: "e.g. 0.1.8"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment Method
+      options:
+        - Docker Compose
+        - Portainer
+        - Local Development
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: |
+        OS:
+        Docker version:
+        Reverse proxy:
+        Database:
+        Keycloak/OIDC:
+    validations:
+      required: true
+
+  - type: textarea
+    id: issue
+    attributes:
+      label: Problem Description
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Paste relevant container/application logs. Remove secrets.
+
+  - type: textarea
+    id: compose
+    attributes:
+      label: Docker Compose / Configuration
+      description: Paste relevant configuration. Remove secrets.
+
+  - type: dropdown
+    id: blocker
+    attributes:
+      label: Is this blocking usage?
+      options:
+        - Yes
+        - No
+    validations:
+      required: true

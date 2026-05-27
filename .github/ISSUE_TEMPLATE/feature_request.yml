@@ -1,0 +1,68 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels:
+  - type:feature
+  - edition:community
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please focus on the operational problem and expected outcome.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What operational problem are you trying to solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution
+      description: Describe the smallest useful change.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Scheduler
+        - Resources
+        - Utilization
+        - Reporting
+        - Deployment
+        - Authentication
+        - UI/UX
+        - API
+        - Foundation
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Expected Impact
+      options:
+        - Critical operational improvement
+        - Significant improvement
+        - Nice to have
+        - Minor enhancement
+    validations:
+      required: true
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: Mockups / References
+      description: Add screenshots, diagrams, workflow examples or references if applicable.

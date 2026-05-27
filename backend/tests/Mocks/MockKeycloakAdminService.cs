@@ -187,6 +187,30 @@ public class MockKeycloakAdminService : IKeycloakAdminService
         return Task.CompletedTask;
     }
 
+    // ── Update email ─────────────────────────────────────────────
+    public bool UpdateEmailSuccess { get; set; } = true;
+    public string? UpdateEmailError { get; set; }
+    public int UpdateEmailCallCount { get; private set; }
+    public (string? keycloakSub, string? newEmail) LastUpdateEmailCall { get; private set; }
+
+    public Task UpdateEmailAsync(string keycloakSub, string newEmail, CancellationToken ct = default)
+    {
+        UpdateEmailCallCount++;
+        LastUpdateEmailCall = (keycloakSub, newEmail);
+        if (!UpdateEmailSuccess)
+            throw new KeycloakAdminException(UpdateEmailError ?? "Failed to update email");
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateEmailForAccountAsync(string? keycloakSub, string currentEmail, string newEmail, CancellationToken ct = default)
+    {
+        UpdateEmailCallCount++;
+        LastUpdateEmailCall = (keycloakSub, newEmail);
+        if (!UpdateEmailSuccess)
+            throw new KeycloakAdminException(UpdateEmailError ?? "Failed to update email");
+        return Task.CompletedTask;
+    }
+
     // ── Enable MFA ────────────────────────────────────────────────
     public bool EnableMfaSuccess { get; set; } = true;
     public string? EnableMfaError { get; set; }
@@ -304,6 +328,11 @@ public class MockKeycloakAdminService : IKeycloakAdminService
         UpdateProfileError = null;
         UpdateProfileCallCount = 0;
         LastUpdateProfileCall = default;
+
+        UpdateEmailSuccess = true;
+        UpdateEmailError = null;
+        UpdateEmailCallCount = 0;
+        LastUpdateEmailCall = default;
 
         EnableMfaSuccess = true;
         EnableMfaError = null;

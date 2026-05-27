@@ -39,11 +39,11 @@ export default defineConfig({
     // default resolution walks from the foundation file upward and finds
     // foundation's own copies of React/react-dom/@radix-ui/zustand/etc.,
     // producing a second React instance and blowing up hooks inside any
-    // context-carrying library. Dedupe forces these to resolve to SaaS's
-    // single copy. The list covers every package from foundation/package.json
-    // that either holds React context, React state, or a module-level
-    // registry — utility-only libs (date-fns, clsx, rrule, jspdf, …) are
-    // safe to load twice and omitted.
+    // context-carrying library. Dedupe forces these to resolve to Community's
+    // single copy. Any package imported from foundation source files must be
+    // listed here — Vite resolves imports relative to the importer's directory,
+    // so foundation's transitive deps won't be found in the shell's node_modules
+    // unless dedupe anchors them here.
     dedupe: [
       "react",
       "react-dom",
@@ -75,6 +75,13 @@ export default defineConfig({
       "@dnd-kit/sortable",
       "@dnd-kit/utilities",
       "lucide-react",
+      "date-fns",
+      "date-fns-tz",
+      "class-variance-authority",
+      "clsx",
+      "tailwind-merge",
+      "jspdf",
+      "@superset-ui/embedded-sdk",
     ],
   },
   optimizeDeps: {
