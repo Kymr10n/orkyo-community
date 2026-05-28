@@ -135,6 +135,22 @@ try
         };
     });
 
+    // ── Rate limiting (reporting endpoints only) ──────────────────────────────
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        options.AddPolicy("reporting-api", ctx =>
+            System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+                ctx.User?.Identity?.Name ?? ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 60,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0,
+                }));
+    });
+
     // ── Migration platform ────────────────────────────────────────────────────
     builder.Services.AddOrkyoMigrationPlatform();
     builder.Services.AddFoundationMigrations();
@@ -157,6 +173,8 @@ try
     app.UseAuthentication();
     app.UseMiddleware<CsrfMiddleware>();
     app.UseAuthorization();
+    if (!builder.Configuration.GetValue<bool>("DISABLE_RATE_LIMITING"))
+        app.UseRateLimiter();
     app.UseMiddleware<CommunityJitProvisioningMiddleware>();
     app.UseMiddleware<SingleTenantMiddleware>();
     app.UseMiddleware<ContextEnrichmentMiddleware>();
@@ -172,6 +190,14 @@ try
     {
         Predicate = check => check.Tags.Contains("ready")
     }).AsInfrastructureEndpoint();
+
+    // Swagger UI (reporting-v1 document only)
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/reporting-v1/swagger.json", "Orkyo Reporting API v1");
+        c.RoutePrefix = "swagger/reporting";
+    });
 
     // Foundation endpoints
     app.MapFoundationEndpoints();

@@ -172,6 +172,30 @@ public class MockKeycloakAdminService : IKeycloakAdminService
         return Task.FromResult(MockUserProfile);
     }
 
+    // ── Update email ──────────────────────────────────────────────
+    public bool UpdateEmailSuccess { get; set; } = true;
+    public string? UpdateEmailError { get; set; }
+    public int UpdateEmailCallCount { get; private set; }
+    public (string? keycloakSub, string? newEmail) LastUpdateEmailCall { get; private set; }
+
+    public Task UpdateEmailAsync(string keycloakSub, string newEmail, CancellationToken ct = default)
+    {
+        UpdateEmailCallCount++;
+        LastUpdateEmailCall = (keycloakSub, newEmail);
+        if (!UpdateEmailSuccess)
+            throw new KeycloakAdminException(UpdateEmailError ?? "Failed to update email");
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateEmailForAccountAsync(string? keycloakSub, string currentEmail, string newEmail, CancellationToken ct = default)
+    {
+        UpdateEmailCallCount++;
+        LastUpdateEmailCall = (keycloakSub, newEmail);
+        if (!UpdateEmailSuccess)
+            throw new KeycloakAdminException(UpdateEmailError ?? "Failed to update email");
+        return Task.CompletedTask;
+    }
+
     // ── Update profile ────────────────────────────────────────────
     public bool UpdateProfileSuccess { get; set; } = true;
     public string? UpdateProfileError { get; set; }
@@ -300,6 +324,11 @@ public class MockKeycloakAdminService : IKeycloakAdminService
         MockUserProfile = new UserProfile { Email = "test@example.com", FirstName = "Test", LastName = "User", EmailVerified = true };
         GetUserProfileError = null;
         GetUserProfileCallCount = 0;
+        UpdateEmailSuccess = true;
+        UpdateEmailError = null;
+        UpdateEmailCallCount = 0;
+        LastUpdateEmailCall = default;
+
         UpdateProfileSuccess = true;
         UpdateProfileError = null;
         UpdateProfileCallCount = 0;
