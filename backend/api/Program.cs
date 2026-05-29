@@ -5,6 +5,7 @@ using Api.Security.Quotas;
 using Api.Services;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using Orkyo.Community;
 using Orkyo.Community.Api.Endpoints;
 using Orkyo.Community.Middleware;
 using Orkyo.Community.Migrations;
@@ -28,7 +29,7 @@ try
     // Community uses DefaultConnection for all DB access. Alias it to the names
     // foundation's ConfigurationValidator and DeploymentConfig expect so they work
     // without requiring operators to configure the same string twice.
-    var defaultConn = builder.Configuration.GetConnectionString("DefaultConnection");
+    var defaultConn = builder.Configuration.GetConnectionString(CommunityConfigKeys.DefaultConnection);
     if (!string.IsNullOrEmpty(defaultConn))
     {
         builder.Configuration["ConnectionStrings:Postgres"] = defaultConn;
@@ -112,7 +113,7 @@ try
     builder.Services.AddScoped<TenantContext>(sp =>
     {
         var opts = sp.GetRequiredService<IOptions<SingleTenantOptions>>().Value;
-        var connStr = sp.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection")
+        var connStr = sp.GetRequiredService<IConfiguration>().GetConnectionString(CommunityConfigKeys.DefaultConnection)
             ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is required");
         return new TenantContext
         {
@@ -120,13 +121,13 @@ try
             TenantSlug = opts.TenantSlug,
             TenantDbConnectionString = connStr,
             Tier = ServiceTier.Enterprise,
-            Status = "active",
+            Status = TenantStatusConstants.Active,
         };
     });
     builder.Services.AddScoped<OrgContext>(sp =>
     {
         var opts = sp.GetRequiredService<IOptions<SingleTenantOptions>>().Value;
-        var connStr = sp.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection")
+        var connStr = sp.GetRequiredService<IConfiguration>().GetConnectionString(CommunityConfigKeys.DefaultConnection)
             ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is required");
         return new OrgContext
         {
@@ -193,7 +194,7 @@ try
     builder.Services.AddCommunityMigrations();
 
     // ── Health checks ─────────────────────────────────────────────────────────
-    var dbCs = builder.Configuration.GetConnectionString("DefaultConnection")
+    var dbCs = builder.Configuration.GetConnectionString(CommunityConfigKeys.DefaultConnection)
         ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is required");
     builder.Services.AddHealthChecks()
         .AddNpgSql(dbCs, name: "postgres", tags: ["db", "ready"]);

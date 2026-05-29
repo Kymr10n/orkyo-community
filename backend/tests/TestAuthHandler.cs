@@ -60,9 +60,9 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
                 claims.Add(new Claim("realm_access", rolesJson));
             }
 
-            var identity = new ClaimsIdentity(claims, "TestScheme");
+            var identity = new ClaimsIdentity(claims, TestConstants.AuthScheme);
             var principal = new ClaimsPrincipal(identity);
-            var ticket = new AuthenticationTicket(principal, "TestScheme");
+            var ticket = new AuthenticationTicket(principal, TestConstants.AuthScheme);
 
             return Task.FromResult(AuthenticateResult.Success(ticket));
         }

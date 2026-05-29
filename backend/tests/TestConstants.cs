@@ -5,6 +5,12 @@ public static class TestConstants
     public const string TenantSlug = "test";
     public const string TenantDatabase = "tenant_test";
 
+    /// <summary>Authentication scheme name registered by the test host + TestAuthHandler.</summary>
+    public const string AuthScheme = "TestScheme";
+
+    /// <summary>ASP.NET environment name used by the integration test host.</summary>
+    public const string EnvironmentName = "Test";
+
     public static string TestBearerToken { get; } = Convert.ToBase64String(
         System.Text.Encoding.UTF8.GetBytes(
             System.Text.Json.JsonSerializer.Serialize(new

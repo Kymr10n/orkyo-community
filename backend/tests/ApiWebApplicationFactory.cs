@@ -26,7 +26,7 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Test");
+        builder.UseEnvironment(TestConstants.EnvironmentName);
 
         builder.ConfigureAppConfiguration((context, config) =>
         {
@@ -40,7 +40,7 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
 
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ASPNETCORE_ENVIRONMENT"] = "Test",
+                ["ASPNETCORE_ENVIRONMENT"] = TestConstants.EnvironmentName,
                 ["ConnectionStrings:Postgres"] = testConnectionString,
                 ["ConnectionStrings:ControlPlane"] = testConnectionString,
                 ["SMTP_HOST"] = "localhost",
@@ -79,11 +79,11 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
 
             services.AddAuthentication(options =>
             {
-                options.DefaultAuthenticateScheme = "TestScheme";
-                options.DefaultChallengeScheme = "TestScheme";
-                options.DefaultScheme = "TestScheme";
+                options.DefaultAuthenticateScheme = TestConstants.AuthScheme;
+                options.DefaultChallengeScheme = TestConstants.AuthScheme;
+                options.DefaultScheme = TestConstants.AuthScheme;
             })
-                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("TestScheme", options => { });
+                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestConstants.AuthScheme, options => { });
 
             services.RemoveAll<IKeycloakAdminService>();
             services.AddSingleton<IKeycloakAdminService>(MockKeycloakAdminService);

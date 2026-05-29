@@ -1,6 +1,7 @@
 using Api.Models;
 using Api.Services;
 using Microsoft.Extensions.Options;
+using Orkyo.Shared;
 
 namespace Orkyo.Community.Tenant;
 
@@ -16,7 +17,7 @@ public sealed class SingleTenantResolver : ITenantResolver
     public SingleTenantResolver(IOptions<SingleTenantOptions> options, IConfiguration configuration)
     {
         var opts = options.Value;
-        var connStr = configuration.GetConnectionString("DefaultConnection")
+        var connStr = configuration.GetConnectionString(CommunityConfigKeys.DefaultConnection)
             ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is required");
 
         _fixed = new TenantContext
@@ -25,7 +26,7 @@ public sealed class SingleTenantResolver : ITenantResolver
             TenantSlug = opts.TenantSlug,
             TenantDbConnectionString = connStr,
             Tier = ServiceTier.Enterprise,
-            Status = "active",
+            Status = TenantStatusConstants.Active,
         };
     }
 

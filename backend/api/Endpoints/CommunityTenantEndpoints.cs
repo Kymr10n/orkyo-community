@@ -1,6 +1,7 @@
 using Api.Security;
 using Microsoft.Extensions.Options;
 using Orkyo.Community.Tenant;
+using Orkyo.Shared;
 
 namespace Orkyo.Community.Api.Endpoints;
 
@@ -28,9 +29,9 @@ public static class CommunityTenantEndpoints
                     tenantId       = tenant.TenantId,
                     tenantSlug     = tenant.TenantSlug,
                     tenantDisplayName = tenant.TenantName,
-                    tenantStatus   = "active",
+                    tenantStatus   = TenantStatusConstants.Active,
                     role           = authContext.Role.ToString().ToLowerInvariant(),
-                    status         = "active",
+                    status         = TenantStatusConstants.Active,
                     isOwner        = authContext.IsAdmin,
                     joinedAt       = (DateTime?)null
                 }
