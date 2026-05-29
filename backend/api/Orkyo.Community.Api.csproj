@@ -17,5 +17,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.7" />
     <!-- Serilog + Loki sink come transitively from Orkyo.Foundation. -->
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.*" />
+    <!-- Used directly in Program.cs for app.UseSwagger()/UseSwaggerUI() over the reporting-v1 doc. -->
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.3" />
   </ItemGroup>
 </Project>
