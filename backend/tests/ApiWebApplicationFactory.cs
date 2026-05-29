@@ -71,6 +71,12 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
+            services.Configure<ServiceProviderOptions>(o =>
+            {
+                o.ValidateOnBuild = true;
+                o.ValidateScopes = true;
+            });
+
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = "TestScheme";

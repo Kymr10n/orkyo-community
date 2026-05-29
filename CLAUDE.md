@@ -51,3 +51,7 @@ Local ports: API `5002` · Keycloak `8082` · Postgres `5433` · Frontend `5174`
 - Don't add tenant-shaped code here. This is single-tenant.
 - Don't add Community-only features that should live in foundation.
 - Don't ship the release bundle without smoke-testing the self-hosted path.
+
+## Explicit-registration rule
+
+If `Program.cs` calls `UseX()`, it must call `AddX()` in the same file — never rely on `AddFoundationServices` to register a service that the API project uses directly. Foundation owns implementations; the API project owns how it exposes them. This rule exists because Foundation is consumed as a NuGet package in CI/Docker, and there is always a window between a Foundation change landing and the package being published. Any implicit dependency on Foundation registering a service will silently break CI during that window.

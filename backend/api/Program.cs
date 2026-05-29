@@ -4,6 +4,7 @@ using Api.Models;
 using Api.Security.Quotas;
 using Api.Services;
 using Microsoft.Extensions.Options;
+using Microsoft.OpenApi.Models;
 using Orkyo.Community.Api.Endpoints;
 using Orkyo.Community.Middleware;
 using Orkyo.Community.Migrations;
@@ -133,6 +134,41 @@ try
             OrgSlug = opts.TenantSlug,
             DbConnectionString = connStr,
         };
+    });
+
+    // ── OpenAPI / Swagger (reporting-v1 document) ────────────────────────────
+    builder.Services.AddSwaggerGen(c =>
+    {
+        c.SwaggerDoc("reporting-v1", new OpenApiInfo
+        {
+            Title = "Orkyo Reporting API",
+            Version = "v1",
+            Description = "Read-only, tenant-scoped reporting endpoints for Power BI, Excel, Metabase, Superset, and custom integrations. " +
+                          "Authenticate with an orkyo_rpt_* reporting token in the Authorization header. " +
+                          "Tenant isolation is enforced server-side — no tenantId parameter accepted.",
+        });
+        c.AddSecurityDefinition("ReportingToken", new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "orkyo_rpt_<prefix>_<secret>",
+            In = ParameterLocation.Header,
+            Description = "Reporting API token in the format: Bearer orkyo_rpt_<prefix>_<secret>",
+        });
+        c.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "ReportingToken" }
+                },
+                Array.Empty<string>()
+            }
+        });
+        c.DocInclusionPredicate((docName, apiDesc) =>
+            docName == "reporting-v1" &&
+            (apiDesc.RelativePath?.StartsWith("api/reporting", StringComparison.OrdinalIgnoreCase) ?? false));
     });
 
     // ── Rate limiting (reporting endpoints only) ──────────────────────────────

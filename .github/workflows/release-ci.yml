@@ -6,8 +6,9 @@ name: CI
 #   push to v* tags          — + assemble release bundle + smoke-selfhosted + GH Release
 #   workflow_dispatch        — manual run
 #   repository_dispatch      — fired by orkyo-foundation when a new package is published.
-#                              channel=nightly: validate-only (floating OrkyoFoundationVersion).
-#                              channel=stable:  open auto-bump PR with regenerated lock files.
+#                              Runs auto-bump only; build/test/smoke are skipped because they
+#                              would test the pre-bump Foundation version. The bump commit
+#                              (push to main) triggers a full CI run against the new version.
 
 on:
   pull_request:
@@ -255,6 +256,7 @@ jobs:
     needs: [nightly-change-check, audit-secrets, audit-nuget, audit-npm, detect-changes]
     if: >-
       !cancelled() &&
+      github.event_name != 'repository_dispatch' &&
       needs.detect-changes.outputs.backend == 'true' &&
       (github.event_name != 'schedule' ||
        needs.nightly-change-check.outputs.has_changes == 'true')
@@ -315,6 +317,7 @@ jobs:
     needs: [nightly-change-check, audit-secrets, audit-nuget, audit-npm, detect-changes]
     if: >-
       !cancelled() &&
+      github.event_name != 'repository_dispatch' &&
       needs.detect-changes.outputs.frontend == 'true' &&
       (github.event_name != 'schedule' ||
        needs.nightly-change-check.outputs.has_changes == 'true')
@@ -373,6 +376,7 @@ jobs:
     needs: [backend-ci, frontend-ci, nightly-change-check]
     if: >-
       !failure() && !cancelled() &&
+      github.event_name != 'repository_dispatch' &&
       (github.event_name != 'schedule' ||
        needs.nightly-change-check.outputs.has_changes == 'true')
 
@@ -944,10 +948,10 @@ jobs:
   # ─────────────────────────────────────────────
   # AUTO-BUMP — fires on every foundation publish (nightly + stable)
   #
-  # Main always reflects the latest foundation publish. The bump commits
-  # directly to main (no PR); the resulting push: main triggers the full
-  # audit/build/test chain as the validation gate. If foundation broke us,
-  # main goes red — visible, immediate, actionable.
+  # Commits the new Foundation pin directly to main. build/test/smoke are
+  # intentionally skipped in the dispatch run (they would test the pre-bump
+  # version). The resulting push to main triggers a full CI run against the
+  # new Foundation version — if Foundation broke us, main goes red immediately.
   # ─────────────────────────────────────────────
   auto-bump:
     name: Auto-bump Foundation (${{ github.event.client_payload.channel }})
@@ -994,10 +998,8 @@ jobs:
             echo "No changes — foundation pin already at ${FOUNDATION_VERSION}"
             exit 0
           fi
-          # Nightly bumps skip CI — they were already validated by the dispatch run.
-          # Stable bumps keep CI so the PR/merge is properly gated.
-          CI_SKIP=$( [ "${CHANNEL}" = "nightly" ] && echo " [skip ci]" || true )
-          git commit -m "chore: bump foundation to ${FOUNDATION_VERSION} (${CHANNEL})${CI_SKIP}"
+          # No [skip ci] — the push to main is the validation gate for the new Foundation version.
+          git commit -m "chore: bump foundation to ${FOUNDATION_VERSION} (${CHANNEL})"
           git push origin HEAD:main
 
       - name: Create failure issue if auto-bump fails
