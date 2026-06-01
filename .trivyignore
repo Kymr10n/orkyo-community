@@ -66,6 +66,13 @@ CVE-2026-42583  # HIGH | netty-codec: Lz4FrameDecoder resource exhaustion — KC
 CVE-2026-42584  # HIGH | netty-codec-http: HttpClientCodec desync — KC 26.6.2 ships 4.1.132; fix requires 4.1.133 | Added: 2026-05-21 | Review: 2026-06-04
 CVE-2026-42587  # HIGH | netty-codec-http/http2: decompression bypass — KC 26.6.2 ships 4.1.132; fix requires 4.1.133 | Added: 2026-05-21 | Review: 2026-06-04
 
+# ── orkyo-community-frontend — Alpine 3.23 packages not yet in built image ────
+# Fix exists in Alpine 3.23 but the image was built before the package landed.
+# nightly security-refresh.yml will auto-resolve once image rebuilds.
+
+# libxml2 2.13.9-r0 → 2.13.9-r1
+CVE-2026-6732   # HIGH | libxml2: DoS via crafted XSD-validated document | Fix in Alpine 3.23 (2.13.9-r1); community-frontend image not yet rebuilt | Added: 2026-06-01 | Review: 2026-06-15
+
 # ── Trivy false positive ───────────────────────────────────────────────────────
 # Trivy reports fix as 12.6.5 but KC 26.6.2 ships mssql-jdbc 13.2.1 (newer); false positive.
 CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy lists fix as 12.6.5 but KC ships 13.2.1 (newer); false positive | Added: 2026-05-21 | Review: 2026-06-04
