@@ -17,14 +17,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#000000" />
 
-    <!-- Eliminate the white flash on Keycloak redirect / initial load.
-         Runs synchronously before first paint: reads the stored theme and
-         applies the matching background to <html> immediately. -->
+    <!-- Eliminate the white flash before React hydrates and before Keycloak
+         redirects. Runs synchronously in <head> before any paint:
+         1. Sets the inline background on <html> so the viewport is never white.
+         2. Adds/removes the "dark" class so Tailwind's .dark body rules fire
+            immediately — preventing the body from showing its default white
+            background before the app store applies the class. -->
     <script>
       (function(){
         var t=localStorage.getItem('theme');
         var dark=t==='dark'||(t!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);
-        document.documentElement.style.background=dark?'#09090b':'#ffffff';
+        var root=document.documentElement;
+        root.style.background=dark?'#09090b':'#ffffff';
+        if(dark){root.classList.add('dark')}else{root.classList.remove('dark')}
       })();
     </script>
 
