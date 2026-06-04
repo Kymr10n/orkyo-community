@@ -5,98 +5,160 @@
   </picture>
 </p>
 
-# Orkyo Community
+<h3 align="center">Orkyo Community Edition</h3>
+<p align="center">Self-hostable production floor planning for manufacturing teams.<br>Coordinate spaces, equipment, and people — without the spreadsheets.</p>
 
-Self-hosted, single-tenant edition of Orkyo — production space planning and scheduling.
+<p align="center">
+  <a href="https://orkyo.com">Website</a> ·
+  <a href="https://orkyo.com/pricing">Pricing</a> ·
+  <a href="https://github.com/Kymr10n/orkyo-community/issues">Issues</a> ·
+  <a href="https://github.com/Kymr10n/orkyo-community/discussions">Discussions</a>
+</p>
 
-## What it is
+<p align="center">
+  <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0">
+  <img src="https://img.shields.io/badge/.NET-10-purple" alt=".NET 10">
+  <img src="https://img.shields.io/badge/React-19-blue" alt="React 19">
+</p>
 
-A complete Orkyo instance for a single organisation, running on one Postgres database. No multi-tenancy, no control plane, no subscription management.
+---
 
-## What it is not
+## What is Orkyo?
 
-Not a replacement for `orkyo-saas`. Community runs one organisation; SaaS manages many tenants from a shared control plane.
+Manufacturing teams often coordinate production areas, equipment, and skilled people using spreadsheets, emails, and meetings. As operations grow, this leads to scheduling conflicts, unused capacity, and avoidable delays.
 
-## Prerequisites
+Orkyo is a lightweight resource orchestration platform that gives your team a shared, visual plan — requests, assignments, conflicts, and utilisation — all in one place.
 
-- Docker + Docker Compose
-- .NET 10 SDK (for host-process development)
-- Node.js 22 (for host-process frontend development)
-- `orkyo-foundation` cloned as a sibling directory
+**Community Edition** is the self-hosted, single-tenant version. One organisation, one database, full control over your data. No subscription required.
 
-## Quick Start
+> **Looking for a hosted option?** [Orkyo Cloud](https://orkyo.com) offers managed hosting with automatic updates, backups, and email support.
+
+## Features
+
+- **Visual space planning** — drag-and-drop layout editor with real-time allocation status
+- **People and equipment scheduling** — capability matching, absence handling, conflict detection
+- **Multi-site management** — manage layouts and resources across all your facilities
+- **Conflict detection** — catch double-bookings and overloads before they're committed
+- **Utilisation tracking** — see where capacity is going and where it's wasted
+- **Request workflow** — teams submit production requests; Orkyo matches them to available resources
+
+## Quick start (Docker Compose)
+
+**Requirements:** Docker Engine 24+ with Compose v2.
 
 ```bash
+# Download the latest release bundle
+curl -sL https://github.com/Kymr10n/orkyo-community/releases/latest/download/orkyo-community.tar.gz \
+  | tar xz && cd orkyo-community
+
+# Configure
 cp .env.template .env
-# Edit .env — change passwords at minimum
-./dev.sh up
+# Edit .env — change POSTGRES_PASSWORD, KEYCLOAK_ADMIN_PASSWORD,
+# and KEYCLOAK_BACKEND_CLIENT_SECRET at minimum
+
+# Start
+docker compose up -d
+
+# Open (port 80 by default; override with FRONTEND_PORT in .env)
+open http://localhost
 ```
 
-Then open http://localhost:5173 and log in with `admin@example.com` / `admin123`.
+Default login: `admin@example.com` / `admin123` — **change this before any non-local deployment**.
 
-## Development Workflows
+See [release/docs/QUICKSTART.md](release/docs/QUICKSTART.md) for the full variable reference and [release/docs/OPERATIONS.md](release/docs/OPERATIONS.md) for backup, upgrade, and rollback procedures.
 
-**Fully containerised** (recommended for testing):
+## Development setup
+
+**Requirements:** Docker, .NET 10 SDK, Node.js 22, `orkyo-foundation` cloned as a sibling directory (`../orkyo-foundation`).
+
 ```bash
-./dev.sh up       # starts everything
-./dev.sh down     # stops everything
-```
+git clone https://github.com/Kymr10n/orkyo-community.git
+git clone https://github.com/Kymr10n/orkyo-foundation.git  # sibling directory
 
-**Host processes** (recommended for active development, hot-reload):
-```bash
-./dev.sh infra      # start db + keycloak + mailhog in Docker
-./dev.sh migrator   # apply DB migrations
-./dev.sh api        # start API (dotnet run)
-./dev.sh frontend   # start Vite dev server
-```
+cd orkyo-community
+cp .env.template .env
+# Edit .env
 
-## Runtime URLs
+./dev.sh infra       # Postgres + Keycloak + MailHog in Docker
+./dev.sh migrator    # Apply DB migrations
+./dev.sh api         # API (dotnet run, hot-reload)
+./dev.sh frontend    # Vite dev server (http://localhost:5173)
+```
 
 | Service  | URL |
 |---|---|
 | Frontend | http://localhost:5173 |
-| API      | http://localhost:8080 |
-| Swagger  | http://localhost:8080/swagger |
-| Keycloak | http://localhost:8180 |
+| API      | http://localhost:5002 |
+| Keycloak | http://localhost:8082 |
 | MailHog  | http://localhost:8025 |
 
-## Default Credentials
+Run all tests:
 
-| | |
-|---|---|
-| App login | `admin@example.com` / `admin123` |
-| Keycloak admin | `admin` / `changeme` |
-
-## Configuration
-
-Copy `.env.template` to `.env` and edit. Key variables:
-
-- `POSTGRES_PASSWORD` — change before any non-local deployment
-- `KEYCLOAK_ADMIN_PASSWORD` / `KEYCLOAK_BACKEND_CLIENT_SECRET` — change in production
-- `COMMUNITY__TENANTNAME` — display name for your organisation
-- `OIDC_AUTHORITY` / `KEYCLOAK_URL` — set to your public Keycloak URL in production
-
-## Self-host deployment
-
-Production deployments use the bundle in [release/](release/), which ships as a single `compose.yml` with no host-side scripts or bind mounts.
-
-**Portainer Stacks** — paste [release/compose.yml](release/compose.yml) into Portainer's web editor (or point at this repo as a Git source with `Compose path: release/compose.yml`), fill in the env vars Portainer prompts for, and deploy.
-
-**Docker Compose CLI** — download a release bundle from [Releases](https://github.com/Kymr10n/orkyo-community/releases), `cp .env.template .env`, edit, `docker compose up -d`.
-
-See [release/docs/QUICKSTART.md](release/docs/QUICKSTART.md) for the full required-variable list and [release/docs/OPERATIONS.md](release/docs/OPERATIONS.md) for backup, upgrade, and rollback.
+```bash
+dotnet test backend/tests/          # unit + integration (requires Docker for integration tests)
+cd frontend && npm test -- --run    # frontend unit tests
+```
 
 ## Architecture
 
 ```
 orkyo-community/
-  backend/api/        — ASP.NET Core 10 API host
-  backend/src/        — Community-specific adapters (single-tenant context, DB factory)
-  backend/migrations/ — Community migration module (runs after foundation migrations)
+  backend/api/        — ASP.NET Core 10 API host (single-tenant adapters)
+  backend/src/        — Community-specific services and context wiring
+  backend/migrations/ — DB migration module (runs after foundation migrations)
   backend/migrator/   — CLI migrator entry point
-  frontend/           — Vite + React frontend (consumes orkyo-foundation components)
-  infra/compose/      — Docker Compose stack
+  frontend/           — Vite + React 19 frontend
+  infra/compose/      — Docker Compose stack (dev + local)
+  release/            — Production release bundle (Docker Compose, env template, docs)
 ```
 
-Shared domain logic, repositories, endpoints, and UI components come from `orkyo-foundation`.
-Community provides single-tenant adapters so foundation code runs without multi-tenant machinery.
+Shared domain logic — endpoints, repositories, scheduling, UI components — lives in [`orkyo-foundation`](https://github.com/Kymr10n/orkyo-foundation). Community provides single-tenant adapters so foundation code runs without multi-tenant machinery.
+
+## Self-hosting in production
+
+**Portainer Stacks** — paste [`release/compose.yml`](release/compose.yml) into Portainer's stack editor (or point it at this repo with `Compose path: release/compose.yml`), fill in the prompted env vars, and deploy.
+
+**VPS / Docker CLI** — download a release bundle from [Releases](https://github.com/Kymr10n/orkyo-community/releases), configure `.env`, run `docker compose up -d`.
+
+All images are published to GitHub Container Registry (`ghcr.io/kymr10n/orkyo-community-*`).
+
+### Upgrading
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+Migrations run automatically on startup. See [release/docs/OPERATIONS.md](release/docs/OPERATIONS.md) for rollback procedures.
+
+## Roadmap
+
+Orkyo is in active development. Near-term priorities:
+
+- Absence and leave management improvements
+- Reporting and capacity export (CSV / BI integration)
+- Notification and reminder system
+- Calendar and iCal integration
+
+Have a feature request? [Open an issue](https://github.com/Kymr10n/orkyo-community/issues) or start a [discussion](https://github.com/Kymr10n/orkyo-community/discussions).
+
+## Support
+
+Community Edition is **community-supported** on a best-effort basis.
+
+| Channel | What it covers |
+|---|---|
+| [GitHub Issues](https://github.com/Kymr10n/orkyo-community/issues) | Bug reports, reproducible defects |
+| [GitHub Discussions](https://github.com/Kymr10n/orkyo-community/discussions) | Questions, setup help, ideas |
+
+**Not included:** response time guarantees, installation support, custom development, SLA. For hosted-managed support, see [Orkyo Cloud](https://orkyo.com/support).
+
+## Contributing
+
+See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for guidelines. Bug reports and well-scoped pull requests are welcome. Feature requests are reviewed against the product roadmap — a subscription does not guarantee implementation.
+
+## License
+
+Orkyo Community Edition is licensed under the [GNU Affero General Public License v3.0](LICENSE). In brief: you can use, modify, and self-host it freely, but if you offer it as a network service you must make your modifications available under the same licence.
+
+For commercial licensing or OEM enquiries, contact [contact@orkyo.com](mailto:contact@orkyo.com).

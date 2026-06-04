@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Orkyo.Community.Tenant;
 
 /// <summary>
 /// Configuration for the single community tenant.
 /// Bound from environment variables at startup.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed class SingleTenantOptions
 {
     public const string SectionKey = "Community";

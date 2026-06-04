@@ -43,6 +43,8 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
                 ["ASPNETCORE_ENVIRONMENT"] = TestConstants.EnvironmentName,
                 ["ConnectionStrings:Postgres"] = testConnectionString,
                 ["ConnectionStrings:ControlPlane"] = testConnectionString,
+                // Community collapses to a single DB — SingleTenantResolver reads DefaultConnection.
+                ["ConnectionStrings:DefaultConnection"] = testConnectionString,
                 ["SMTP_HOST"] = "localhost",
                 ["SMTP_PORT"] = "1025",
                 ["SMTP_USE_SSL"] = "false",
