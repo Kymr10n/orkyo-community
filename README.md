@@ -59,8 +59,8 @@ cp .env.template .env
 # Start
 docker compose up -d
 
-# Open
-open http://localhost:3000
+# Open (port 80 by default; override with FRONTEND_PORT in .env)
+open http://localhost
 ```
 
 Default login: `admin@example.com` / `admin123` — **change this before any non-local deployment**.
