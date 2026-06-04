@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Orkyo.Community;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace Orkyo.Community;
 /// database split into a single connection named <c>DefaultConnection</c>; the foundation
 /// <c>ConfigKeys</c> only defines the multi-database <c>Postgres</c>/<c>ControlPlane</c> keys.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public static class CommunityConfigKeys
 {
     public const string DefaultConnection = "DefaultConnection";
