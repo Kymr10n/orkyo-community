@@ -1,4 +1,3 @@
-using Api.Models;
 using Api.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -13,7 +12,6 @@ public class SingleTenantMiddlewareTests
         TenantId = Guid.NewGuid(),
         TenantSlug = "community",
         TenantDbConnectionString = "Host=localhost;Database=community",
-        Tier = ServiceTier.Free,
         Status = "active",
     };
 

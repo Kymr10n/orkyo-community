@@ -1,6 +1,5 @@
 using Api.Configuration;
 using Api.Middleware;
-using Api.Models;
 using Api.Security.Quotas;
 using Api.Services;
 using Microsoft.Extensions.Options;
@@ -120,7 +119,6 @@ try
             TenantId = opts.TenantId,
             TenantSlug = opts.TenantSlug,
             TenantDbConnectionString = connStr,
-            Tier = ServiceTier.Enterprise,
             Status = TenantStatusConstants.Active,
         };
     });

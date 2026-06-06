@@ -1,4 +1,3 @@
-using Api.Models;
 using Api.Services;
 using Microsoft.Extensions.Options;
 using Orkyo.Shared;
@@ -25,7 +24,6 @@ public sealed class SingleTenantResolver : ITenantResolver
             TenantId = opts.TenantId,
             TenantSlug = opts.TenantSlug,
             TenantDbConnectionString = connStr,
-            Tier = ServiceTier.Enterprise,
             Status = TenantStatusConstants.Active,
         };
     }
