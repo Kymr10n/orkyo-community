@@ -32,6 +32,14 @@ public sealed class CliOptions
         HelpText = "Override the safety guard that refuses non-local connections.")]
     public bool ForceNonLocal { get; init; }
 
+    [Option("floorplans", Default = false,
+        HelpText = "Seed the curated floorplan-backed sites (with image assets + geometry-bearing spaces) instead of scale-driven sites/spaces. Requires a profile with a floorplan set (manufacturing).")]
+    public bool Floorplans { get; init; }
+
+    [Option("tenant-id", Default = null,
+        HelpText = "Override the single-tenant id used for asset rows. Defaults to Community__TenantId env var, then the community default tenant id.")]
+    public string? TenantId { get; init; }
+
     [Option("connection", Default = null,
         HelpText = "Override the DB connection string. Defaults to ConnectionStrings__DefaultConnection env var.")]
     public string? Connection { get; init; }
@@ -62,6 +70,10 @@ public static class Program
         await using var conn = new NpgsqlConnection(connString);
         await conn.OpenAsync();
 
+        // Single-tenant: assets.tenant_id must match the id the app serves (OrgContext.OrgId =
+        // SingleTenantOptions.TenantId, config "Community:TenantId"). Mirror that resolution.
+        var tenantId = ResolveTenantId(opts.TenantId);
+
         var seedOpts = new SeedOptions
         {
             Profile = opts.Profile,
@@ -70,11 +82,13 @@ public static class Program
             RandomSeed = opts.RandomSeed,
             UseRandom = opts.UseRandom,
             ForceNonLocal = opts.ForceNonLocal,
+            UseFloorplans = opts.Floorplans,
+            TenantId = tenantId,
         };
 
         Console.WriteLine(
             $"Seeding Community DB ({new NpgsqlConnectionStringBuilder(connString).Database}) — " +
-            $"profile={opts.Profile}, scale={opts.Scale}, mode={seedOpts.Mode}.");
+            $"profile={opts.Profile}, scale={opts.Scale}, mode={seedOpts.Mode}, floorplans={opts.Floorplans}.");
 
         try
         {
@@ -83,6 +97,7 @@ public static class Program
             Console.WriteLine($"Seeded in {report.Duration.TotalSeconds:F1}s:");
             Console.WriteLine($"  Sites:              {report.Sites,8}");
             Console.WriteLine($"  Spaces:             {report.Spaces,8}");
+            Console.WriteLine($"  Floorplan assets:   {report.FloorplanAssets,8}");
             Console.WriteLine($"  Job titles:         {report.JobTitles,8}");
             Console.WriteLine($"  Departments:        {report.Departments,8}");
             Console.WriteLine($"  People:             {report.People,8}");
@@ -90,6 +105,16 @@ public static class Program
             Console.WriteLine($"  Group members:      {report.PersonGroupMembers,8}");
             Console.WriteLine($"  Requests:           {report.Requests,8}");
             Console.WriteLine($"  Assignments:        {report.Assignments,8}");
+            if (report.Tools + report.Capabilities + report.AvailabilityEvents + report.Templates > 0)
+            {
+                Console.WriteLine($"  Tools:              {report.Tools,8}");
+                Console.WriteLine($"  Capabilities:       {report.Capabilities,8}");
+                Console.WriteLine($"  Requirements:       {report.Requirements,8}");
+                Console.WriteLine($"  Availability events:{report.AvailabilityEvents,8}");
+                Console.WriteLine($"  Absences:           {report.Absences,8}");
+                Console.WriteLine($"  Templates:          {report.Templates,8}");
+                Console.WriteLine($"  Conflicts (seeded): {report.Conflicts,8}");
+            }
             return 0;
         }
         catch (InvalidOperationException ex)
@@ -98,5 +123,16 @@ public static class Program
             Console.Error.WriteLine($"Seed aborted: {ex.Message}");
             return 4;
         }
+    }
+
+    // Mirrors SingleTenantOptions: --tenant-id override, else Community__TenantId env, else default.
+    private static Guid ResolveTenantId(string? overrideValue)
+    {
+        if (!string.IsNullOrWhiteSpace(overrideValue))
+            return Guid.Parse(overrideValue);
+        var fromEnv = Environment.GetEnvironmentVariable("Community__TenantId");
+        return Guid.TryParse(fromEnv, out var id)
+            ? id
+            : new Guid("00000000-0000-0000-0000-000000000001");
     }
 }
