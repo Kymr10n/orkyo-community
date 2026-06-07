@@ -66,7 +66,11 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
                 // actually uses Redis — health/live does not, and integration
                 // tests in this fixture don't exercise Redis-backed code paths.
                 // A non-functional placeholder is enough to pass the presence check.
-                ["REDIS_CONNECTION"] = "localhost:6379,abortConnect=false"
+                ["REDIS_CONNECTION"] = "localhost:6379,abortConnect=false",
+                // 32 zero-bytes encoded as base64 — satisfies ConfigurationValidator's
+                // format check (valid base64, exactly 32 bytes). No real encryption
+                // runs in integration tests so this value is never used operationally.
+                ["ORKYO_MASTER_ENCRYPTION_KEY"] = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 
             });
         });
