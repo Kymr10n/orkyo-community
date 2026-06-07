@@ -61,6 +61,8 @@ public class DatabaseFixture : IAsyncLifetime
         // tests we run today (health checks + endpoint routing).
         Environment.SetEnvironmentVariable("REDIS_CONNECTION",
             "localhost:6379,abortConnect=false");
+        Environment.SetEnvironmentVariable("ORKYO_MASTER_ENCRYPTION_KEY",
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
 
         Factory = new ApiWebApplicationFactory(this);
         _ = Factory.Services; // Eagerly start the server; CreateClient() no longer does this lazily in MvcTesting 10.x
