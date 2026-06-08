@@ -616,6 +616,9 @@ jobs:
           exit-code: '1'
           ignore-unfixed: true
           trivyignores: .trivyignore
+          # Trivy 0.70 crashes with HTTP/2 PROTOCOL_ERROR when streaming MimeKit.dll
+          # from GHCR during layer analysis. Remove once trivy-action is upgraded past 0.70.
+          skip-files: 'app/MimeKit.dll'
         env:
           # Keycloak ships JARs and requires the Java DB. All other images (.NET/nginx) do not.
           TRIVY_SKIP_JAVA_DB_UPDATE: ${{ matrix.service != 'keycloak' && 'true' || 'false' }}
