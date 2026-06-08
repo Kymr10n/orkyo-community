@@ -444,6 +444,7 @@ jobs:
           SMTP_FROM_NAME: "Orkyo CI"
           APP_BASE_URL: "http://localhost:5002"
           REDIS_CONNECTION: "localhost:6379,abortConnect=false"
+          ORKYO_MASTER_ENCRYPTION_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
         run: |
           dotnet run --no-build -c Release \
             --project backend/api/Orkyo.Community.Api.csproj \
@@ -485,6 +486,7 @@ jobs:
           SMTP_FROM_NAME: "Orkyo CI"
           APP_BASE_URL: "http://localhost:5002"
           REDIS_CONNECTION: "localhost:6379,abortConnect=false"
+          ORKYO_MASTER_ENCRYPTION_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
         run: |
           dotnet run --no-build -c Release \
             --project backend/api/Orkyo.Community.Api.csproj \
