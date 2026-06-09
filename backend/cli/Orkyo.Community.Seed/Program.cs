@@ -32,8 +32,8 @@ public sealed class CliOptions
         HelpText = "Override the safety guard that refuses non-local connections.")]
     public bool ForceNonLocal { get; init; }
 
-    [Option("floorplans", Default = false,
-        HelpText = "Seed the curated floorplan-backed sites (with image assets + geometry-bearing spaces) instead of scale-driven sites/spaces. Requires a profile with a floorplan set (manufacturing).")]
+    [Option("floorplans", Default = true,
+        HelpText = "Seed the curated floorplan-backed sites (with image assets + geometry-bearing spaces) instead of scale-driven sites/spaces. Requires a profile with a floorplan set (manufacturing). Pass --floorplans false to disable.")]
     public bool Floorplans { get; init; }
 
     [Option("tenant-id", Default = null,
