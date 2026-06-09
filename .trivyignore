@@ -60,12 +60,17 @@ CVE-2026-4878   # HIGH | libcap: fix not yet in KC 26.6.2 base image, no package
 CVE-2025-6965   # HIGH | sqlite-libs: fix not yet in KC 26.6.2 base image, no package manager | Added: 2026-05-21 | Review: 2026-06-20
 
 # ── Keycloak embedded JARs (quay.io/keycloak/keycloak:26.6.2) ────────────────
-# netty 4.1.132.Final shipped by KC 26.6.2; these CVEs require 4.1.133 or 4.2.13.
+# netty 4.1.132.Final shipped by KC 26.6.2; these CVEs require 4.1.133–4.1.135 or 4.2.13–4.2.15.
 CVE-2026-42577  # HIGH | netty-transport-native-epoll: DoS via RST on half-closed TCP — KC 26.6.2 ships 4.1.132; fix requires 4.2.13 | Added: 2026-05-21 | Review: 2026-06-20
 CVE-2026-42579  # HIGH | netty-codec-dns: input validation bypass — KC 26.6.2 ships 4.1.132; fix requires 4.1.133 | Added: 2026-05-21 | Review: 2026-06-20
 CVE-2026-42583  # HIGH | netty-codec: Lz4FrameDecoder resource exhaustion — KC 26.6.2 ships 4.1.132; fix requires 4.1.133 | Added: 2026-05-21 | Review: 2026-06-20
 CVE-2026-42584  # HIGH | netty-codec-http: HttpClientCodec desync — KC 26.6.2 ships 4.1.132; fix requires 4.1.133 | Added: 2026-05-21 | Review: 2026-06-20
 CVE-2026-42587  # HIGH | netty-codec-http/http2: decompression bypass — KC 26.6.2 ships 4.1.132; fix requires 4.1.133 | Added: 2026-05-21 | Review: 2026-06-20
+CVE-2026-44893  # HIGH | netty-codec-haproxy: HAProxy SSL TLV parsing leaks retained slice — KC 26.6.2 ships 4.1.132; fix requires 4.1.135 | Added: 2026-06-09 | Review: 2026-06-23
+CVE-2026-44249  # HIGH | netty-handler: IPv6 subnet filter bypass via incorrect comparator masking — KC 26.6.2 ships 4.1.132; fix requires 4.1.135 | Added: 2026-06-09 | Review: 2026-06-23
+CVE-2026-45416  # HIGH | netty-handler: SNI handler pre-allocates up to 16 MiB from nine attacker bytes — KC 26.6.2 ships 4.1.132; fix requires 4.1.135 | Added: 2026-06-09 | Review: 2026-06-23
+CVE-2026-45674  # HIGH | netty-resolver-dns: DNS cache poisoning via missing bailiwick checks in CNAME — KC 26.6.2 ships 4.1.132; fix requires 4.1.135 | Added: 2026-06-09 | Review: 2026-06-23
+CVE-2026-47691  # HIGH | netty-resolver-dns: insufficient bailiwick validation for NS records — KC 26.6.2 ships 4.1.132; fix requires 4.1.135 | Added: 2026-06-09 | Review: 2026-06-23
 
 # ── orkyo-community-frontend — Alpine 3.23 packages not yet in built image ────
 # Fix exists in Alpine 3.23 but the image was built before the package landed.
