@@ -17,19 +17,19 @@ updates:
       # Orkyo.* packages are bumped automatically by foundation's nightly dispatch.
       # Dependabot PRs for these duplicate that work and waste CI minutes.
       - dependency-name: "Orkyo.*"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 0
     labels: [dependencies, backend]
 
   - package-ecosystem: npm
     directory: /frontend
     schedule:
       interval: weekly
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 0
     labels: [dependencies, frontend]
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
     labels: [dependencies, ci]
