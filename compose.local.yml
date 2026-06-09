@@ -117,6 +117,7 @@ services:
       BFF_REDIRECT_URI: http://localhost:${API_PORT}/api/auth/bff/callback
       BFF_ALLOWED_HOSTS: localhost,*.localhost
       REDIS_CONNECTION: "redis:6379,password=${REDIS_PASSWORD},abortConnect=false"
+      ORKYO_MASTER_ENCRYPTION_KEY: ${ORKYO_MASTER_ENCRYPTION_KEY}
     ports:
       - "${API_PORT}:8080"
     healthcheck:
