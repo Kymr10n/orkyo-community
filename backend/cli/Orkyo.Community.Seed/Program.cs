@@ -36,6 +36,10 @@ public sealed class CliOptions
         HelpText = "Seed the curated floorplan-backed sites (with image assets + geometry-bearing spaces) instead of scale-driven sites/spaces. Requires a profile with a floorplan set (manufacturing). Pass --floorplans false to disable.")]
     public bool Floorplans { get; init; }
 
+    [Option("tools", Default = false,
+        HelpText = "Also seed tool/equipment resources and their criteria. Off by default — the demo seeds people and spaces only.")]
+    public bool Tools { get; init; }
+
     [Option("tenant-id", Default = null,
         HelpText = "Override the single-tenant id used for asset rows. Defaults to Community__TenantId env var, then the community default tenant id.")]
     public string? TenantId { get; init; }
@@ -84,11 +88,12 @@ public static class Program
             ForceNonLocal = opts.ForceNonLocal,
             UseFloorplans = opts.Floorplans,
             TenantId = tenantId,
+            ResourceTypes = opts.Tools ? SeedResourceTypes.All : SeedResourceTypes.Default,
         };
 
         Console.WriteLine(
             $"Seeding Community DB ({new NpgsqlConnectionStringBuilder(connString).Database}) — " +
-            $"profile={opts.Profile}, scale={opts.Scale}, mode={seedOpts.Mode}, floorplans={opts.Floorplans}.");
+            $"profile={opts.Profile}, scale={opts.Scale}, mode={seedOpts.Mode}, floorplans={opts.Floorplans}, tools={opts.Tools}.");
 
         try
         {
