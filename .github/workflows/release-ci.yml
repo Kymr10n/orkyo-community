@@ -18,6 +18,11 @@ on:
     branches: [main]
     tags: ['v*']
     paths-ignore: ['**.md', 'docs/**']
+  schedule:
+    # Nightly build. The nightly-change-check job below skips the run when main
+    # is unchanged since the last successful scheduled build, so this only does a
+    # full build/scan when there is something new to validate.
+    - cron: '30 3 * * *'
   workflow_dispatch:
   repository_dispatch:
     types: [foundation_updated]
