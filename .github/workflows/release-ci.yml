@@ -786,6 +786,7 @@ jobs:
           POSTGRES_DB=orkyo_community
           KEYCLOAK_DB=keycloak
           REDIS_PASSWORD=ci-redis-password
+          ORKYO_MASTER_ENCRYPTION_KEY=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
           APP_BASE_URL=http://localhost
           KEYCLOAK_URL=http://localhost:9080
           KEYCLOAK_ADMIN=admin
