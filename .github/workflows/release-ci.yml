@@ -867,9 +867,15 @@ jobs:
             exit 1
           fi
           echo "Theme CSS URL: $THEME_CSS"
-          HTTP=$(curl -sk -o /dev/null -w "%{http_code}" "$THEME_CSS")
+          # Keycloak emits a root-relative href; resolve it against the KC origin
+          # before fetching (curl needs an absolute URL).
+          case "$THEME_CSS" in
+            http*) THEME_URL="$THEME_CSS" ;;
+            *)     THEME_URL="http://localhost:9080$THEME_CSS" ;;
+          esac
+          HTTP=$(curl -sk -o /dev/null -w "%{http_code}" "$THEME_URL")
           if [ "$HTTP" != "200" ]; then
-            echo "::error::Keycloak theme CSS returned HTTP $HTTP: $THEME_CSS"; exit 1
+            echo "::error::Keycloak theme CSS returned HTTP $HTTP: $THEME_URL"; exit 1
           fi
           echo "Keycloak theme CSS: OK ($HTTP)"
 
