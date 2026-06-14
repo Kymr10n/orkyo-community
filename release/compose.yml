@@ -85,6 +85,9 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB:-orkyo_community};Username=${POSTGRES_USER:-orkyo};Password=${POSTGRES_PASSWORD}"
+      # AES-256-GCM master key for at-rest field/blob encryption (base64, 32 bytes).
+      # The backend fails fast if unset/invalid. Generate with: openssl rand -base64 32
+      ORKYO_MASTER_ENCRYPTION_KEY: ${ORKYO_MASTER_ENCRYPTION_KEY:?AES-256-GCM master key (base64, 32 bytes) — generate with openssl rand -base64 32}
       KEYCLOAK_INTERNAL_URL: http://keycloak:8080
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-orkyo-community}
       KEYCLOAK_BACKEND_CLIENT_ID: ${KEYCLOAK_BACKEND_CLIENT_ID:-orkyo-backend}
@@ -135,6 +138,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB:-orkyo_community};Username=${POSTGRES_USER:-orkyo};Password=${POSTGRES_PASSWORD}"
+      # Must match the api's key — both decrypt the same at-rest data.
+      ORKYO_MASTER_ENCRYPTION_KEY: ${ORKYO_MASTER_ENCRYPTION_KEY:?AES-256-GCM master key (base64, 32 bytes) — generate with openssl rand -base64 32}
       KEYCLOAK_URL: ${KEYCLOAK_URL:?public Keycloak URL, e.g. https://auth.example.com}
       KEYCLOAK_INTERNAL_URL: http://keycloak:8080
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-orkyo-community}
