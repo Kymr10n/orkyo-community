@@ -79,6 +79,14 @@ CVE-2026-47691  # HIGH | netty-resolver-dns: insufficient bailiwick validation f
 # libxml2 2.13.9-r0 → 2.13.9-r1
 CVE-2026-6732   # HIGH | libxml2: DoS via crafted XSD-validated document | Fix in Alpine 3.23 (2.13.9-r1); community-frontend image not yet rebuilt | Added: 2026-06-01 | Review: 2026-06-15
 
+# ── dotnet 10.0-alpine / node:22-alpine — openssl not yet rebuilt in base image ──
+# openssl fix (3.5.7-r0) is in Alpine 3.23, but the pinned dotnet/aspnet,
+# dotnet/runtime and node:22-alpine base images still ship 3.5.6-r0. apk upgrade
+# is disallowed; nightly security-refresh.yml resolves once the bases are rebuilt.
+
+# libcrypto3 / libssl3 3.5.6-r0 → 3.5.7-r0
+CVE-2026-45447  # HIGH | openssl: heap use-after-free in PKCS7_verify() | Fix in Alpine 3.23 (3.5.7-r0); dotnet & node alpine bases not yet rebuilt | Added: 2026-06-14 | Review: 2026-06-21
+
 # ── Trivy false positive ───────────────────────────────────────────────────────
 # Trivy reports fix as 12.6.5 but KC 26.6.2 ships mssql-jdbc 13.2.1 (newer); false positive.
 CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy lists fix as 12.6.5 but KC ships 13.2.1 (newer); false positive | Added: 2026-05-21 | Review: 2026-06-20
