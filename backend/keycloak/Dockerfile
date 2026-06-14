@@ -24,6 +24,11 @@ LABEL org.opencontainers.image.source=https://github.com/Kymr10n/orkyo-community
 
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 
+# Must match the features the builder stage compiled in. `start --optimized`
+# refuses to boot if a build-time option (here kc.features) differs from what
+# was persisted, so re-declare it in the runtime stage.
+ENV KC_FEATURES=token-exchange,recovery-codes
+
 # Store the realm as a template; docker-entrypoint.sh runs envsubst at startup
 # to inject APP_BASE_URL before Keycloak imports it.
 COPY release/config/keycloak/realm.json /opt/keycloak/data/import/realm.json.template
@@ -31,6 +36,9 @@ COPY backend/keycloak/docker-entrypoint.sh /docker-entrypoint.sh
 
 USER root
 RUN chmod +x /docker-entrypoint.sh
+# COPY lands import/ + the template as root, but the entrypoint (UID 1000) renders
+# realm.json into this dir at startup — so it must be writable by the keycloak user.
+RUN chown -R 1000:0 /opt/keycloak/data/import
 
 # Run as the non-root keycloak user (UID 1000) — matches the upstream image default.
 USER 1000
