@@ -71,6 +71,7 @@ CVE-2026-44249  # HIGH | netty-handler: IPv6 subnet filter bypass via incorrect 
 CVE-2026-45416  # HIGH | netty-handler: SNI handler pre-allocates up to 16 MiB from nine attacker bytes — KC 26.6.2 ships 4.1.132; fix requires 4.1.135 | Added: 2026-06-09 | Review: 2026-06-23
 CVE-2026-45674  # HIGH | netty-resolver-dns: DNS cache poisoning via missing bailiwick checks in CNAME — KC 26.6.2 ships 4.1.132; fix requires 4.1.135 | Added: 2026-06-09 | Review: 2026-06-23
 CVE-2026-47691  # HIGH | netty-resolver-dns: insufficient bailiwick validation for NS records — KC 26.6.2 ships 4.1.132; fix requires 4.1.135 | Added: 2026-06-09 | Review: 2026-06-23
+CVE-2026-48059  # HIGH | netty-codec-haproxy: DoS via memory exhaustion in PROXY protocol v2 codec — KC 26.6.2 ships 4.1.132; fix requires 4.1.135 | Added: 2026-06-14 | Review: 2026-06-21
 
 # ── orkyo-community-frontend — Alpine 3.23 packages not yet in built image ────
 # Fix exists in Alpine 3.23 but the image was built before the package landed.
