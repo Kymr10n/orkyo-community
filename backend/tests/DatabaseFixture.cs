@@ -59,7 +59,7 @@ public class DatabaseFixture : IAsyncLifetime
         // builds; the actual integration-test behaviour is unaffected because
         // the corresponding services are lazy-resolved and never used by the
         // tests we run today (health checks + endpoint routing).
-        Environment.SetEnvironmentVariable("REDIS_CONNECTION",
+        Environment.SetEnvironmentVariable("VALKEY_CONNECTION",
             "localhost:6379,abortConnect=false");
         Environment.SetEnvironmentVariable("ORKYO_MASTER_ENCRYPTION_KEY",
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");

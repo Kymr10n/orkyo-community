@@ -41,14 +41,14 @@ services:
       retries: 15
       start_period: 20s
 
-  redis:
-    image: redis:7-alpine
-    container_name: orkyo-community-redis
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: orkyo-community-valkey
+    command: valkey-server --requirepass ${VALKEY_PASSWORD}
     ports:
-      - "${REDIS_PORT}:6379"
+      - "${VALKEY_PORT}:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "valkey-cli", "-a", "${VALKEY_PASSWORD}", "ping"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -84,7 +84,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      redis:
+      valkey:
         condition: service_healthy
       migrator:
         condition: service_completed_successfully
@@ -116,7 +116,7 @@ services:
       BFF_COOKIE_SECURE: "false"
       BFF_REDIRECT_URI: http://localhost:${API_PORT}/api/auth/bff/callback
       BFF_ALLOWED_HOSTS: localhost,*.localhost
-      REDIS_CONNECTION: "redis:6379,password=${REDIS_PASSWORD},abortConnect=false"
+      VALKEY_CONNECTION: "valkey:6379,password=${VALKEY_PASSWORD},abortConnect=false"
       ORKYO_MASTER_ENCRYPTION_KEY: ${ORKYO_MASTER_ENCRYPTION_KEY}
     ports:
       - "${API_PORT}:8080"

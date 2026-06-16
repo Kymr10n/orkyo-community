@@ -98,9 +98,9 @@ try
 
     builder.Services.AddScoped<IAdminAuditService, CommunityAuditService>();
 
-    var redisCs = builder.Configuration[ConfigKeys.RedisConnection]
-        ?? throw new InvalidOperationException($"Redis connection string is required. Set {ConfigKeys.RedisConnection}.");
-    builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisCs));
+    var valkeyCs = builder.Configuration[ConfigKeys.ValkeyConnection]
+        ?? throw new InvalidOperationException($"Valkey connection string is required. Set {ConfigKeys.ValkeyConnection}.");
+    builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(valkeyCs));
     builder.Services.AddSingleton<IBreakGlassSessionStore, NullBreakGlassSessionStore>();
 
     builder.Services.AddScoped<CommunityJitProvisioningMiddleware>();

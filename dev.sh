@@ -90,8 +90,8 @@ load_env() {
   export ConnectionStrings__Postgres="$_cs"
   export VITE_API_BASE_URL="http://localhost:${API_PORT}"
 
-  # Redis — used by API for BFF sessions and Data Protection keys
-  export REDIS_CONNECTION="localhost:${REDIS_PORT},password=${REDIS_PASSWORD},abortConnect=false"
+  # Valkey — used by API for BFF sessions and Data Protection keys
+  export VALKEY_CONNECTION="localhost:${VALKEY_PORT},password=${VALKEY_PASSWORD},abortConnect=false"
 
   # BFF auth constants for host-mode API
   export BFF_ENABLED=true
@@ -197,14 +197,14 @@ cmd_infra() {
   sync_assets
   check_env_or_confirm
 
-  log "Starting infrastructure (db, redis, keycloak, mailhog)"
-  "${COMPOSE_CMD[@]}" up -d --remove-orphans db redis keycloak mailhog
+  log "Starting infrastructure (db, valkey, keycloak, mailhog)"
+  "${COMPOSE_CMD[@]}" up -d --remove-orphans db valkey keycloak mailhog
 
   wait_for_url "http://localhost:9001/health/ready" "Keycloak"
 
   success "Infrastructure is up"
   echo "Postgres: localhost:${POSTGRES_PORT}"
-  echo "Redis:    localhost:${REDIS_PORT}"
+  echo "Valkey:    localhost:${VALKEY_PORT}"
   echo "Keycloak: http://localhost:${KEYCLOAK_PORT}"
   echo "MailHog:  http://localhost:${MAILHOG_UI_PORT}"
   echo ""
