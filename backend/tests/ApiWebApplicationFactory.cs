@@ -64,7 +64,7 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
                 // Program.cs requires VALKEY_CONNECTION at startup. The Singleton
                 // ConnectionMultiplexer factory only resolves when something
                 // actually uses Valkey — health/live does not, and integration
-                // tests in this fixture don't exercise Redis-backed code paths.
+                // tests in this fixture don't exercise Valkey-backed code paths.
                 // A non-functional placeholder is enough to pass the presence check.
                 ["VALKEY_CONNECTION"] = "localhost:6379,abortConnect=false",
                 // 32 zero-bytes encoded as base64 — satisfies ConfigurationValidator's
