@@ -400,10 +400,10 @@ jobs:
         ports:
           - 5432:5432
 
-      redis:
-        image: redis:7-alpine
+      valkey:
+        image: valkey/valkey:8-alpine
         options: >-
-          --health-cmd "redis-cli ping"
+          --health-cmd "valkey-cli ping"
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
@@ -448,7 +448,7 @@ jobs:
           SMTP_FROM_EMAIL: "noreply@ci.local"
           SMTP_FROM_NAME: "Orkyo CI"
           APP_BASE_URL: "http://localhost:5002"
-          REDIS_CONNECTION: "localhost:6379,abortConnect=false"
+          VALKEY_CONNECTION: "localhost:6379,abortConnect=false"
           ORKYO_MASTER_ENCRYPTION_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
         run: |
           dotnet run --no-build -c Release \
@@ -490,7 +490,7 @@ jobs:
           SMTP_FROM_EMAIL: "noreply@ci.local"
           SMTP_FROM_NAME: "Orkyo CI"
           APP_BASE_URL: "http://localhost:5002"
-          REDIS_CONNECTION: "localhost:6379,abortConnect=false"
+          VALKEY_CONNECTION: "localhost:6379,abortConnect=false"
           ORKYO_MASTER_ENCRYPTION_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
         run: |
           dotnet run --no-build -c Release \
@@ -785,7 +785,7 @@ jobs:
           POSTGRES_PASSWORD=ci-postgres-password
           POSTGRES_DB=orkyo_community
           KEYCLOAK_DB=keycloak
-          REDIS_PASSWORD=ci-redis-password
+          VALKEY_PASSWORD=ci-valkey-password
           ORKYO_MASTER_ENCRYPTION_KEY=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
           APP_BASE_URL=http://localhost
           KEYCLOAK_URL=http://localhost:9080

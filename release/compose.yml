@@ -4,7 +4,7 @@
 # images. Works equally well with `docker compose up -d` and Portainer Stacks.
 #
 # Required env vars (deploy will fail with a clear message if missing):
-#   POSTGRES_PASSWORD, REDIS_PASSWORD, KEYCLOAK_ADMIN_PASSWORD,
+#   POSTGRES_PASSWORD, VALKEY_PASSWORD, KEYCLOAK_ADMIN_PASSWORD,
 #   KEYCLOAK_BACKEND_CLIENT_SECRET, APP_BASE_URL, KEYCLOAK_URL,
 #   BFF_COOKIE_DOMAIN, SMTP_HOST, SMTP_FROM_EMAIL, ORKYO_VERSION
 #
@@ -52,15 +52,15 @@ services:
         psql -h db -U "${POSTGRES_USER:-orkyo}" -d postgres \
           -c "CREATE DATABASE \"${KEYCLOAK_DB:-keycloak}\""
 
-  # ── Redis (BFF sessions, Data Protection keys) ────────────────────────────────
-  redis:
-    image: redis:7-alpine
-    container_name: orkyo_community_redis
+  # ── Valkey (BFF sessions, Data Protection keys) ────────────────────────────────
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: orkyo_community_valkey
     restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD:?set a strong Redis password}
+    command: valkey-server --requirepass ${VALKEY_PASSWORD:?set a strong Valkey password}
     networks: [orkyo-internal]
     healthcheck:
-      test: ["CMD-SHELL", "REDISCLI_AUTH=${REDIS_PASSWORD} redis-cli ping"]
+      test: ["CMD-SHELL", "REDISCLI_AUTH=${VALKEY_PASSWORD} valkey-cli ping"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -95,7 +95,7 @@ services:
       KEYCLOAK_URL: ${KEYCLOAK_URL:?public Keycloak URL, e.g. https://auth.example.com}
       OIDC_AUTHORITY: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM:-orkyo-community}
       OIDC_INTERNAL_AUTHORITY: http://keycloak:8080/realms/${KEYCLOAK_REALM:-orkyo-community}
-      REDIS_CONNECTION: "redis:6379,password=${REDIS_PASSWORD},abortConnect=false"
+      VALKEY_CONNECTION: "valkey:6379,password=${VALKEY_PASSWORD},abortConnect=false"
       APP_BASE_URL: ${APP_BASE_URL:?public app URL, e.g. https://community.example.com}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-${APP_BASE_URL}}
       BFF_ENABLED: "true"
@@ -121,7 +121,7 @@ services:
     networks: [orkyo-internal, orkyo-public]
     depends_on:
       db: { condition: service_healthy }
-      redis: { condition: service_healthy }
+      valkey: { condition: service_healthy }
       migrator: { condition: service_completed_successfully }
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health || exit 1"]
@@ -146,7 +146,7 @@ services:
       KEYCLOAK_BACKEND_CLIENT_ID: ${KEYCLOAK_BACKEND_CLIENT_ID:-orkyo-backend}
       KEYCLOAK_BACKEND_CLIENT_SECRET: ${KEYCLOAK_BACKEND_CLIENT_SECRET:?set the orkyo-backend OIDC client secret}
       OIDC_INTERNAL_AUTHORITY: http://keycloak:8080/realms/${KEYCLOAK_REALM:-orkyo-community}
-      REDIS_CONNECTION: "redis:6379,password=${REDIS_PASSWORD},abortConnect=false"
+      VALKEY_CONNECTION: "valkey:6379,password=${VALKEY_PASSWORD},abortConnect=false"
       SMTP_HOST: ${SMTP_HOST:?SMTP host}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USE_SSL: ${SMTP_USE_SSL:-false}

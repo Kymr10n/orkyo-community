@@ -16,7 +16,7 @@ These have no defaults — deploy will refuse to start without them:
 |---|---|
 | `ORKYO_VERSION` | Image tag, e.g. `0.4.2` |
 | `POSTGRES_PASSWORD` | Database password |
-| `REDIS_PASSWORD` | Redis password |
+| `VALKEY_PASSWORD` | Valkey password |
 | `KEYCLOAK_ADMIN_PASSWORD` | Keycloak admin console password |
 | `KEYCLOAK_BACKEND_CLIENT_SECRET` | Secret for the `orkyo-backend` OIDC client |
 | `APP_BASE_URL` | Public URL where users reach the app, e.g. `https://community.example.com` |
