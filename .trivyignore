@@ -35,43 +35,19 @@ CVE-2026-22184  # HIGH | zlib: buffer overflow in untgz | Fix in Alpine 3.23 (1.
 CVE-2026-9256   # HIGH | nginx: ngx_http_rewrite_module code execution and DoS | Fix in Alpine 3.23 (1.28.3-r2); nginx:1.28-alpine not yet rebuilt | Added: 2026-05-29 | Review: 2026-06-20
 CVE-2026-49975  # HIGH | nginx: HTTP/2 DoS via compression bomb and Slowloris-style attack | Fix in Alpine 3.23 (1.28.3-r3); nginx:1.28-alpine not yet rebuilt | Added: 2026-06-06 | Review: 2026-06-20
 
-# ── Keycloak base image JDK (quay.io/keycloak/keycloak:26.6.2 / ubi9) ────────
-# The Keycloak image ships without a package manager (microdnf absent in 26.x).
-# OS packages cannot be upgraded from within the Dockerfile.
-# Fix requires Keycloak to ship a new base image with updated ubi9 packages.
-#
-# Resolved in 26.6.2: CVE-2026-22016 (JDK 21.0.11), netty 4.1.132
-# (CVE-2026-33870/33871/42579/42583/42584/42587), quarkus 3.33.1.1
-# (CVE-2026-39852), bcprov 1.84 (CVE-2026-5598), pgjdbc 42.7.11 (CVE-2026-42198).
-
-# java-21-openjdk-headless — Oracle CPU patches not yet in KC 26.6.2 ubi9 base
-CVE-2025-30749  # HIGH | openjdk: fix not yet in KC 26.6.2 base image, no package manager | Added: 2026-05-21 | Review: 2026-06-20
-CVE-2025-50059  # HIGH | openjdk: fix not yet in KC 26.6.2 base image, no package manager | Added: 2026-05-21 | Review: 2026-06-20
-CVE-2025-50106  # HIGH | openjdk: fix not yet in KC 26.6.2 base image, no package manager | Added: 2026-05-21 | Review: 2026-06-20
-CVE-2025-64720  # HIGH | openjdk: fix not yet in KC 26.6.2 base image, no package manager | Added: 2026-05-21 | Review: 2026-06-20
-CVE-2025-65018  # HIGH | openjdk: fix not yet in KC 26.6.2 base image, no package manager | Added: 2026-05-21 | Review: 2026-06-20
-CVE-2026-21945  # HIGH | openjdk: fix not yet in KC 26.6.2 base image, no package manager | Added: 2026-05-21 | Review: 2026-06-20
-CVE-2026-34282  # HIGH | openjdk: Enhance TLS connection handling — fix not yet in KC 26.6.2 base image | Added: 2026-05-21 | Review: 2026-06-20
-
-# libcap — privilege escalation via TOCTOU in cap_set_file()
-CVE-2026-4878   # HIGH | libcap: fix not yet in KC 26.6.2 base image, no package manager | Added: 2026-05-21 | Review: 2026-06-20
-
-# sqlite-libs — integer truncation
-CVE-2025-6965   # HIGH | sqlite-libs: fix not yet in KC 26.6.2 base image, no package manager | Added: 2026-05-21 | Review: 2026-06-20
-
-# ── Keycloak embedded JARs (quay.io/keycloak/keycloak:26.6.2) ────────────────
-# netty 4.1.132.Final shipped by KC 26.6.2; these CVEs require 4.1.133–4.1.135 or 4.2.13–4.2.15.
-CVE-2026-42577  # HIGH | netty-transport-native-epoll: DoS via RST on half-closed TCP — KC 26.6.2 ships 4.1.132; fix requires 4.2.13 | Added: 2026-05-21 | Review: 2026-06-20
-CVE-2026-42579  # HIGH | netty-codec-dns: input validation bypass — KC 26.6.2 ships 4.1.132; fix requires 4.1.133 | Added: 2026-05-21 | Review: 2026-06-20
-CVE-2026-42583  # HIGH | netty-codec: Lz4FrameDecoder resource exhaustion — KC 26.6.2 ships 4.1.132; fix requires 4.1.133 | Added: 2026-05-21 | Review: 2026-06-20
-CVE-2026-42584  # HIGH | netty-codec-http: HttpClientCodec desync — KC 26.6.2 ships 4.1.132; fix requires 4.1.133 | Added: 2026-05-21 | Review: 2026-06-20
-CVE-2026-42587  # HIGH | netty-codec-http/http2: decompression bypass — KC 26.6.2 ships 4.1.132; fix requires 4.1.133 | Added: 2026-05-21 | Review: 2026-06-20
-CVE-2026-44893  # HIGH | netty-codec-haproxy: HAProxy SSL TLV parsing leaks retained slice — KC 26.6.2 ships 4.1.132; fix requires 4.1.135 | Added: 2026-06-09 | Review: 2026-06-23
-CVE-2026-44249  # HIGH | netty-handler: IPv6 subnet filter bypass via incorrect comparator masking — KC 26.6.2 ships 4.1.132; fix requires 4.1.135 | Added: 2026-06-09 | Review: 2026-06-23
-CVE-2026-45416  # HIGH | netty-handler: SNI handler pre-allocates up to 16 MiB from nine attacker bytes — KC 26.6.2 ships 4.1.132; fix requires 4.1.135 | Added: 2026-06-09 | Review: 2026-06-23
-CVE-2026-45674  # HIGH | netty-resolver-dns: DNS cache poisoning via missing bailiwick checks in CNAME — KC 26.6.2 ships 4.1.132; fix requires 4.1.135 | Added: 2026-06-09 | Review: 2026-06-23
-CVE-2026-47691  # HIGH | netty-resolver-dns: insufficient bailiwick validation for NS records — KC 26.6.2 ships 4.1.132; fix requires 4.1.135 | Added: 2026-06-09 | Review: 2026-06-23
-CVE-2026-48059  # HIGH | netty-codec-haproxy: DoS via memory exhaustion in PROXY protocol v2 codec — KC 26.6.2 ships 4.1.132; fix requires 4.1.135 | Added: 2026-06-14 | Review: 2026-06-21
+# ── Keycloak embedded JARs (quay.io/keycloak/keycloak:26.6.3) ────────────────
+# KC 26.6.3 ships netty 4.1.133.Final (bumped from 4.1.132 in 26.6.2); the entries
+# below require 4.1.135. The 26.6.3 upgrade also resolved & removed all openjdk CVEs
+# (CVE-2025-30749/50059/50106/64720/65018, CVE-2026-21945/34282), libcap CVE-2026-4878,
+# sqlite CVE-2025-6965, and the netty 4.1.133 CVEs (CVE-2026-42577/42579/42583/42584/42587).
+# Verified by a Trivy 0.70.0 scan of the 26.6.3 image.
+CVE-2026-44893  # HIGH | netty-codec-haproxy: HAProxy SSL TLV parsing leaks retained slice — KC 26.6.3 ships 4.1.133; fix requires 4.1.135 | Added: 2026-06-09 | Review: 2026-06-23
+CVE-2026-44249  # HIGH | netty-handler: IPv6 subnet filter bypass via incorrect comparator masking — KC 26.6.3 ships 4.1.133; fix requires 4.1.135 | Added: 2026-06-09 | Review: 2026-06-23
+CVE-2026-45416  # HIGH | netty-handler: SNI handler pre-allocates up to 16 MiB from nine attacker bytes — KC 26.6.3 ships 4.1.133; fix requires 4.1.135 | Added: 2026-06-09 | Review: 2026-06-23
+CVE-2026-45674  # HIGH | netty-resolver-dns: DNS cache poisoning via missing bailiwick checks in CNAME — KC 26.6.3 ships 4.1.133; fix requires 4.1.135 | Added: 2026-06-09 | Review: 2026-06-23
+CVE-2026-47691  # HIGH | netty-resolver-dns: insufficient bailiwick validation for NS records — KC 26.6.3 ships 4.1.133; fix requires 4.1.135 | Added: 2026-06-09 | Review: 2026-06-23
+CVE-2026-48059  # HIGH | netty-codec-haproxy: DoS via memory exhaustion in PROXY protocol v2 codec — KC 26.6.3 ships 4.1.133; fix requires 4.1.135 | Added: 2026-06-14 | Review: 2026-06-21
+CVE-2026-50010  # HIGH | netty-handler: improper trust manager handling leads to hostname verification bypass — KC 26.6.3 ships 4.1.133; fix requires 4.1.135 | Added: 2026-06-16 | Review: 2026-06-30
 
 # ── orkyo-community-frontend — Alpine 3.23 packages not yet in built image ────
 # Fix exists in Alpine 3.23 but the image was built before the package landed.
@@ -89,5 +65,5 @@ CVE-2026-6732   # HIGH | libxml2: DoS via crafted XSD-validated document | Fix i
 CVE-2026-45447  # HIGH | openssl: heap use-after-free in PKCS7_verify() | Fix in Alpine 3.23 (3.5.7-r0); dotnet & node alpine bases not yet rebuilt | Added: 2026-06-14 | Review: 2026-06-21
 
 # ── Trivy false positive ───────────────────────────────────────────────────────
-# Trivy reports fix as 12.6.5 but KC 26.6.2 ships mssql-jdbc 13.2.1 (newer); false positive.
-CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy lists fix as 12.6.5 but KC ships 13.2.1 (newer); false positive | Added: 2026-05-21 | Review: 2026-06-20
+# Trivy reports fix as 12.6.5 but KC ships mssql-jdbc 13.2.1.jre11 (newer); false positive.
+CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy lists fix as 12.6.5 but KC ships 13.2.1.jre11 (newer); false positive | Added: 2026-05-21 | Review: 2026-06-20
