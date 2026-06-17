@@ -23,7 +23,7 @@ COPY --chown=node:node package*.json ./
 RUN --mount=type=secret,id=npm_token,uid=1000 \
     echo "@kymr10n:registry=https://npm.pkg.github.com" > .npmrc \
     && echo "//npm.pkg.github.com/:_authToken=$(cat /run/secrets/npm_token)" >> .npmrc \
-    && npm install \
+    && npm install --legacy-peer-deps \
     && rm -f .npmrc
 
 # Copy source and entrypoint (src/ and public/ will be overridden by

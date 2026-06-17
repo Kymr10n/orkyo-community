@@ -3,7 +3,7 @@ using Api.Middleware;
 using Api.Security.Quotas;
 using Api.Services;
 using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Orkyo.Community;
 using Orkyo.Community.Api.Endpoints;
 using Orkyo.Community.Middleware;
@@ -155,14 +155,11 @@ try
             In = ParameterLocation.Header,
             Description = "Reporting API token in the format: Bearer orkyo_rpt_<prefix>_<secret>",
         });
-        c.AddSecurityRequirement(new OpenApiSecurityRequirement
+        c.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
         {
             {
-                new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "ReportingToken" }
-                },
-                Array.Empty<string>()
+                new OpenApiSecuritySchemeReference("ReportingToken"),
+                []
             }
         });
         c.DocInclusionPredicate((docName, apiDesc) =>
