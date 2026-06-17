@@ -6,7 +6,7 @@ COPY package.json package-lock.json ./
 RUN --mount=type=secret,id=ghcr_token \
     printf '@kymr10n:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=%s\n' \
       "$(cat /run/secrets/ghcr_token)" > .npmrc && \
-    npm ci --legacy-peer-deps && \
+    npm ci && \
     rm -f .npmrc
 
 FROM node:22-alpine@sha256:e58326d0d441090181ac150dc2078d3e2cf6a0d42e809aebba3ef5880935ffdd AS builder
