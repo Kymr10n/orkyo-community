@@ -122,6 +122,18 @@ try
                     QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst,
                     QueueLimit = 0,
                 }));
+        // Per-IP ceiling on the anonymous BFF auth endpoints (login/callback/logout),
+        // mapped via MapFoundationEndpoints when BFF is enabled.
+        options.AddPolicy("bff-auth", ctx =>
+            System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+                ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 20,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0,
+                }));
     });
 
     // ── Migration platform ────────────────────────────────────────────────────
