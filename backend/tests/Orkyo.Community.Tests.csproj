@@ -12,6 +12,7 @@
   <ItemGroup>
     <Using Include="Xunit" />
     <Using Include="AwesomeAssertions" />
+    <Using Include="Orkyo.Foundation.TestSupport" />
   </ItemGroup>
 
   <ItemGroup>
@@ -25,4 +26,18 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
   </ItemGroup>
+
+  <!-- Foundation test support: project reference locally, NuGet in CI/Docker -->
+  <Choose>
+    <When Condition="Exists('..\..\..\orkyo-foundation\backend\testsupport\Orkyo.Foundation.TestSupport.csproj')">
+      <ItemGroup>
+        <ProjectReference Include="..\..\..\orkyo-foundation\backend\testsupport\Orkyo.Foundation.TestSupport.csproj" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <PackageReference Include="Orkyo.Foundation.TestSupport" Version="$(OrkyoFoundationVersion)" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
 </Project>

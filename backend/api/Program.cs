@@ -3,7 +3,6 @@ using Api.Middleware;
 using Api.Security.Quotas;
 using Api.Services;
 using Microsoft.Extensions.Options;
-using Microsoft.OpenApi;
 using Orkyo.Community;
 using Orkyo.Community.Api.Endpoints;
 using Orkyo.Community.Middleware;
@@ -47,36 +46,7 @@ try
     builder.Services.AddResponseCompression();
 
     // ── CORS ──────────────────────────────────────────────────────────────────
-    builder.Services.AddCors(options =>
-    {
-        options.AddDefaultPolicy(policy =>
-        {
-            var rawOrigins = builder.Configuration[ConfigKeys.CorsAllowedOrigins] ?? "";
-            var allowedOrigins = rawOrigins
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            if (allowedOrigins.Count > 0)
-            {
-                policy.WithOrigins([.. allowedOrigins])
-                    .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-                    .WithHeaders("Content-Type", "Authorization",
-                        Api.Constants.HeaderConstants.TenantSlug,
-                        Api.Constants.HeaderConstants.CorrelationId,
-                        Api.Constants.HeaderConstants.CsrfToken)
-                    .AllowCredentials();
-            }
-            else if (!builder.Environment.IsProduction())
-            {
-                policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
-            }
-            else
-            {
-                throw new InvalidOperationException(
-                    "CORS_ALLOWED_ORIGINS must be set in production.");
-            }
-        });
-    });
+    builder.Services.AddOrkyoApiCors(builder.Configuration, builder.Environment);
 
     // ── Community infrastructure ──────────────────────────────────────────────
     builder.Services.AddSingleton(DeploymentConfig.FromConfiguration(builder.Configuration));
@@ -136,36 +106,7 @@ try
     });
 
     // ── OpenAPI / Swagger (reporting-v1 document) ────────────────────────────
-    builder.Services.AddSwaggerGen(c =>
-    {
-        c.SwaggerDoc("reporting-v1", new OpenApiInfo
-        {
-            Title = "Orkyo Reporting API",
-            Version = "v1",
-            Description = "Read-only, tenant-scoped reporting endpoints for Power BI, Excel, Metabase, Superset, and custom integrations. " +
-                          "Authenticate with an orkyo_rpt_* reporting token in the Authorization header. " +
-                          "Tenant isolation is enforced server-side — no tenantId parameter accepted.",
-        });
-        c.AddSecurityDefinition("ReportingToken", new OpenApiSecurityScheme
-        {
-            Name = "Authorization",
-            Type = SecuritySchemeType.Http,
-            Scheme = "bearer",
-            BearerFormat = "orkyo_rpt_<prefix>_<secret>",
-            In = ParameterLocation.Header,
-            Description = "Reporting API token in the format: Bearer orkyo_rpt_<prefix>_<secret>",
-        });
-        c.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
-        {
-            {
-                new OpenApiSecuritySchemeReference("ReportingToken"),
-                []
-            }
-        });
-        c.DocInclusionPredicate((docName, apiDesc) =>
-            docName == "reporting-v1" &&
-            (apiDesc.RelativePath?.StartsWith("api/reporting", StringComparison.OrdinalIgnoreCase) ?? false));
-    });
+    builder.Services.AddOrkyoReportingSwagger();
 
     // ── Rate limiting (reporting endpoints only) ──────────────────────────────
     builder.Services.AddRateLimiter(options =>
@@ -212,24 +153,8 @@ try
     app.UseMiddleware<ContextEnrichmentMiddleware>();
 
     // ── Endpoints ─────────────────────────────────────────────────────────────
-    var healthCheckOptions = new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
-    {
-        ResponseWriter = WriteHealthCheckResponse
-    };
-    app.MapHealthChecks("/health", healthCheckOptions).AsInfrastructureEndpoint();
-    app.MapGet("/health/live", () => Results.Ok(new { status = "ok" })).AsInfrastructureEndpoint();
-    app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
-    {
-        Predicate = check => check.Tags.Contains("ready")
-    }).AsInfrastructureEndpoint();
-
-    // Swagger UI (reporting-v1 document only)
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/reporting-v1/swagger.json", "Orkyo Reporting API v1");
-        c.RoutePrefix = "swagger/reporting";
-    });
+    app.MapOrkyoHealthEndpoints();
+    app.UseOrkyoReportingSwaggerUI();
 
     // Foundation endpoints
     app.MapFoundationEndpoints();
@@ -248,26 +173,6 @@ catch (Exception ex) when (ex is not OperationCanceledException)
 finally
 {
     Log.CloseAndFlush();
-}
-
-static async Task WriteHealthCheckResponse(
-    HttpContext context,
-    Microsoft.Extensions.Diagnostics.HealthChecks.HealthReport report)
-{
-    context.Response.ContentType = "application/json";
-    var result = System.Text.Json.JsonSerializer.Serialize(new
-    {
-        status = report.Status.ToString(),
-        utc = DateTime.UtcNow.ToString("O"),
-        checks = report.Entries.Select(e => new
-        {
-            name = e.Key,
-            status = e.Value.Status.ToString(),
-            description = e.Value.Description,
-            duration = e.Value.Duration.TotalMilliseconds
-        })
-    });
-    await context.Response.WriteAsync(result);
 }
 
 public partial class Program { }
