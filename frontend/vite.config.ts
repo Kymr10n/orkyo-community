@@ -30,6 +30,26 @@ const foundationAliases: Record<string, string> = useSiblingFoundation
 
 export default defineConfig({
   plugins: [tailwindcss(), react()],
+  build: {
+    rollupOptions: {
+      output: {
+        // Split large, stable vendors into their own long-cached chunks so the
+        // per-route chunks (see TenantApp's lazy routes) don't each re-bundle
+        // them. Grouping mirrors the dedupe list below.
+        manualChunks: (id: string) => {
+          if (!id.includes("node_modules")) return undefined;
+          if (/[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id))
+            return "vendor-react";
+          if (id.includes("@radix-ui")) return "vendor-radix";
+          if (id.includes("@fullcalendar")) return "vendor-fullcalendar";
+          if (id.includes("@dnd-kit")) return "vendor-dnd";
+          if (id.includes("@tanstack")) return "vendor-tanstack";
+          if (id.includes("jspdf")) return "vendor-jspdf";
+          return undefined;
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
