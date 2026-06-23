@@ -45,6 +45,7 @@ export default defineConfig({
           if (id.includes("@dnd-kit")) return "vendor-dnd";
           if (id.includes("@tanstack")) return "vendor-tanstack";
           if (id.includes("jspdf")) return "vendor-jspdf";
+          if (id.includes("recharts") || id.includes("d3-")) return "vendor-recharts";
           return undefined;
         },
       },
@@ -101,6 +102,7 @@ export default defineConfig({
       "@dnd-kit/sortable",
       "@dnd-kit/utilities",
       "lucide-react",
+      "recharts",
     ],
   },
   optimizeDeps: {},
