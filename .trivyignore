@@ -61,6 +61,9 @@ CVE-2026-50010  # HIGH | netty-handler: improper trust manager handling leads to
 # libxml2 2.13.9-r0 → 2.13.9-r1
 CVE-2026-6732   # HIGH | libxml2: DoS via crafted XSD-validated document | Fix in Alpine 3.23 (2.13.9-r1); community-frontend image not yet rebuilt | Added: 2026-06-01 | Review: 2026-06-15
 
+# libexpat 2.7.5-r0 → 2.8.1-r0
+CVE-2026-45186  # HIGH | libexpat: denial of service via crafted XML input | Fix in Alpine 3.23 (2.8.1-r0); community-frontend image not yet rebuilt | Added: 2026-06-24 | Review: 2026-07-08
+
 # ── dotnet 10.0-alpine / node:22-alpine — openssl not yet rebuilt in base image ──
 # openssl fix (3.5.7-r0) is in Alpine 3.23, but the pinned dotnet/aspnet,
 # dotnet/runtime and node:22-alpine base images still ship 3.5.6-r0. apk upgrade
