@@ -54,6 +54,15 @@ CVE-2026-47691  # HIGH | netty-resolver-dns: insufficient bailiwick validation f
 CVE-2026-48059  # HIGH | netty-codec-haproxy: DoS via memory exhaustion in PROXY protocol v2 codec — KC 26.6.3 ships 4.1.133; fix requires 4.1.135 | Added: 2026-06-14 | Review: 2026-06-21
 CVE-2026-50010  # HIGH | netty-handler: improper trust manager handling leads to hostname verification bypass — KC 26.6.3 ships 4.1.133; fix requires 4.1.135 | Added: 2026-06-16 | Review: 2026-06-30
 
+# jackson-databind 2.21.2 → 2.21.4 (bundled in keycloak-admin-cli-26.6.3.jar)
+# Vulnerable jackson-databind ships inside upstream Keycloak's admin-cli JAR; the
+# fix (2.21.4) exists but requires upstream KC to rebuild admin-cli. The admin-cli
+# is a build/ops CLI, and both bypasses require application-controlled polymorphic
+# deserialization (default-typing / a permissive PolymorphicTypeValidator) which
+# KC's usage does not enable. Remove once upstream KC bundles jackson 2.21.4.
+CVE-2026-54512  # HIGH | jackson-databind: PolymorphicTypeValidator bypass via generic type parameters — bundled 2.21.2 in keycloak-admin-cli-26.6.3.jar; fix requires upstream KC to rebuild admin-cli with 2.21.4 | Added: 2026-06-24 | Review: 2026-07-08
+CVE-2026-54513  # HIGH | jackson-databind: array subtype allowlist bypass in BasicPolymorphicTypeValidator — bundled 2.21.2 in keycloak-admin-cli-26.6.3.jar; fix requires upstream KC to rebuild admin-cli with 2.21.4 | Added: 2026-06-24 | Review: 2026-07-08
+
 # ── orkyo-community-frontend — Alpine 3.23 packages not yet in built image ────
 # Fix exists in Alpine 3.23 but the image was built before the package landed.
 # nightly security-refresh.yml will auto-resolve once image rebuilds.
