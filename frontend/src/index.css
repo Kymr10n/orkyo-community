@@ -117,3 +117,14 @@
     font-size: 14px;
   }
 }
+
+/* Tailwind v4 dropped the default cursor:pointer on <button>; restore it app-wide so
+   every clickable control (buttons, Radix Tabs/Select triggers, role=button) shows a
+   pointer. Disabled buttons are skipped (they carry pointer-events:none). Lives in
+   @layer base so inline utilities like cursor-grab / cursor-not-allowed still win. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+}
