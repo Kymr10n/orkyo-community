@@ -6,9 +6,10 @@
  * meaningful for a self-hosted single-tenant deployment.
  */
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@kymr10n/foundation/src/components/ui/tabs';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { TabsContent } from '@kymr10n/foundation/src/components/ui/tabs';
+import { PageTabs } from '@kymr10n/foundation/src/components/layout/PageTabs';
 import { Button } from '@kymr10n/foundation/src/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { AdminPageShell } from '@kymr10n/foundation/src/components/admin/AdminPageShell';
@@ -20,7 +21,23 @@ import { AnnouncementsTab } from '@kymr10n/foundation/src/components/admin/Annou
 
 export function CommunityAdminPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('configuration');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabParam || 'configuration');
+
+  // Keep the active tab in sync with the URL so it survives reload / deep links.
+  useEffect(() => {
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('tab', tab);
+    setSearchParams(newParams, { replace: true });
+  };
 
   return (
     <AdminPageShell
@@ -37,14 +54,16 @@ export function CommunityAdminPage() {
         </Button>
       }
     >
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4 max-w-[560px]">
-          <TabsTrigger value="configuration">Configuration</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-          <TabsTrigger value="diagnostics">Diagnostics</TabsTrigger>
-          <TabsTrigger value="announcements">Announcements</TabsTrigger>
-        </TabsList>
-
+      <PageTabs
+        tabs={[
+          { value: 'configuration', label: 'Configuration' },
+          { value: 'settings', label: 'Settings' },
+          { value: 'diagnostics', label: 'Diagnostics' },
+          { value: 'announcements', label: 'Announcements' },
+        ]}
+        value={activeTab}
+        onChange={handleTabChange}
+      >
         <TabsContent value="configuration" className="mt-6">
           <RouteErrorBoundary label="Configuration"><CommunityConfigurationTab /></RouteErrorBoundary>
         </TabsContent>
@@ -60,7 +79,7 @@ export function CommunityAdminPage() {
         <TabsContent value="announcements" className="mt-6">
           <RouteErrorBoundary label="Announcements"><AnnouncementsTab /></RouteErrorBoundary>
         </TabsContent>
-      </Tabs>
+      </PageTabs>
     </AdminPageShell>
   );
 }

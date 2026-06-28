@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { CommunityAdminPage } from './CommunityAdminPage';
 
 // ── Mutable auth state (per-test override) ────────────────────────────────────
@@ -54,6 +55,15 @@ async function openUserMenu() {
   await userEvent.click(userMenuButton);
 }
 
+/** Render inside a router so the page's useSearchParams (?tab=) has context. */
+function renderPage(path = '/') {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <CommunityAdminPage />
+    </MemoryRouter>,
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('CommunityAdminPage', () => {
@@ -66,17 +76,17 @@ describe('CommunityAdminPage', () => {
   // ── Header ──────────────────────────────────────────────────────────────────
 
   it('renders the Orkyo brand in the header', () => {
-    render(<CommunityAdminPage />);
+    renderPage();
     expect(screen.getByText('Orkyo')).toBeInTheDocument();
   });
 
   it('renders the Administration label', () => {
-    render(<CommunityAdminPage />);
+    renderPage();
     expect(screen.getByText('Administration')).toBeInTheDocument();
   });
 
   it('navigates to / when Open Application is clicked', async () => {
-    render(<CommunityAdminPage />);
+    renderPage();
     await userEvent.click(screen.getByRole('button', { name: /open application/i }));
     expect(mockNavigate).toHaveBeenCalledWith('/');
   });
@@ -84,26 +94,26 @@ describe('CommunityAdminPage', () => {
   // ── User menu ───────────────────────────────────────────────────────────────
 
   it('shows user display name in the user menu', async () => {
-    render(<CommunityAdminPage />);
+    renderPage();
     await openUserMenu();
     expect(screen.getByText('Alex Admin')).toBeInTheDocument();
   });
 
   it('shows user email in the user menu', async () => {
-    render(<CommunityAdminPage />);
+    renderPage();
     await openUserMenu();
     expect(screen.getByText('alex@example.com')).toBeInTheDocument();
   });
 
   it('falls back to "Admin" when display name is empty', async () => {
     mockAuth.appUser = { displayName: '', email: 'admin@example.com' };
-    render(<CommunityAdminPage />);
+    renderPage();
     await openUserMenu();
     expect(screen.getByText('Admin')).toBeInTheDocument();
   });
 
   it('calls logout when Sign out is clicked', async () => {
-    render(<CommunityAdminPage />);
+    renderPage();
     await openUserMenu();
     await userEvent.click(screen.getByText('Sign out'));
     expect(mockAuth.logout).toHaveBeenCalledOnce();
@@ -112,25 +122,30 @@ describe('CommunityAdminPage', () => {
   // ── Tabs ────────────────────────────────────────────────────────────────────
 
   it('shows the Configuration tab by default', () => {
-    render(<CommunityAdminPage />);
+    renderPage();
     expect(screen.getByTestId('configuration-tab')).toBeInTheDocument();
   });
 
   it('switches to Settings tab', async () => {
-    render(<CommunityAdminPage />);
+    renderPage();
     await userEvent.click(screen.getByRole('tab', { name: 'Settings' }));
     expect(screen.getByTestId('settings-tab')).toBeInTheDocument();
   });
 
   it('switches to Diagnostics tab', async () => {
-    render(<CommunityAdminPage />);
+    renderPage();
     await userEvent.click(screen.getByRole('tab', { name: 'Diagnostics' }));
     expect(screen.getByTestId('diagnostics-tab')).toBeInTheDocument();
   });
 
   it('switches to Announcements tab', async () => {
-    render(<CommunityAdminPage />);
+    renderPage();
     await userEvent.click(screen.getByRole('tab', { name: 'Announcements' }));
     expect(screen.getByTestId('announcements-tab')).toBeInTheDocument();
+  });
+
+  it('selects the tab from the ?tab= query param (deep-link)', () => {
+    renderPage('/?tab=diagnostics');
+    expect(screen.getByTestId('diagnostics-tab')).toBeInTheDocument();
   });
 });

@@ -1,3 +1,4 @@
+using Api.Repositories;
 using Api.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -27,6 +28,11 @@ try
             services.AddSingleton<IOrgDbConnectionFactory>(sp =>
                 sp.GetRequiredService<IDbConnectionFactory>());
             services.AddSingleton<UserLifecycleService>();
+            // Email broadcast for announcements (worker has no tenant context → default branding).
+            services.AddSingleton<ITenantSettingsService, WorkerTenantSettingsService>();
+            services.AddSingleton<IEmailService, EmailService>();
+            services.AddSingleton<IAnnouncementRepository, AnnouncementRepository>();
+            services.AddSingleton<IAnnouncementBroadcastService, AnnouncementBroadcastService>();
             services.AddHostedService<CommunityWorkerService>();
         })
         .Build();
@@ -46,12 +52,17 @@ internal sealed class CommunityWorkerService : BackgroundService
 {
     private readonly ILogger<CommunityWorkerService> _logger;
     private readonly UserLifecycleService _userLifecycle;
+    private readonly IAnnouncementBroadcastService _announcementBroadcast;
     private DateTime _lastDailyCheck = DateTime.MinValue;
 
-    public CommunityWorkerService(ILogger<CommunityWorkerService> logger, UserLifecycleService userLifecycle)
+    public CommunityWorkerService(
+        ILogger<CommunityWorkerService> logger,
+        UserLifecycleService userLifecycle,
+        IAnnouncementBroadcastService announcementBroadcast)
     {
         _logger = logger;
         _userLifecycle = userLifecycle;
+        _announcementBroadcast = announcementBroadcast;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -71,6 +82,9 @@ internal sealed class CommunityWorkerService : BackgroundService
                     await _userLifecycle.ProcessAsync(stoppingToken);
                     _lastDailyCheck = now;
                 }
+
+                // Announcement email broadcasts are time-sensitive — process every loop.
+                await _announcementBroadcast.ProcessPendingBroadcastsAsync(stoppingToken);
 
                 await Task.Delay(TimeSpan.FromMinutes(15), stoppingToken);
             }
