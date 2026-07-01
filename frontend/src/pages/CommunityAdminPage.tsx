@@ -18,6 +18,7 @@ import { CommunityConfigurationTab } from '@/components/admin/CommunityConfigura
 import { SettingsTab } from '@kymr10n/foundation/src/components/admin/SettingsTab';
 import { DiagnosticsTab } from '@kymr10n/foundation/src/components/admin/DiagnosticsTab';
 import { AnnouncementsTab } from '@kymr10n/foundation/src/components/admin/AnnouncementsTab';
+import { FeedbackTab } from '@kymr10n/foundation/src/components/admin/FeedbackTab';
 
 export function CommunityAdminPage() {
   const navigate = useNavigate();
@@ -60,6 +61,7 @@ export function CommunityAdminPage() {
           { value: 'settings', label: 'Settings' },
           { value: 'diagnostics', label: 'Diagnostics' },
           { value: 'announcements', label: 'Announcements' },
+          { value: 'feedback', label: 'Feedback' },
         ]}
         value={activeTab}
         onChange={handleTabChange}
@@ -78,6 +80,10 @@ export function CommunityAdminPage() {
 
         <TabsContent value="announcements" className="mt-6">
           <RouteErrorBoundary label="Announcements"><AnnouncementsTab /></RouteErrorBoundary>
+        </TabsContent>
+
+        <TabsContent value="feedback" className="mt-6">
+          <RouteErrorBoundary label="Feedback"><FeedbackTab /></RouteErrorBoundary>
         </TabsContent>
       </PageTabs>
     </AdminPageShell>
