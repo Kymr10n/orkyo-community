@@ -36,7 +36,7 @@ public static class Program
             .AddSingleton<IConfiguration>(configuration)
             .AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Information))
             .AddOrkyoMigrationPlatform()
-            .AddFoundationMigrations()
+            .AddCommunityFoundationMigrations()
             .AddCommunityMigrations()
             .AddSingleton<ITenantRegistry, CommunityTenantRegistry>()
             .BuildServiceProvider();

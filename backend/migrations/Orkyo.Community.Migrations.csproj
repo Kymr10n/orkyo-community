@@ -14,12 +14,14 @@
       <ItemGroup>
         <ProjectReference Include="..\..\..\orkyo-foundation\backend\migration-abstractions\Orkyo.Migration.Abstractions.csproj" />
         <ProjectReference Include="..\..\..\orkyo-foundation\backend\migrator-runtime\Orkyo.Migrator.csproj" />
+        <ProjectReference Include="..\..\..\orkyo-foundation\backend\migrations-foundation\Orkyo.Foundation.Migrations.csproj" />
       </ItemGroup>
     </When>
     <Otherwise>
       <ItemGroup>
         <PackageReference Include="Orkyo.Migration.Abstractions" Version="$(OrkyoFoundationVersion)" />
         <PackageReference Include="Orkyo.Migrator" Version="$(OrkyoFoundationVersion)" />
+        <PackageReference Include="Orkyo.Foundation.Migrations" Version="$(OrkyoFoundationVersion)" />
       </ItemGroup>
     </Otherwise>
   </Choose>

@@ -138,7 +138,7 @@ try
 
     // ── Migration platform ────────────────────────────────────────────────────
     builder.Services.AddOrkyoMigrationPlatform();
-    builder.Services.AddFoundationMigrations();
+    builder.Services.AddCommunityFoundationMigrations();
     builder.Services.AddCommunityMigrations();
 
     // ── Health checks ─────────────────────────────────────────────────────────

@@ -126,7 +126,7 @@ public class DatabaseFixture : IAsyncLifetime
         var services = new ServiceCollection()
             .AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning))
             .AddOrkyoMigrationPlatform()
-            .AddFoundationMigrations()
+            .AddCommunityFoundationMigrations()
             .AddCommunityMigrations()
             .BuildServiceProvider();
         return services.GetRequiredService<MigrationRunner>();
