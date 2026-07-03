@@ -19,6 +19,7 @@ import { SettingsTab } from '@kymr10n/foundation/src/components/admin/SettingsTa
 import { DiagnosticsTab } from '@kymr10n/foundation/src/components/admin/DiagnosticsTab';
 import { AnnouncementsTab } from '@kymr10n/foundation/src/components/admin/AnnouncementsTab';
 import { FeedbackTab } from '@kymr10n/foundation/src/components/admin/FeedbackTab';
+import { AuditLogTab } from '@kymr10n/foundation/src/components/admin/AuditLogTab';
 
 export function CommunityAdminPage() {
   const navigate = useNavigate();
@@ -59,6 +60,7 @@ export function CommunityAdminPage() {
         tabs={[
           { value: 'configuration', label: 'Configuration' },
           { value: 'settings', label: 'Settings' },
+          { value: 'audit', label: 'Audit Log' },
           { value: 'diagnostics', label: 'Diagnostics' },
           { value: 'announcements', label: 'Announcements' },
           { value: 'feedback', label: 'Feedback' },
@@ -72,6 +74,10 @@ export function CommunityAdminPage() {
 
         <TabsContent value="settings" className="mt-6">
           <RouteErrorBoundary label="Settings"><SettingsTab /></RouteErrorBoundary>
+        </TabsContent>
+
+        <TabsContent value="audit" className="mt-6">
+          <RouteErrorBoundary label="Audit Log"><AuditLogTab /></RouteErrorBoundary>
         </TabsContent>
 
         <TabsContent value="diagnostics" className="mt-6">
