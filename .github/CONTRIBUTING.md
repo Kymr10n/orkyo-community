@@ -9,6 +9,14 @@ Code that has an analogue in both Community and SaaS belongs in [`orkyo-foundati
 
 ## Development Setup
 
+One-time, before running host processes — installs the git hooks and restores backend/frontend deps:
+
+```bash
+./setup.sh
+```
+
+Then:
+
 ```bash
 ./dev.sh up         # full stack in containers
 ./dev.sh infra      # infra only (db/keycloak/mailhog) — pair with host processes below

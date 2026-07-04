@@ -15,6 +15,8 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/Kymr10n/orkyo-community/actions/workflows/release-ci.yml"><img src="https://github.com/Kymr10n/orkyo-community/actions/workflows/release-ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="https://github.com/Kymr10n/orkyo-community/releases/latest"><img src="https://img.shields.io/github/v/release/Kymr10n/orkyo-community?sort=semver" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0">
   <img src="https://img.shields.io/badge/.NET-10-purple" alt=".NET 10">
   <img src="https://img.shields.io/badge/React-19-blue" alt="React 19">
@@ -34,6 +36,10 @@ Orkyo replaces that with a shared, visual plan: requests, assignments, conflicts
 
 > **Prefer managed hosting?** [Orkyo Cloud](https://orkyo.com) handles updates, backups, and support.
 
+**Who it's for:** operations & production planners, ops managers, and IT admins who self-host. Manufacturing is the flagship use case; the model fits any spaces-people-resources scheduling problem.
+
+**What it's _not_:** Orkyo is focused on operational scheduling — it is **not** an ERP, MES, or CMMS, and doesn't try to be. It complements those systems rather than replacing them.
+
 ## Features
 
 - **Visual planning** — drag-and-drop layout editor with real-time allocation status
@@ -49,8 +55,8 @@ Orkyo replaces that with a shared, visual plan: requests, assignments, conflicts
 
 ```bash
 # Download and extract the latest release bundle
-curl -sL https://github.com/Kymr10n/orkyo-community/releases/latest/download/orkyo-community.tar.gz \
-  | tar xz && cd orkyo-community
+curl -fsSL https://github.com/Kymr10n/orkyo-community/releases/latest/download/orkyo-community.zip -o orkyo-community.zip
+unzip -q orkyo-community.zip && cd orkyo-community-v*/
 
 cp .env.template .env
 # Edit .env — set POSTGRES_PASSWORD, KEYCLOAK_ADMIN_PASSWORD, KEYCLOAK_BACKEND_CLIENT_SECRET

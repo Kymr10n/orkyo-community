@@ -955,8 +955,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Stable-named alias so `releases/latest/download/orkyo-community.zip` always resolves
+          # (the versioned asset can't be fetched via the /latest/ URL).
+          cp "dist/orkyo-community-v${{ steps.version.outputs.VERSION }}.zip" dist/orkyo-community.zip
           gh release create "${{ github.ref_name }}" \
             dist/orkyo-community-v${{ steps.version.outputs.VERSION }}.zip \
+            dist/orkyo-community.zip \
             dist/orkyo-community-v${{ steps.version.outputs.VERSION }}.zip.sha256 \
             sboms/*.spdx.json \
             --generate-notes \
