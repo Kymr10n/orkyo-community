@@ -35,6 +35,16 @@ In local dev the backend projects use a project reference to `orkyo-foundation`.
 
 Changes to `release/` are user-facing for self-hosters. Smoke-test the self-hosted path (`release/docs/QUICKSTART.md`) before tagging a release.
 
+## How changes land
+
+`main` is protected — no direct pushes. Every change lands through a pull request:
+
+1. Fork (external contributors) or branch (maintainers), then commit your change.
+2. Open a PR against `main`.
+3. CI must pass and a code owner (@Kymr10n) must approve; keep review threads resolved. New pushes
+   dismiss stale approvals.
+4. A maintainer merges. Maintainers/admins may bypass this only for emergency fixes.
+
 ## Pull Request Checklist
 
 - [ ] Placement check: belongs in community, not in foundation.
