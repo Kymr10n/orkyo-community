@@ -108,33 +108,12 @@ try
     // ── OpenAPI / Swagger (reporting-v1 document) ────────────────────────────
     builder.Services.AddOrkyoReportingSwagger();
 
-    // ── Rate limiting (reporting endpoints only) ──────────────────────────────
-    builder.Services.AddRateLimiter(options =>
-    {
-        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-        options.AddPolicy("reporting-api", ctx =>
-            System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
-                ctx.User?.Identity?.Name ?? ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = 60,
-                    Window = TimeSpan.FromMinutes(1),
-                    QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst,
-                    QueueLimit = 0,
-                }));
-        // Per-IP ceiling on the anonymous BFF auth endpoints (login/callback/logout),
-        // mapped via MapFoundationEndpoints when BFF is enabled.
-        options.AddPolicy("bff-auth", ctx =>
-            System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
-                ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = 20,
-                    Window = TimeSpan.FromMinutes(1),
-                    QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst,
-                    QueueLimit = 0,
-                }));
-    });
+    // ── Rate limiting ─────────────────────────────────────────────────────────
+    // Registers every named policy the mapped foundation endpoints require (admin-operations,
+    // password-change, session-bootstrap, contact-form, bff-auth, reporting-api). Owned by
+    // foundation so a new foundation endpoint can't 500 here on a policy Community forgot to add.
+    // Community has no edition-specific policies to layer on top.
+    builder.Services.AddFoundationRateLimiting();
 
     // ── Migration platform ────────────────────────────────────────────────────
     builder.Services.AddOrkyoMigrationPlatform();

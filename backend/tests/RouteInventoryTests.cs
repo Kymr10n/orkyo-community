@@ -54,9 +54,10 @@ public class RouteInventoryTests
     {
         var response = await _client.GetAsync(path);
 
-        Assert.True(
-            response.StatusCode != HttpStatusCode.NotFound,
-            $"Route '{path}' returned 404 — likely missing '{expectedMapCall}()' call in Program.cs. " +
-            $"Cross-reference with FoundationWebApplicationFactory.cs (lines ~417-452).");
+        Assert.False(
+            response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.InternalServerError,
+            $"Route '{path}' returned {(int)response.StatusCode}. 404 = likely missing '{expectedMapCall}()' " +
+            $"call in Program.cs; 500 = the route is mapped but a service or rate-limit policy behind it is not " +
+            $"registered. Cross-reference with FoundationWebApplicationFactory.cs (lines ~417-452).");
     }
 }

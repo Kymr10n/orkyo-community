@@ -15,6 +15,15 @@ NC='\033[0m'
 
 COMPOSE_CMD=(docker compose -f "$LOCAL_COMPOSE_FILE" --env-file "$ROOT_DIR/.env")
 
+# Shared .env loader (parses base64/`=`-bearing values correctly; see the helper's header).
+DOTENV_LIB="$ROOT_DIR/../orkyo-foundation/scripts/load-dotenv.sh"
+if [[ ! -f "$DOTENV_LIB" ]]; then
+  echo "error: shared env loader missing: $DOTENV_LIB (is orkyo-foundation a sibling checkout?)" >&2
+  exit 1
+fi
+# shellcheck source=/dev/null
+source "$DOTENV_LIB"
+
 log()     { echo -e "${BLUE}[dev]${NC} $*"; }
 success() { echo -e "${GREEN}[dev]${NC} $*"; }
 warn()    { echo -e "${YELLOW}[dev]${NC} $*"; }
@@ -77,10 +86,7 @@ sync_assets() {
 load_env() {
   ensure_env
 
-  while IFS='=' read -r key value; do
-    [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
-    export "$key=$value"
-  done < <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .env)
+  load_dotenv "$ROOT_DIR/.env"
 
   export ASPNETCORE_ENVIRONMENT=Development
   export ASPNETCORE_URLS="http://localhost:${API_PORT}"
