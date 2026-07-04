@@ -79,10 +79,8 @@ cd orkyo-community
 cp .env.template .env
 # Edit .env
 
-./dev.sh infra       # Postgres + Keycloak + MailHog in Docker
-./dev.sh migrator    # Apply DB migrations
-./dev.sh api         # API (dotnet run, hot-reload)
-./dev.sh frontend    # Vite dev server (http://localhost:5173)
+./dev.sh rebuild     # Rebuilds all sources and starts all containers
+./dev.sh seed --profile manufacturing --scale large --mode reset  # optional: seeds system with test data
 ```
 
 | Service  | URL |
