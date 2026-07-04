@@ -40,6 +40,14 @@ vi.mock('@kymr10n/foundation/src/components/admin/AnnouncementsTab', () => ({
   AnnouncementsTab: () => <div data-testid="announcements-tab">Announcements</div>,
 }));
 
+vi.mock('@kymr10n/foundation/src/components/admin/AuditLogTab', () => ({
+  AuditLogTab: () => <div data-testid="audit-log-tab">Audit Log</div>,
+}));
+
+vi.mock('@kymr10n/foundation/src/components/admin/FeedbackTab', () => ({
+  FeedbackTab: () => <div data-testid="feedback-tab">Feedback</div>,
+}));
+
 // Test CommunityConfigurationTab in isolation; mock here to keep test boundaries clean
 vi.mock('@/components/admin/CommunityConfigurationTab', () => ({
   CommunityConfigurationTab: () => <div data-testid="configuration-tab">Configuration</div>,
@@ -119,6 +127,13 @@ describe('CommunityAdminPage', () => {
     expect(mockAuth.logout).toHaveBeenCalledOnce();
   });
 
+  it('navigates to /account when Manage Account is clicked', async () => {
+    renderPage();
+    await openUserMenu();
+    await userEvent.click(screen.getByText('Manage Account'));
+    expect(mockNavigate).toHaveBeenCalledWith('/account');
+  });
+
   // ── Tabs ────────────────────────────────────────────────────────────────────
 
   it('shows the Configuration tab by default', () => {
@@ -142,6 +157,18 @@ describe('CommunityAdminPage', () => {
     renderPage();
     await userEvent.click(screen.getByRole('tab', { name: 'Announcements' }));
     expect(screen.getByTestId('announcements-tab')).toBeInTheDocument();
+  });
+
+  it('switches to Audit Log tab', async () => {
+    renderPage();
+    await userEvent.click(screen.getByRole('tab', { name: 'Audit Log' }));
+    expect(screen.getByTestId('audit-log-tab')).toBeInTheDocument();
+  });
+
+  it('switches to Feedback tab', async () => {
+    renderPage();
+    await userEvent.click(screen.getByRole('tab', { name: 'Feedback' }));
+    expect(screen.getByTestId('feedback-tab')).toBeInTheDocument();
   });
 
   it('selects the tab from the ?tab= query param (deep-link)', () => {

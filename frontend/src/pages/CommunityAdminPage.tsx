@@ -44,6 +44,7 @@ export function CommunityAdminPage() {
   return (
     <AdminPageShell
       breadcrumbLabel="Administration"
+      accountHref="/account"
       headerExtras={
         <Button
           variant="outline"
