@@ -50,6 +50,26 @@ public class SingleTenantMiddlewareTests
     }
 
     [Fact]
+    public async Task InvokeAsync_WhenTenantResolved_StoresOrgContextDerivedFromTenant()
+    {
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+        var middleware = new SingleTenantMiddleware(
+            next: _ => Task.CompletedTask,
+            resolver: new StubTenantResolver(SomeTenant),
+            logger: NullLogger<SingleTenantMiddleware>.Instance);
+
+        await middleware.InvokeAsync(context);
+
+        // Foundation endpoints read this via GetOrgContext(HttpContext) for tenant-audit writes
+        // (floorplan download, site/settings mutations). Missing it → 500 "Org context not available".
+        var org = context.Items["OrgContext"].Should().BeOfType<OrgContext>().Subject;
+        org.OrgId.Should().Be(SomeTenant.TenantId);
+        org.OrgSlug.Should().Be(SomeTenant.TenantSlug);
+        org.DbConnectionString.Should().Be(SomeTenant.TenantDbConnectionString);
+    }
+
+    [Fact]
     public async Task InvokeAsync_WhenTenantResolved_CallsNext()
     {
         var nextCalled = false;

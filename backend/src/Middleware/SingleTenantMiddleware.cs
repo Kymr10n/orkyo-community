@@ -4,10 +4,12 @@ namespace Orkyo.Community.Middleware;
 
 /// <summary>
 /// Community tenant middleware. Resolves the single fixed tenant from
-/// <see cref="SingleTenantResolver"/> and stores it in <c>HttpContext.Items</c>
-/// so that <c>ContextEnrichmentMiddleware</c> can pick it up.
-/// The community edition always has exactly one tenant, so the tenant context is
-/// set on every request regardless of <see cref="SkipTenantResolutionAttribute"/>.
+/// <see cref="SingleTenantResolver"/> and stores both the <c>TenantContext</c> and the derived
+/// <c>OrgContext</c> in <c>HttpContext.Items</c> so that <c>ContextEnrichmentMiddleware</c> and the
+/// foundation endpoints can pick them up (foundation reads them via <c>GetTenantContext()</c> /
+/// <c>GetOrgContext()</c>; the latter backs tenant-audit writes on e.g. floorplan/site/settings).
+/// The community edition always has exactly one tenant, so the context is set on every request
+/// regardless of <see cref="SkipTenantResolutionAttribute"/> — mirroring SaaS's TenantMiddleware.
 /// </summary>
 public sealed class SingleTenantMiddleware
 {
@@ -34,6 +36,7 @@ public sealed class SingleTenantMiddleware
         }
 
         context.Items["TenantContext"] = tenant;
+        context.Items["OrgContext"] = OrgContextExtensions.FromTenant(tenant);
         await _next(context);
     }
 }
