@@ -136,13 +136,7 @@ Shared domain logic — endpoints, repositories, scheduling, UI components — l
 
 ## Roadmap
 
-Active development; near-term priorities:
-
-- Availability & absence model improvements
-- Notifications and reminders
-- Calendar / iCal integration
-
-[Open an issue](https://github.com/Kymr10n/orkyo-community/issues) or start a [discussion](https://github.com/Kymr10n/orkyo-community/discussions) with requests.
+Active development, pre-1.0. Near-term: availability & absence model, notifications, calendar/iCal integration. See [ROADMAP.md](ROADMAP.md) — and [open an issue](https://github.com/Kymr10n/orkyo-community/issues) or [discussion](https://github.com/Kymr10n/orkyo-community/discussions) with requests.
 
 ## Support
 
