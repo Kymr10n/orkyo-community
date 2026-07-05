@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & setup help
+    url: https://github.com/Kymr10n/orkyo-community/discussions
+    about: Ask questions, get setup help, or share ideas — issues are for reproducible bugs.
+  - name: Security vulnerability
+    url: https://github.com/Kymr10n/orkyo-community/security/policy
+    about: Report vulnerabilities privately — do not open a public issue.
+  - name: Managed hosting & paid support
+    url: https://orkyo.com
+    about: Orkyo Cloud handles updates, backups, and support.
