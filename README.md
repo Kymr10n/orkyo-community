@@ -49,6 +49,14 @@ Orkyo replaces that with a shared, visual plan: requests, assignments, conflicts
 - **Utilisation tracking** — see where capacity goes, and where it's wasted
 - **Request workflow** — teams submit requests; Orkyo matches them to available resources
 
+## Screenshots
+
+|  |  |
+|---|---|
+| **Calendar scheduling** — plan requests across the week, colour-coded by status and conflict.<br><img src=".github/screenshot-calendar.png" alt="Calendar scheduling view"> | **Spaces & floorplan** — schedule work into spaces straight from the request backlog.<br><img src=".github/screenshot-spaces.png" alt="Spaces and floorplan view"> |
+| **People utilisation** — booked vs. available capacity per person, across sites.<br><img src=".github/screenshot-people.png" alt="People utilisation grid"> | **Insights** — request, scheduling, and utilisation trends at a glance.<br><img src=".github/screenshot-insights.png" alt="Insights analytics dashboard"> |
+| **Conflict detection** — overbooking, capability mismatches, and availability clashes surfaced before commit.<br><img src=".github/screenshot-conflicts.png" alt="Conflict detection view"> | |
+
 ## Self-host
 
 **Requirements:** Docker Engine 24+ with Compose v2.
