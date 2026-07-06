@@ -6,6 +6,10 @@ cd "$(dirname "$0")"
 ROOT_DIR="$PWD"
 LOCAL_COMPOSE_FILE="$ROOT_DIR/compose.local.yml"
 FRONTEND_ROOT="$ROOT_DIR/frontend"
+# Host mapping of Keycloak's management port — must track the keycloak `ports:`
+# entry in compose.local.yml (community maps 9001:9000; SaaS uses 9000 so both
+# stacks can run side-by-side).
+KEYCLOAK_MGMT_PORT=9001
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -41,12 +45,13 @@ Usage: ./dev.sh <command>
   status    Show container status
   reset     Remove local Docker volumes (destroys all local data)
 
-  infra     Start infrastructure only: db, keycloak, mailhog
+  infra     Start infrastructure only: db, valkey, keycloak, mailhog
             (use with host-process commands below for active development)
 
 Host processes (fast hot-reload, run after ./dev.sh infra):
   migrator  Run the database migrator on the host
   api       Run the API on the host
+  worker    Run the background worker on the host
   frontend  Run the Vite dev server on the host
   seed      Seed the database with realistic data
             e.g.: ./dev.sh seed --profile manufacturing --scale medium
@@ -148,7 +153,7 @@ cmd_up() {
   log "Starting full stack in containers (build may take a minute the first time)"
   "${COMPOSE_CMD[@]}" up -d --remove-orphans
 
-  wait_for_url "http://localhost:9001/health/ready" "Keycloak"
+  wait_for_url "http://localhost:${KEYCLOAK_MGMT_PORT}/health/ready" "Keycloak"
   wait_for_url "http://localhost:${API_PORT}/health" "API"
 
   success "Full stack is up"
@@ -206,7 +211,7 @@ cmd_infra() {
   log "Starting infrastructure (db, valkey, keycloak, mailhog)"
   "${COMPOSE_CMD[@]}" up -d --remove-orphans db valkey keycloak mailhog
 
-  wait_for_url "http://localhost:9001/health/ready" "Keycloak"
+  wait_for_url "http://localhost:${KEYCLOAK_MGMT_PORT}/health/ready" "Keycloak"
 
   success "Infrastructure is up"
   echo "Postgres: localhost:${POSTGRES_PORT}"
@@ -217,22 +222,28 @@ cmd_infra() {
   cmd_doctor
 }
 
-cmd_migrator() {
+run_dotnet_project() {
+  local project_dir="$1"
+  shift
   load_env
-  cd "$ROOT_DIR/backend/migrator"
-  dotnet run -- migrate --target all
+  cd "$project_dir"
+  dotnet run -- "$@"
+}
+
+cmd_migrator() {
+  run_dotnet_project "$ROOT_DIR/backend/migrator" migrate --target all
 }
 
 cmd_api() {
-  load_env
-  cd "$ROOT_DIR/backend/api"
-  dotnet run
+  run_dotnet_project "$ROOT_DIR/backend/api"
+}
+
+cmd_worker() {
+  run_dotnet_project "$ROOT_DIR/backend/worker"
 }
 
 cmd_seed() {
-  load_env
-  cd "$ROOT_DIR/backend/cli/Orkyo.Community.Seed"
-  dotnet run -- "$@"
+  run_dotnet_project "$ROOT_DIR/backend/cli/Orkyo.Community.Seed" "$@"
 }
 
 cmd_frontend() {
@@ -251,10 +262,11 @@ cmd_doctor() {
   1. ./dev.sh up           # Start everything in Docker
 
 ── Active development workflow (host processes) ─────────────────────────────
-  1. ./dev.sh infra        # Start db, keycloak, mailhog in Docker
+  1. ./dev.sh infra        # Start db, valkey, keycloak, mailhog in Docker
   2. ./dev.sh migrator     # Apply DB migrations on host
   3. ./dev.sh api          # Start API on host
-  4. ./dev.sh frontend     # Start Vite dev server on host
+  4. ./dev.sh worker       # Start background worker on host (optional)
+  5. ./dev.sh frontend     # Start Vite dev server on host
 
 ── Runtime URLs ─────────────────────────────────────────────────────────────
   Frontend: http://localhost:${FRONTEND_PORT}
@@ -278,6 +290,7 @@ case "$command" in
   infra) cmd_infra ;;
   migrator) cmd_migrator ;;
   api) cmd_api ;;
+  worker) cmd_worker ;;
   seed) shift; cmd_seed "$@" ;;
   frontend) cmd_frontend ;;
   doctor) cmd_doctor ;;

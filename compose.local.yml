@@ -74,7 +74,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    restart: on-failure
+    # No restart policy: the migrator is run-once. Restarting on failure would
+    # loop endlessly on a genuinely broken migration (matches SaaS).
+    restart: "no"
 
   api:
     build:
