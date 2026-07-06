@@ -51,6 +51,11 @@ public sealed class CliOptions
 
 public static class Program
 {
+    // Mirror Orkyo.Community.CommunityConfigKeys' env-var forms — this CLI does not reference
+    // the Orkyo.Community project, so the env-var names are duplicated here.
+    private const string DefaultConnectionEnvVar = "ConnectionStrings__DefaultConnection";
+    private const string CommunityTenantIdEnvVar = "Community__TenantId";
+
     public static async Task<int> Main(string[] args)
     {
         var result = Parser.Default.ParseArguments<CliOptions>(args);
@@ -68,7 +73,7 @@ public static class Program
         }
 
         var connString = opts.Connection
-            ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+            ?? Environment.GetEnvironmentVariable(DefaultConnectionEnvVar)
             ?? "Host=localhost;Port=5433;Database=orkyo_community_dev;Username=postgres;Password=postgres";
 
         await using var conn = new NpgsqlConnection(connString);
@@ -135,7 +140,7 @@ public static class Program
     {
         if (!string.IsNullOrWhiteSpace(overrideValue))
             return Guid.Parse(overrideValue);
-        var fromEnv = Environment.GetEnvironmentVariable("Community__TenantId");
+        var fromEnv = Environment.GetEnvironmentVariable(CommunityTenantIdEnvVar);
         return Guid.TryParse(fromEnv, out var id)
             ? id
             : new Guid("00000000-0000-0000-0000-000000000001");
