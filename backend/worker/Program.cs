@@ -3,6 +3,7 @@ using Api.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Orkyo.Shared;
 using Orkyo.Shared.Keycloak;
 using Serilog;
 
@@ -73,26 +74,27 @@ internal sealed class CommunityWorkerService : BackgroundService
         {
             try
             {
-                var now = DateTime.UtcNow;
+                var nowUtc = DateTime.UtcNow;
 
                 // Run GDPR user lifecycle once per day
-                if (now - _lastDailyCheck >= TimeSpan.FromHours(24))
+                if (WorkerSchedulePolicy.ShouldRunUserLifecycle(nowUtc, _lastDailyCheck))
                 {
                     _logger.LogInformation("Running user lifecycle check");
                     await _userLifecycle.ProcessAsync(stoppingToken);
-                    _lastDailyCheck = now;
+                    _lastDailyCheck = nowUtc;
                 }
 
                 // Announcement email broadcasts are time-sensitive — process every loop.
                 await _announcementBroadcast.ProcessPendingBroadcastsAsync(stoppingToken);
 
-                await Task.Delay(TimeSpan.FromMinutes(15), stoppingToken);
+                var jitter = TimeSpan.FromSeconds(Random.Shared.Next(0, 15));
+                await Task.Delay(WorkerSchedulePolicy.GetLoopDelay(jitter), stoppingToken);
             }
             catch (OperationCanceledException) { break; }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error in worker");
-                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                await Task.Delay(WorkerSchedulePolicy.GetErrorRetryDelay(), stoppingToken);
             }
         }
 

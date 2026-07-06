@@ -30,8 +30,8 @@ try
     var defaultConn = builder.Configuration.GetConnectionString(CommunityConfigKeys.DefaultConnection);
     if (!string.IsNullOrEmpty(defaultConn))
     {
-        builder.Configuration["ConnectionStrings:Postgres"] = defaultConn;
-        builder.Configuration["ConnectionStrings:ControlPlane"] = defaultConn;
+        builder.Configuration[ConfigKeys.ConnectionStringPostgresPath] = defaultConn;
+        builder.Configuration[ConfigKeys.ConnectionStringControlPlanePath] = defaultConn;
     }
 
     if (args.Contains("--validate"))
@@ -144,7 +144,7 @@ try
     app.UseAuthentication();
     app.UseMiddleware<CsrfMiddleware>();
     app.UseAuthorization();
-    if (!builder.Configuration.GetValue<bool>("DISABLE_RATE_LIMITING"))
+    if (!builder.Configuration.GetValue<bool>(ConfigKeys.DisableRateLimiting))
         app.UseRateLimiter();
     app.UseMiddleware<CommunityJitProvisioningMiddleware>();
     app.UseMiddleware<SingleTenantMiddleware>();

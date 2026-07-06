@@ -1,3 +1,4 @@
+using Api.Constants;
 using Api.Services;
 
 namespace Orkyo.Community.Middleware;
@@ -35,8 +36,8 @@ public sealed class SingleTenantMiddleware
             return;
         }
 
-        context.Items["TenantContext"] = tenant;
-        context.Items["OrgContext"] = OrgContextExtensions.FromTenant(tenant);
+        context.Items[HttpContextItemKeys.TenantContext] = tenant;
+        context.Items[HttpContextItemKeys.OrgContext] = OrgContextExtensions.FromTenant(tenant);
         await _next(context);
     }
 }

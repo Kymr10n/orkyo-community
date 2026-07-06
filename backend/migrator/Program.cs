@@ -10,6 +10,14 @@ namespace Orkyo.Community.Migrator;
 
 public static class Program
 {
+    // Mirror Orkyo.Shared.ConfigKeys.ConnectionStringControlPlaneEnvVar / .ControlPlaneConnectionLegacyEnvVar
+    // and Orkyo.Community.CommunityConfigKeys' DefaultConnection env-var forms — this standalone
+    // migrator references neither project, so the env-var names are duplicated here.
+    private const string ControlPlaneEnvVar = "ConnectionStrings__ControlPlane";
+    private const string ControlPlaneLegacyEnvVar = "CONTROL_PLANE_CONNECTION_STRING";
+    private const string DefaultConnectionEnvVar = "ConnectionStrings__DefaultConnection";
+    private const string DefaultConnectionLegacyEnvVar = "DEFAULT_CONNECTION_STRING";
+
     public static async Task<int> Main(string[] args)
     {
         // Community uses a single database for everything.
@@ -17,15 +25,15 @@ public static class Program
         // Environment.GetEnvironmentVariable, so we must set the process env var —
         // IConfiguration injection is not sufficient.
         var defaultConn =
-            Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
-            ?? Environment.GetEnvironmentVariable("DEFAULT_CONNECTION_STRING");
+            Environment.GetEnvironmentVariable(DefaultConnectionEnvVar)
+            ?? Environment.GetEnvironmentVariable(DefaultConnectionLegacyEnvVar);
 
         if (!string.IsNullOrEmpty(defaultConn))
         {
-            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ConnectionStrings__ControlPlane")))
-                Environment.SetEnvironmentVariable("ConnectionStrings__ControlPlane", defaultConn);
-            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CONTROL_PLANE_CONNECTION_STRING")))
-                Environment.SetEnvironmentVariable("CONTROL_PLANE_CONNECTION_STRING", defaultConn);
+            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(ControlPlaneEnvVar)))
+                Environment.SetEnvironmentVariable(ControlPlaneEnvVar, defaultConn);
+            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(ControlPlaneLegacyEnvVar)))
+                Environment.SetEnvironmentVariable(ControlPlaneLegacyEnvVar, defaultConn);
         }
 
         var configuration = new ConfigurationBuilder()

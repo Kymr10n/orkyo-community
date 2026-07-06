@@ -1,3 +1,4 @@
+using Api.Constants;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Npgsql;
@@ -24,7 +25,7 @@ public class DatabaseFixture : IAsyncLifetime
     public HttpClient CreateAuthorizedClient(string tenantSlug = TestConstants.TenantSlug)
     {
         var client = Factory.CreateClient();
-        client.DefaultRequestHeaders.Add("X-Tenant-Slug", tenantSlug);
+        client.DefaultRequestHeaders.Add(HeaderConstants.TenantSlug, tenantSlug);
         client.DefaultRequestHeaders.Add("Authorization", $"Bearer {TestConstants.TestBearerToken}");
         return client;
     }
