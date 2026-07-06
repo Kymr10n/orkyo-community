@@ -1,6 +1,9 @@
 FROM node:22-alpine@sha256:e58326d0d441090181ac150dc2078d3e2cf6a0d42e809aebba3ef5880935ffdd AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
+# The postinstall hook (npm ci, below) runs scripts/sync-foundation-build.mjs, so the
+# script must be present in this deps stage. It no-ops without a sibling foundation checkout.
+COPY scripts ./scripts
 # GitHub Packages auth is mounted as a BuildKit secret so the token never lands
 # in an image layer. Required to fetch @kymr10n/foundation from npm.pkg.github.com.
 RUN --mount=type=secret,id=ghcr_token \
