@@ -12,12 +12,21 @@ coverage:
         target: 80%
         only_pulls: true
 
+comment:
+  layout: condensed_header, files, condensed_footer
+  require_changes: true
+  require_base: true
+
 flags:
   backend:
-    paths: [backend/src/**, backend/api/**, backend/worker/**]
+    paths:
+      - backend/src/**
+      - backend/api/**
+      - backend/worker/**
     carryforward: true
   frontend:
-    paths: [frontend/src/**]
+    paths:
+      - frontend/src/**
     carryforward: true
 
 ignore:
@@ -25,8 +34,12 @@ ignore:
   - "backend/migrations/**"
   - "backend/migrator/**"
   - "backend/**/*Options.cs"
+  - "backend/**/*Settings.cs"
   - "backend/**/*Constants.cs"
+  - "backend/**/*Extensions.cs"
   - "backend/**/Program.cs"
   - "frontend/src/**/*.test.*"
   - "frontend/src/**/*.spec.*"
+  - "frontend/src/**/*.d.ts"
   - "frontend/vite.config.*"
+  - "frontend/eslint.config.*"

@@ -14,8 +14,9 @@ When in doubt, check the foundation README's placement rule.
 
 ```
 ./dev.sh up         # full stack in containers
-./dev.sh infra      # infra only (db/keycloak/mailhog) — pair with host processes below
+./dev.sh infra      # infra only (db/valkey/keycloak/mailhog) — pair with host processes below
 ./dev.sh api        # API on host (hot reload)
+./dev.sh worker     # background worker on host
 ./dev.sh frontend   # Vite dev server on host
 ./dev.sh logs api   # stream a service's logs
 ./dev.sh doctor     # startup sequence + runtime URLs
@@ -29,7 +30,7 @@ Local ports: API `5002` · Keycloak `8082` · Postgres `5433` · Frontend `5174`
 - **Foundation reference is conditional**: project ref in local dev, NuGet pin in CI / Docker. Don't change the csproj conditional without coordination.
 - **Migrations** must carry the `-- @migration-class:` header. See `orkyo-infra/docs/migrations/classification.md`.
 - **Release bundle** (`release/`) is the self-hosted artifact. Changes there are user-facing for self-hosters; smoke-test before tagging.
-- **Observability is not yet wired** here. Foundation will gain a shared observability helper that this repo will then consume; expect that PR.
+- **Observability**: structured Serilog logging IS wired (same foundation helper as SaaS — `OrkyoObservability.InitBootstrapLogger()` + `UseOrkyoLogging` in `backend/api/Program.cs`; the Loki sink comes transitively from foundation). What's missing vs SaaS is **Prometheus metrics only** (`UseHttpMetrics` + a gated `/metrics` endpoint); foundation will gain an opt-in metrics helper that this repo then consumes — expect that PR.
 
 ## Where things live
 

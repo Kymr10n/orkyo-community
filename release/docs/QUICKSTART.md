@@ -19,6 +19,7 @@ These have no defaults — deploy will refuse to start without them:
 | `VALKEY_PASSWORD` | Valkey password |
 | `KEYCLOAK_ADMIN_PASSWORD` | Keycloak admin console password |
 | `KEYCLOAK_BACKEND_CLIENT_SECRET` | Secret for the `orkyo-backend` OIDC client |
+| `ORKYO_MASTER_ENCRYPTION_KEY` | AES-256-GCM master key (base64, 32 bytes) — generate with `openssl rand -base64 32` |
 | `APP_BASE_URL` | Public URL where users reach the app, e.g. `https://community.example.com` |
 | `KEYCLOAK_URL` | Public URL for Keycloak, e.g. `https://auth.example.com` |
 | `BFF_COOKIE_DOMAIN` | Cookie domain, e.g. `community.example.com` |

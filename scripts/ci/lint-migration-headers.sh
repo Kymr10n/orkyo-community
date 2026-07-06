@@ -5,8 +5,8 @@
 #   <sql-dir>  Root directory containing migration SQL files (searched recursively)
 #
 # Validates:
-#   1. Every NEW migration file has a classification header
-#   2. No DROP COLUMN / DROP TABLE / TRUNCATE without Classification: contract
+#   1. Every NEW migration file has a -- @migration-class: header (within first 10 lines)
+#   2. No DROP COLUMN / DROP TABLE / TRUNCATE without @migration-class: contract
 #   3. No MODIFICATION of existing migration files
 #   4. Sequential file numbering without gaps (per subdirectory)
 #   5. All CREATE INDEX use CONCURRENTLY
@@ -26,8 +26,8 @@ else
   DIFF_BASE="HEAD~1"
 fi
 
-CHANGED_SQL=$(git diff --name-only "$DIFF_BASE"...HEAD -- "$SQL_DIR/**/*.sql" 2>/dev/null || \
-              git diff --name-only "$DIFF_BASE" HEAD -- "*.sql" 2>/dev/null || true)
+CHANGED_SQL=$(git diff --name-only "$DIFF_BASE"...HEAD -- ":(glob)$SQL_DIR/**/*.sql" 2>/dev/null || \
+              git diff --name-only "$DIFF_BASE" HEAD -- ":(glob)$SQL_DIR/**/*.sql" 2>/dev/null || true)
 
 if [ -z "$CHANGED_SQL" ]; then
   echo "No migration SQL files changed — skipping lint."
@@ -39,7 +39,7 @@ echo "$CHANGED_SQL"
 echo ""
 
 # ── Rule 3: No modification of existing files ─────────────────────────────────
-MODIFIED=$(git diff --name-only --diff-filter=M "$DIFF_BASE"...HEAD -- "$SQL_DIR/**/*.sql" 2>/dev/null || true)
+MODIFIED=$(git diff --name-only --diff-filter=M "$DIFF_BASE"...HEAD -- ":(glob)$SQL_DIR/**/*.sql" 2>/dev/null || true)
 if [ -n "$MODIFIED" ]; then
   echo "::error::VIOLATION — existing migration files must never be modified:"
   echo "$MODIFIED"
@@ -47,28 +47,39 @@ if [ -n "$MODIFIED" ]; then
 fi
 
 # ── Check new files only ──────────────────────────────────────────────────────
-NEW_FILES=$(git diff --name-only --diff-filter=A "$DIFF_BASE"...HEAD -- "$SQL_DIR/**/*.sql" 2>/dev/null || true)
+NEW_FILES=$(git diff --name-only --diff-filter=A "$DIFF_BASE"...HEAD -- ":(glob)$SQL_DIR/**/*.sql" 2>/dev/null || true)
 
 for FILE in $NEW_FILES; do
   [ -f "$FILE" ] || continue
 
   echo "--- $FILE ---"
 
-  # Rule 1: classification header
-  if ! grep -qi "^-- Classification:" "$FILE"; then
-    echo "::error file=$FILE::Missing classification header. Add:"
-    echo "::error file=$FILE::  -- Classification: safe | expand | contract | unsafe"
-    echo "::error file=$FILE::  -- Description: <one line>"
-    echo "::error file=$FILE::  -- Rollback: <strategy or none-needed>"
+  # Rule 1: @migration-class header must appear within first 10 lines
+  HEADER=$(head -n 10 "$FILE" | grep -E -m1 '^--[[:space:]]*@migration-class:' || true)
+  if [[ -z "$HEADER" ]]; then
+    echo "::error file=$FILE::Missing classification header within first 10 lines. Add:"
+    echo "::error file=$FILE::  -- @migration-class: expand | data | contract | none"
     ERRORS=$((ERRORS + 1))
   else
-    CLASSIFICATION=$(grep -i "^-- Classification:" "$FILE" | head -1 | sed 's/.*Classification: *//i' | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
-    echo "  Classification: $CLASSIFICATION"
+    CLASSIFICATION=$(echo "$HEADER" | sed -E 's/^--[[:space:]]*@migration-class:[[:space:]]*//' | tr -d '[:space:]')
+    echo "  @migration-class: $CLASSIFICATION"
+
+    case "$CLASSIFICATION" in
+      expand|data|contract|none) ;;
+      *)
+        echo "::error file=$FILE::Invalid @migration-class value '$CLASSIFICATION'. Must be: expand | data | contract | none"
+        ERRORS=$((ERRORS + 1))
+        ;;
+    esac
+
+    if [ "$CLASSIFICATION" = "contract" ]; then
+      echo "::warning file=$FILE::contract migration detected — the deploy workflow will require approve_unsafe_migration=true (not rollback-safe)"
+    fi
 
     # Rule 2: destructive DDL requires contract classification
     if grep -qiE "^\s*(DROP\s+COLUMN|DROP\s+TABLE|TRUNCATE)" "$FILE"; then
       if [ "$CLASSIFICATION" != "contract" ]; then
-        echo "::error file=$FILE::DROP COLUMN / DROP TABLE / TRUNCATE requires Classification: contract"
+        echo "::error file=$FILE::DROP COLUMN / DROP TABLE / TRUNCATE requires @migration-class: contract"
         ERRORS=$((ERRORS + 1))
       fi
     fi

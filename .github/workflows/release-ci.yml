@@ -347,6 +347,17 @@ jobs:
         run: npm ci
         working-directory: frontend
 
+      - name: Verify foundation package is installed
+        # Fails fast with a clear message if the registry/auth ever silently
+        # drops @kymr10n/foundation, instead of letting downstream lint surface
+        # cryptic "type 'X' is an 'error' type" errors.
+        run: |
+          test -d node_modules/@kymr10n/foundation \
+            || (echo "::error::@kymr10n/foundation is not installed — check npm registry auth" && exit 1)
+          npm run check:foundation-imports
+          npm run check:dedupe-sync
+        working-directory: frontend
+
       - name: Lint
         run: npm run lint
         working-directory: frontend

@@ -28,12 +28,17 @@ This dumps both the application database and the Keycloak database. Schedule it 
 # 1. Stop everything except the database
 docker compose stop api worker frontend keycloak
 
-# 2. Drop and recreate (DESTRUCTIVE — make sure your backup is good)
+# 2. Terminate any straggling connections — DROP DATABASE fails if anything is
+#    still connected (e.g. a shell you left open, or a service still shutting down)
+docker exec -i orkyo_community_db psql -U orkyo postgres -c \
+  "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname IN ('orkyo_community','keycloak') AND pid <> pg_backend_pid()"
+
+# 3. Drop and recreate (DESTRUCTIVE — make sure your backup is good)
 docker exec -i orkyo_community_db psql -U orkyo postgres -c "DROP DATABASE orkyo_community"
 docker exec -i orkyo_community_db psql -U orkyo postgres -c "DROP DATABASE keycloak"
 docker exec -i orkyo_community_db psql -U orkyo postgres < orkyo-backup-<timestamp>.sql
 
-# 3. Restart
+# 4. Restart
 docker compose up -d
 ```
 

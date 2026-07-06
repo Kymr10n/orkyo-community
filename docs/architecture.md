@@ -46,7 +46,7 @@ COMMUNITY__TENANTSLUG=community
 COMMUNITY__TENANTNAME=Orkyo Community
 ```
 
-`SingleTenantMiddleware` sets this as `HttpContext.Items["TenantContext"]` on every request (except endpoints marked `[SkipTenantResolution]`), so all foundation services receive a valid tenant context without any request header or subdomain.
+`SingleTenantMiddleware` sets this as `HttpContext.Items["TenantContext"]` on **every** request — including endpoints marked `[SkipTenantResolution]`, since the community edition always has exactly one tenant and setting the context unconditionally is harmless (see the note in `SingleTenantMiddleware`'s doc-comment). All foundation services receive a valid tenant context without any request header or subdomain.
 
 ## Migration Order
 
