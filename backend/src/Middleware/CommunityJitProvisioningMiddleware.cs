@@ -1,6 +1,8 @@
 using Api.Integrations.Keycloak;
 using Api.Security;
 using Api.Services;
+using Microsoft.Extensions.Caching.Memory;
+using Orkyo.Shared;
 
 namespace Orkyo.Community.Middleware;
 
@@ -25,13 +27,29 @@ public sealed class CommunityJitProvisioningMiddleware(
     IIdentityLinkService identityLinkService,
     ILogger<CommunityJitProvisioningMiddleware> logger) : IMiddleware
 {
+    // Cache: externalSubject → known-provisioned marker (5-min absolute expiry, 5000 entry
+    // limit — mirrors ContextEnrichmentMiddleware's principal cache). Only POSITIVE
+    // existence is cached: once a user exists, JIT provisioning never applies to them
+    // again, so a cached hit safely skips the per-request DB lookup. Negatives are never
+    // cached so a user missing from the DB is always provisioned on their next request.
+    private static readonly MemoryCache _provisionedSubjects = new(new MemoryCacheOptions
+    {
+        SizeLimit = 5_000
+    });
+
+    private static readonly TimeSpan CacheTtl = TimePolicyConstants.CacheTtl;
+
+    /// <summary>Clear the cache (for integration tests).</summary>
+    public static void ClearCache() => _provisionedSubjects.Compact(1.0);
+
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
         if (context.User.Identity?.IsAuthenticated == true)
         {
             var tokenProfile = KeycloakTokenProfile.FromPrincipal(context.User);
 
-            if (tokenProfile.IsValid && tokenProfile.Subject is not null)
+            if (tokenProfile.IsValid && tokenProfile.Subject is not null
+                && !_provisionedSubjects.TryGetValue(tokenProfile.Subject, out _))
             {
                 var existing = await identityLinkService.FindByExternalIdentityAsync(
                     AuthProvider.Keycloak, tokenProfile.Subject);
@@ -44,12 +62,27 @@ public sealed class CommunityJitProvisioningMiddleware(
                         logger.LogInformation(
                             "JIT provisioning: creating user record for subject {Subject}",
                             tokenProfile.Subject);
-                        await identityLinkService.LinkIdentityAsync(externalToken);
+                        var result = await identityLinkService.LinkIdentityAsync(externalToken);
+                        if (result.Success)
+                        {
+                            CacheProvisioned(tokenProfile.Subject);
+                        }
                     }
+                }
+                else
+                {
+                    CacheProvisioned(tokenProfile.Subject);
                 }
             }
         }
 
         await next(context);
     }
+
+    private static void CacheProvisioned(string subject)
+        => _provisionedSubjects.Set(subject, true, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = CacheTtl,
+            Size = 1
+        });
 }

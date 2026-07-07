@@ -26,6 +26,7 @@ LABEL org.opencontainers.image.source=https://github.com/Kymr10n/orkyo-community
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY runtime_config.tpl.js /runtime_config.tpl.js
 COPY docker-entrypoint-prod.sh /docker-entrypoint-prod.sh
 RUN chmod +x /docker-entrypoint-prod.sh \

@@ -1,6 +1,6 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vitest/config";
 
@@ -29,6 +29,16 @@ const foundationAliases: Record<string, string> = useSiblingFoundation
   : {};
 
 export default defineConfig({
+  define: {
+    // Replaced at bundle time; AboutPage uses these for version display.
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    __APP_VERSION__: JSON.stringify(
+      JSON.parse(readFileSync(
+        new URL("./node_modules/@kymr10n/foundation/package.json", import.meta.url),
+        "utf-8"
+      )).version
+    ),
+  },
   plugins: [tailwindcss(), react()],
   build: {
     rollupOptions: {
@@ -43,6 +53,7 @@ export default defineConfig({
           if (id.includes("@radix-ui")) return "vendor-radix";
           if (id.includes("@fullcalendar")) return "vendor-fullcalendar";
           if (id.includes("@dnd-kit")) return "vendor-dnd";
+          if (id.includes("@tanstack/react-query")) return "vendor-query";
           if (id.includes("@tanstack")) return "vendor-tanstack";
           if (id.includes("jspdf")) return "vendor-jspdf";
           if (id.includes("recharts") || id.includes("d3-")) return "vendor-recharts";

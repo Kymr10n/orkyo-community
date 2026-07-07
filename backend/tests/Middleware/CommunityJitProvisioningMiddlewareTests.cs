@@ -9,6 +9,13 @@ namespace Orkyo.Community.Tests.Middleware;
 
 public class CommunityJitProvisioningMiddlewareTests
 {
+    public CommunityJitProvisioningMiddlewareTests()
+    {
+        // The known-provisioned cache is static; clear it so tests don't leak
+        // cached subjects into each other.
+        CommunityJitProvisioningMiddleware.ClearCache();
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static ClaimsPrincipal AuthenticatedPrincipal(string subject = "kc-sub-001",
@@ -139,13 +146,86 @@ public class CommunityJitProvisioningMiddlewareTests
         linkSvc.FindCallCount.Should().Be(0);
         linkSvc.LinkCallCount.Should().Be(0);
     }
+
+    // ── Known-provisioned cache (positive existence only) ────────────────────
+
+    [Fact]
+    public async Task InvokeAsync_SubjectKnownToExist_SecondRequestSkipsDbLookup()
+    {
+        var linkSvc = new SpyIdentityLinkService(existingPrincipal: new PrincipalContext
+        {
+            UserId = Guid.NewGuid(),
+            Email = "user@example.com",
+            DisplayName = "User",
+            AuthProvider = AuthProvider.Keycloak,
+            ExternalSubject = "kc-sub-001",
+        });
+        var sut = new CommunityJitProvisioningMiddleware(
+            linkSvc, NullLogger<CommunityJitProvisioningMiddleware>.Instance);
+
+        await sut.InvokeAsync(MakeContext(AuthenticatedPrincipal()), _ => Task.CompletedTask);
+        await sut.InvokeAsync(MakeContext(AuthenticatedPrincipal()), _ => Task.CompletedTask);
+
+        linkSvc.FindCallCount.Should().Be(1);
+        linkSvc.LinkCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_AfterSuccessfulProvisioning_SecondRequestSkipsDbLookup()
+    {
+        var linkSvc = new SpyIdentityLinkService(existingPrincipal: null);
+        var sut = new CommunityJitProvisioningMiddleware(
+            linkSvc, NullLogger<CommunityJitProvisioningMiddleware>.Instance);
+
+        await sut.InvokeAsync(MakeContext(AuthenticatedPrincipal()), _ => Task.CompletedTask);
+        await sut.InvokeAsync(MakeContext(AuthenticatedPrincipal()), _ => Task.CompletedTask);
+
+        linkSvc.FindCallCount.Should().Be(1);
+        linkSvc.LinkCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_FailedProvisioning_IsNotCached_RetriesNextRequest()
+    {
+        var linkSvc = new SpyIdentityLinkService(existingPrincipal: null, linkSucceeds: false);
+        var sut = new CommunityJitProvisioningMiddleware(
+            linkSvc, NullLogger<CommunityJitProvisioningMiddleware>.Instance);
+
+        await sut.InvokeAsync(MakeContext(AuthenticatedPrincipal()), _ => Task.CompletedTask);
+        await sut.InvokeAsync(MakeContext(AuthenticatedPrincipal()), _ => Task.CompletedTask);
+
+        linkSvc.FindCallCount.Should().Be(2);
+        linkSvc.LinkCallCount.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_CacheIsPerSubject_DifferentSubjectStillLookedUp()
+    {
+        var linkSvc = new SpyIdentityLinkService(existingPrincipal: new PrincipalContext
+        {
+            UserId = Guid.NewGuid(),
+            Email = "user@example.com",
+            DisplayName = "User",
+            AuthProvider = AuthProvider.Keycloak,
+            ExternalSubject = "kc-sub-001",
+        });
+        var sut = new CommunityJitProvisioningMiddleware(
+            linkSvc, NullLogger<CommunityJitProvisioningMiddleware>.Instance);
+
+        await sut.InvokeAsync(MakeContext(AuthenticatedPrincipal("kc-sub-001")), _ => Task.CompletedTask);
+        await sut.InvokeAsync(MakeContext(AuthenticatedPrincipal("kc-sub-002")), _ => Task.CompletedTask);
+
+        linkSvc.FindCallCount.Should().Be(2);
+    }
 }
 
 /// <summary>
 /// Spy for <see cref="IIdentityLinkService"/> — records calls and returns
 /// canned responses so tests can assert provisioning behaviour.
 /// </summary>
-file sealed class SpyIdentityLinkService(PrincipalContext? existingPrincipal = null) : IIdentityLinkService
+file sealed class SpyIdentityLinkService(
+    PrincipalContext? existingPrincipal = null,
+    bool linkSucceeds = true) : IIdentityLinkService
 {
     public int FindCallCount { get; private set; }
     public int LinkCallCount { get; private set; }
@@ -163,7 +243,7 @@ file sealed class SpyIdentityLinkService(PrincipalContext? existingPrincipal = n
         LinkCallCount++;
         return Task.FromResult(new IdentityLinkResult
         {
-            Success = true,
+            Success = linkSucceeds,
             UserId = Guid.NewGuid(),
             Email = token.Email,
             DisplayName = token.DisplayName,
