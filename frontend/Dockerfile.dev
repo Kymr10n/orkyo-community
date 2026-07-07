@@ -20,6 +20,9 @@ USER node
 # if node_modules is absent or empty (e.g. fresh named volume).
 # The GitHub Packages token is passed via BuildKit secret (never baked into layers).
 COPY --chown=node:node package*.json ./
+# The postinstall hook (npm install, below) runs scripts/sync-foundation-build.mjs,
+# so scripts/ must be present before the install step (mirrors the prod Dockerfile).
+COPY --chown=node:node scripts ./scripts
 RUN --mount=type=secret,id=npm_token,uid=1000 \
     echo "@kymr10n:registry=https://npm.pkg.github.com" > .npmrc \
     && echo "//npm.pkg.github.com/:_authToken=$(cat /run/secrets/npm_token)" >> .npmrc \
