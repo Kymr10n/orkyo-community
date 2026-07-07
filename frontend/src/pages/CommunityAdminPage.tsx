@@ -6,14 +6,14 @@
  * meaningful for a self-hosted single-tenant deployment.
  */
 
-import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { TabsContent } from '@kymr10n/foundation/src/components/ui/tabs';
 import { PageTabs } from '@kymr10n/foundation/src/components/layout/PageTabs';
 import { Button } from '@kymr10n/foundation/src/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { AdminPageShell } from '@kymr10n/foundation/src/components/admin/AdminPageShell';
 import { RouteErrorBoundary } from '@kymr10n/foundation/src/components/ui/RouteErrorBoundary';
+import { useTabParam } from '@kymr10n/foundation/src/hooks/useTabParam';
 import { CommunityConfigurationTab } from '@/components/admin/CommunityConfigurationTab';
 import { SettingsTab } from '@kymr10n/foundation/src/components/admin/SettingsTab';
 import { DiagnosticsTab } from '@kymr10n/foundation/src/components/admin/DiagnosticsTab';
@@ -23,27 +23,12 @@ import { AuditLogTab } from '@kymr10n/foundation/src/components/admin/AuditLogTa
 
 export function CommunityAdminPage() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState(tabParam || 'configuration');
-
-  // Keep the active tab in sync with the URL so it survives reload / deep links.
-  useEffect(() => {
-    if (tabParam) {
-      setActiveTab(tabParam);
-    }
-  }, [tabParam]);
-
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set('tab', tab);
-    setSearchParams(newParams, { replace: true });
-  };
+  const [activeTab, setActiveTab] = useTabParam('configuration');
 
   return (
     <AdminPageShell
-      breadcrumbLabel="Administration"
+      title="Administration"
+      description="Manage configuration, settings, and diagnostics for this deployment"
       accountHref="/account"
       headerExtras={
         <Button
@@ -67,7 +52,7 @@ export function CommunityAdminPage() {
           { value: 'feedback', label: 'Feedback' },
         ]}
         value={activeTab}
-        onChange={handleTabChange}
+        onChange={setActiveTab}
       >
         <TabsContent value="configuration" className="mt-6">
           <RouteErrorBoundary label="Configuration"><CommunityConfigurationTab /></RouteErrorBoundary>
