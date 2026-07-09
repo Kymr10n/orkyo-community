@@ -96,6 +96,21 @@ docker exec -it orkyo_community_db \    # SQL shell
   psql -U orkyo -d orkyo_community
 ```
 
+## Terms of Service gate (optional)
+
+Community does not show a Terms of Service acceptance page by default. To require
+every user to accept terms before entering the app, set an environment variable on
+the `api` service (e.g. via a compose override or the `environment:` block):
+
+```yaml
+ToS__RequiredVersion: "2026-01"   # any version label you choose
+```
+
+- When set, users must accept the built-in generic Terms of Service text once;
+  acceptance is recorded per user and version in the `tos_acceptances` table.
+- Changing the value to a new label forces all users to re-accept.
+- Unsetting it disables the gate again (recorded acceptances are kept).
+
 ## Common issues
 
 | Symptom | Likely cause |
