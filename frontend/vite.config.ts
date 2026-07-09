@@ -41,6 +41,8 @@ export default defineConfig({
   },
   plugins: [tailwindcss(), react()],
   build: {
+    // Browser floor = Tailwind v4 requirement; see foundation docs/UI-GUIDELINES.md#browser-support
+    target: ['chrome111', 'edge111', 'firefox128', 'safari16.4'],
     rollupOptions: {
       output: {
         // Split large, stable vendors into their own long-cached chunks so the

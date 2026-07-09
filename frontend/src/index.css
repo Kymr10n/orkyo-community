@@ -60,6 +60,10 @@
 
 @layer base {
   :root {
+    /* Tell the engine which scheme is active so NATIVE UI (scrollbars, form
+       controls, validation popups) matches the app theme instead of defaulting
+       to light inside dark mode. */
+    color-scheme: light;
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -83,6 +87,7 @@
   }
 
   .dark {
+    color-scheme: dark;
     --background: 216 13% 5%;
     --foreground: 216 8% 80%;
     --card: 217 14% 9%;
