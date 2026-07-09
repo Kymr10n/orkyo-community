@@ -23,6 +23,13 @@ CVE-2026-56408  # HIGH | libexpat <2.8.2 integer overflow copyString | upstream 
 # libcrypto3 / libssl3 3.5.6-r0 → 3.5.7-r0
 CVE-2026-45447  # HIGH | openssl: heap use-after-free in PKCS7_verify() | Fix in Alpine 3.23 (3.5.7-r0); dotnet & node alpine bases not yet rebuilt | Added: 2026-06-14 | Review: 2026-06-21
 
+# ── Keycloak 26.6.4 — jackson-databind 2.21.4 not shipped by upstream ─────────
+# Upstream KC 26.6 line has no patch release (26.6.5+ does not exist; 26.7.0 is
+# a minor upgrade needing its own validation — tracked separately). The affected
+# deserialization sits in KC's own jars; no Orkyo-controlled input path.
+CVE-2026-54512  # HIGH | jackson-databind PolymorphicTypeValidator bypass (RCE) in upstream keycloak 26.6.4 jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-09 | Review: 2026-07-23
+CVE-2026-54513  # HIGH | jackson-databind security bypass (RCE) in upstream keycloak 26.6.4 jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-09 | Review: 2026-07-23
+
 # ── Trivy false positive ───────────────────────────────────────────────────────
 # Trivy reports fix as 12.6.5 but KC ships mssql-jdbc 13.2.1.jre11 (newer); false positive.
 CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy lists fix as 12.6.5 but KC ships 13.2.1.jre11 (newer); false positive | Added: 2026-05-21 | Review: 2026-06-20
