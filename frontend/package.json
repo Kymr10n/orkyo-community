@@ -15,7 +15,7 @@
     "build": "vite build",
     "check:foundation-imports": "node ./scripts/validate-foundation-imports.mjs",
     "check:dedupe-sync": "node ./scripts/check-dedupe-sync.mjs",
-    "typecheck": "tsc -b",
+    "typecheck": "tsc --noEmit",
     "preview": "vite preview --host 0.0.0.0 --port 4173",
     "test": "vitest run",
     "test:watch": "vitest",
