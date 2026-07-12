@@ -43,6 +43,8 @@ try
 catch (Exception ex)
 {
     Log.Fatal(ex, "Worker terminated unexpectedly");
+    // Signal failure so container restart policies see the crash (was exiting 0).
+    Environment.ExitCode = 1;
 }
 finally
 {
