@@ -11,6 +11,7 @@
   "scripts": {
     "postinstall": "node scripts/sync-foundation-build.mjs",
     "dev": "vite --host 0.0.0.0 --port 5173",
+    "prebuild": "cp -r node_modules/@kymr10n/foundation/assets/. public/",
     "build": "vite build",
     "check:foundation-imports": "node ./scripts/validate-foundation-imports.mjs",
     "check:dedupe-sync": "node ./scripts/check-dedupe-sync.mjs",
