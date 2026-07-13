@@ -7,6 +7,13 @@ using Orkyo.Shared;
 using Orkyo.Shared.Keycloak;
 using Serilog;
 
+// ── Worker logging contract (kept in lockstep with the other edition's worker) ──
+// Shared invariants: Information default with Microsoft→Warning; a fatal crash
+// does Log.Fatal + Environment.ExitCode = 1, and finally CloseAndFlush. The SINKS
+// deliberately differ per edition (saas: console + rolling file + enrichers for
+// prod ops; community: console only — the self-host container captures stdout).
+// Do not extract a shared helper: the common config is ~2 lines and foundation
+// core would gain a Serilog dependency for it (optimization plan W4.8).
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
