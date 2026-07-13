@@ -99,18 +99,11 @@ try
             Status = TenantStatusConstants.Active,
         };
     });
+    // Derived from the same scope's TenantContext (mirrors SingleTenantMiddleware's own
+    // construction) rather than re-reading SingleTenantOptions, so there's exactly one
+    // options/connection-string read per scope.
     builder.Services.AddScoped<OrgContext>(sp =>
-    {
-        var opts = sp.GetRequiredService<IOptions<SingleTenantOptions>>().Value;
-        var connStr = sp.GetRequiredService<IConfiguration>().GetConnectionString(CommunityConfigKeys.DefaultConnection)
-            ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is required");
-        return new OrgContext
-        {
-            OrgId = opts.TenantId,
-            OrgSlug = opts.TenantSlug,
-            DbConnectionString = connStr,
-        };
-    });
+        OrgContextExtensions.FromTenant(sp.GetRequiredService<TenantContext>()));
 
     // ── OpenAPI / Swagger (reporting-v1 document) ────────────────────────────
     builder.Services.AddOrkyoReportingSwagger();

@@ -7,6 +7,12 @@
 **/TestResults/
 .env
 frontend/.npmrc
+# Compiled JS/decls tsc can emit next to sources when run without --outDir.
+# Sources are .ts/.tsx; a .js under src is always build output (parity with
+# orkyo-foundation / orkyo-saas).
+frontend/src/**/*.js
+frontend/vite.config.js
+frontend/*.tsbuildinfo
 .local/
 **/.vs/
 **/.idea/
