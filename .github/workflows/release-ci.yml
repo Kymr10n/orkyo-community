@@ -124,132 +124,49 @@ jobs:
   # SECURITY AUDITS — three parallel jobs, all gate downstream builds
   # ─────────────────────────────────────────────
   audit-secrets:
-    name: audit / secrets + fs
-    timeout-minutes: 10
-    runs-on: ubuntu-latest
     needs: [nightly-change-check]
     if: >-
       !cancelled() &&
       (github.event_name != 'schedule' ||
        needs.nightly-change-check.outputs.has_changes == 'true')
-
     permissions:
       contents: read
       security-events: write
-    steps:
-      - name: Checkout (full history for secret scan)
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          fetch-depth: 0
-
-      - name: Install gitleaks
-        env:
-          GITLEAKS_VERSION: 8.30.1
-        run: |
-          curl -sSfL \
-            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
-            | sudo tar -xz -C /usr/local/bin gitleaks
-          gitleaks version
-
-      - name: Gitleaks secret scan
-        run: gitleaks detect --source . --config .gitleaks.toml --redact --verbose --exit-code 1
-
-      - name: Trivy — IaC config scan
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          scan-type: config
-          scan-ref: .
-          severity: HIGH,CRITICAL
-          exit-code: '1'
-
-      - name: Trivy — filesystem scan
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          scan-type: fs
-          scan-ref: .
-          severity: HIGH,CRITICAL
-          exit-code: '1'
-          ignore-unfixed: true
-        env:
-          TRIVY_SKIP_JAVA_DB_UPDATE: "true"
-
-      - name: Migration header lint
-        run: bash scripts/ci/lint-migration-headers.sh backend/migrations/sql
+      pull-requests: read  # ceiling: reusable-audit-secrets' job requests it (gitleaks PR scan)
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-secrets.yml@a367c8115f0c402dc8535fd15e15629ad9b03860
+    with:
+      migration-lint-path: backend/migrations/sql
+      run-iac-scan: true
+    secrets: inherit
 
   audit-nuget:
-    name: audit / NuGet
-    timeout-minutes: 10
-    runs-on: ubuntu-latest
     needs: [nightly-change-check]
     if: >-
       !cancelled() &&
       (github.event_name != 'schedule' ||
        needs.nightly-change-check.outputs.has_changes == 'true')
-
     permissions:
       contents: read
       packages: read
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-
-      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
-        with:
-          global-json-file: global.json
-          source-url: https://nuget.pkg.github.com/Kymr10n/index.json
-        env:
-          NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Restore
-        run: dotnet restore Orkyo.Community.slnx --locked-mode
-
-      - name: Check for vulnerable packages
-        run: |
-          output=$(dotnet list Orkyo.Community.slnx package --vulnerable --include-transitive 2>&1)
-          echo "$output"
-          if echo "$output" | grep -qi "has the following vulnerable packages"; then
-            echo "::error::Vulnerable NuGet packages detected"; exit 1
-          fi
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-nuget.yml@a367c8115f0c402dc8535fd15e15629ad9b03860
+    with:
+      solution-path: Orkyo.Community.slnx
+      with-private-registry: true
+    secrets: inherit
 
   audit-npm:
-    name: audit / npm
-    timeout-minutes: 10
-    runs-on: ubuntu-latest
     needs: [nightly-change-check]
     if: >-
       !cancelled() &&
       (github.event_name != 'schedule' ||
        needs.nightly-change-check.outputs.has_changes == 'true')
-
     permissions:
       contents: read
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Configure npm for GitHub Packages (@kymr10n/foundation)
-        run: |
-          echo "@kymr10n:registry=https://npm.pkg.github.com" > frontend/.npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GHCR_TOKEN }}" >> frontend/.npmrc
-
-      - name: Install frontend deps
-        run: npm ci
-        working-directory: frontend
-
-      - name: npm audit
-        run: npm audit --audit-level=high --omit=dev
-        working-directory: frontend
-
-      - name: License scan (open-source distribution requirement)
-        run: |
-          npx --yes license-checker@^25.0.1 \
-            --summary --excludePrivatePackages \
-            --failOn "GPL-2.0;GPL-3.0;AGPL-3.0;LGPL-2.0;LGPL-2.1;LGPL-3.0"
-        working-directory: frontend
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-npm.yml@a367c8115f0c402dc8535fd15e15629ad9b03860
+    with:
+      with-private-registry: true
+      with-license-scan: true
+    secrets: inherit
 
   # ─────────────────────────────────────────────
   # BACKEND CI
@@ -599,90 +516,19 @@ jobs:
   # CONTAINER SCAN
   # ─────────────────────────────────────────────
   container-scan:
-    name: Container Scan (${{ matrix.service }})
-    timeout-minutes: 15
-    runs-on: ubuntu-latest
     needs: [build-images]
     if: >-
       !failure() && !cancelled() &&
       github.event_name == 'push' &&
       (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
-    strategy:
-      matrix:
-        service: [api, worker, migrator, frontend, keycloak]
-      fail-fast: false
-
     permissions:
       contents: read
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-
-      - name: Log in to GHCR
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
-
-      - name: Trivy — image scan
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          image-ref: ${{ env.REGISTRY }}/orkyo-community-${{ matrix.service }}:sha-${{ github.sha }}
-          severity: HIGH,CRITICAL
-          exit-code: '1'
-          ignore-unfixed: true
-          trivyignores: .trivyignore
-          # Trivy 0.70 crashes with HTTP/2 PROTOCOL_ERROR when streaming MimeKit.dll
-          # from GHCR during layer analysis. Remove once trivy-action is upgraded past 0.70.
-          skip-files: 'app/MimeKit.dll'
-        env:
-          # Keycloak ships JARs and requires the Java DB. All other images (.NET/nginx) do not.
-          TRIVY_SKIP_JAVA_DB_UPDATE: ${{ matrix.service != 'keycloak' && 'true' || 'false' }}
-
-      - name: Verify non-root container
-        if: matrix.service != 'frontend'
-        run: |
-          uid=$(docker run --rm \
-            ${{ env.REGISTRY }}/orkyo-community-${{ matrix.service }}:sha-${{ github.sha }} \
-            id -u 2>/dev/null || echo "999")
-          if [ "$uid" = "0" ]; then
-            echo "::error::${{ matrix.service }} runs as root"; exit 1
-          fi
-
-      - name: Verify .NET runtime can load app
-        # Twin: orkyo-saas/.github/workflows/release-ci.yml — keep in sync.
-        if: matrix.service != 'frontend'
-        run: |
-          # Boot the image briefly; the dotnet host fails fast with a clear
-          # message if the app's runtimeconfig references a framework the
-          # image doesn't have. Any startup error other than missing-framework
-          # is fine (env vars missing etc) — we only fail on the specific
-          # framework-resolution error.
-          set +e
-          output=$(timeout 5 docker run --rm \
-            ${{ env.REGISTRY }}/orkyo-community-${{ matrix.service }}:sha-${{ github.sha }} 2>&1)
-          set -e
-          if echo "$output" | grep -qE "No frameworks were found|framework.*was not found|To install missing framework"; then
-            echo "::error::${{ matrix.service }} image is missing a required .NET framework — runtimeconfig/base-image mismatch"
-            echo "$output" | tail -20
-            exit 1
-          fi
-
-      - name: Generate SBOM
-        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
-        with:
-          image: ${{ env.REGISTRY }}/orkyo-community-${{ matrix.service }}:sha-${{ github.sha }}
-          format: spdx-json
-          output-file: sbom-${{ matrix.service }}.spdx.json
-          registry-username: ${{ github.actor }}
-          registry-password: ${{ secrets.GHCR_TOKEN }}
-
-      - name: Upload SBOM artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: sbom-${{ matrix.service }}-${{ github.sha }}
-          path: sbom-${{ matrix.service }}.spdx.json
-          retention-days: 90
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-container-scan.yml@a367c8115f0c402dc8535fd15e15629ad9b03860
+    with:
+      image-name-prefix: orkyo-community
+      services: '["api","worker","migrator","frontend","keycloak"]'
+      java-services: '["keycloak"]'
+    secrets: inherit
 
   # ─────────────────────────────────────────────
   # RELEASE BUNDLE + SMOKE + GH RELEASE — v* only
@@ -986,71 +832,12 @@ jobs:
   # new Foundation version — if Foundation broke us, main goes red immediately.
   # ─────────────────────────────────────────────
   auto-bump:
-    name: Auto-bump Foundation (${{ github.event.client_payload.channel }})
-    timeout-minutes: 15
-    runs-on: ubuntu-latest
     if: github.event_name == 'repository_dispatch'
     permissions:
       contents: write
       issues: write
-
-    env:
-      FOUNDATION_VERSION: ${{ github.event.client_payload.version }}
-      CHANNEL: ${{ github.event.client_payload.channel }}
-
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          # GHCR_TOKEN so the resulting commit triggers downstream CI
-          # (commits from GITHUB_TOKEN do not, by design).
-          token: ${{ secrets.GHCR_TOKEN }}
-          fetch-depth: 0
-
-      - name: Setup Node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Configure git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Bump foundation pin
-        env:
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-        run: scripts/bump-foundation.sh "${FOUNDATION_VERSION}"
-
-      - name: Commit and push to main
-        run: |
-          git add -A
-          if git diff --cached --quiet; then
-            echo "No changes — foundation pin already at ${FOUNDATION_VERSION}"
-            exit 0
-          fi
-          # No [skip ci] — the push to main is the validation gate for the new Foundation version.
-          git commit -m "chore: bump foundation to ${FOUNDATION_VERSION} (${CHANNEL})"
-          git push origin HEAD:main
-
-      - name: Create failure issue if auto-bump fails
-        if: failure()
-        env:
-          GH_TOKEN: ${{ secrets.GHCR_TOKEN }}
-        run: |
-          TITLE="Auto-bump failed: foundation ${FOUNDATION_VERSION} (${CHANNEL})"
-          BODY="The \`auto-bump\` job failed for foundation version \`${FOUNDATION_VERSION}\` on channel \`${CHANNEL}\`.
-
-          **Workflow run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-          Check the run logs and re-trigger the bump manually if needed."
-          EXISTING=$(gh issue list --state open --search "$TITLE" --json number --jq '.[0].number // ""')
-          if [ -n "$EXISTING" ]; then
-            gh issue comment "$EXISTING" --body "$BODY"
-          else
-            gh issue create --title "$TITLE" --body "$BODY" --label "ci-failure"
-          fi
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-auto-bump.yml@a367c8115f0c402dc8535fd15e15629ad9b03860
+    secrets: inherit
 
   # ─────────────────────────────────────────────
   # EVIDENCE BUNDLE — always
