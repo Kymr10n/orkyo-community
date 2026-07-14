@@ -89,6 +89,39 @@ export default defineConfig(
     },
   },
 
+
+  // ── Convention guardrails (G1 dialog/native + G3 jspdf), synced saas↔community ──
+  // Propagated from foundation's Wave-2 flip at `error` (zero violations here).
+  // Scope note: the mutation-feedback (meta) selectors are NOT propagated — the
+  // product repos have not adopted the meta convention yet. This file is byte-
+  // synced saas→community (G4 manifest); per-file exemptions go INLINE in the
+  // consuming file (eslint-disable with a reason), never here, so the two
+  // configs stay identical. See orkyo-foundation/docs/dialog-feedback.md.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: [
+          {
+            name: 'jspdf',
+            message:
+              'jspdf is heavy and foundation-owned (dynamic import in gantt-pdf-export). Do not import it in product code. See plan G3.',
+          },
+          {
+            name: '@kymr10n/foundation/src/components/ui/dialog',
+            importNames: ['Dialog', 'DialogContent'],
+            message:
+              'Hand-rolled dialog shell: use FormDialog / ScaffoldDialog / ConfirmDialog. Composition helpers (DialogFooter, DialogHeader, ScrollableDialogBody, …) remain allowed. Genuinely-special dialogs carry an inline eslint-disable with a reason. See foundation docs/dialog-feedback.md (G1).',
+          },
+        ],
+      }],
+      'no-restricted-globals': ['error',
+        { name: 'alert', message: 'Native alert(): use toast (sonner) or ErrorAlert. See foundation docs/dialog-feedback.md.' },
+        { name: 'confirm', message: 'Native confirm(): use ConfirmDialog. See foundation docs/dialog-feedback.md.' },
+        { name: 'prompt', message: 'Native prompt(): use a FormDialog. See foundation docs/dialog-feedback.md.' },
+      ],
+    },
+  },
   {
     files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
     rules: {
@@ -100,6 +133,9 @@ export default defineConfig(
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unnecessary-condition': 'off',
       'no-console': 'off',
+      // Tests may stub dialogs / native prompts freely.
+      'no-restricted-imports': 'off',
+      'no-restricted-globals': 'off',
     },
   },
 );
