@@ -6,10 +6,12 @@ import App from "./App";
 import "./index.css";
 import { queryClient } from "@kymr10n/foundation/src/lib/core/query-client";
 import { initRUM } from "@kymr10n/foundation/src/lib/core/rum";
+import { initStaleChunkReload } from "@kymr10n/foundation/src/lib/core/stale-chunk";
 import { initTheme } from "@kymr10n/foundation/src/lib/core/theme";
 
 initTheme();
 initRUM();
+initStaleChunkReload();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
