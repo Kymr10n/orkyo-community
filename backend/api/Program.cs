@@ -45,10 +45,11 @@ try
     builder.Services.AddFoundationServices(builder.Configuration);
     // Explicit-registration rule: UseAuthentication()/UseAuthorization() below must
     // have matching Add* calls in this file rather than relying on AddFoundationServices.
-    // AddAuthorization() composes with foundation's policy setup (framework registration
-    // is idempotent). AddOrkyoAuthentication() is idempotent from the next foundation
-    // release onward — call it here once the pinned Orkyo.Foundation package includes
-    // that change; calling it against the current pin would duplicate the Bearer scheme.
+    // AddFoundationServices() also calls AddOrkyoAuthentication() internally; as of
+    // Orkyo.Foundation 0.7.0 that method is idempotent, so the explicit call here is a
+    // safe no-op on the second registration. AddAuthorization() composes with
+    // foundation's policy setup (framework registration is idempotent).
+    builder.Services.AddOrkyoAuthentication(builder.Configuration);
     builder.Services.AddAuthorization();
     builder.Services.AddResponseCompression();
 

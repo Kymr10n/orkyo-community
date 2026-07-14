@@ -26,6 +26,7 @@ public partial class ExplicitRegistrationTests
     /// </summary>
     private static readonly Dictionary<string, string[]> UseToAdd = new()
     {
+        ["UseAuthentication"] = ["AddOrkyoAuthentication", "AddAuthentication"],
         ["UseAuthorization"] = ["AddAuthorization"],
         ["UseCors"] = ["AddOrkyoApiCors", "AddCors"],
         // Community registers the limiter via AddFoundationRateLimiting; saas via
@@ -46,16 +47,8 @@ public partial class ExplicitRegistrationTests
         "UseHttpMetrics",
     ];
 
-    /// <summary>
-    /// Documented, tracked deviations. <c>UseAuthentication</c> is currently
-    /// satisfied transitively by <c>AddFoundationServices</c> pending W4.7, which
-    /// lands an idempotent <c>AddOrkyoAuthentication</c> in Foundation and adds the
-    /// explicit call here. Move it into <see cref="UseToAdd"/> at that point.
-    /// </summary>
-    private static readonly HashSet<string> KnownTransitionalExceptions =
-    [
-        "UseAuthentication",
-    ];
+    /// <summary>Documented, tracked deviations. Currently empty.</summary>
+    private static readonly HashSet<string> KnownTransitionalExceptions = [];
 
     [GeneratedRegex(@"\bapp\.(Use[A-Za-z0-9]+)\(")]
     private static partial Regex UseCallRegex();
