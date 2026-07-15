@@ -39,3 +39,10 @@ CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy lists f
 # image contains yet (verified across tags 2026-07-11). nginx here serves static
 # assets only and performs no outbound DNS via c-ares under attacker control.
 CVE-2026-33630  # HIGH | c-ares use-after-free/double-free in query-completion handling | upstream nginx-alpine not yet rebuilt with 1.34.8-r0 | Added: 2026-07-11 | Review: 2026-07-23
+
+# 2026-07-15: curl/libcurl 8.19.0-r0 in nginx-alpine (pinned digest = latest
+# published 1.30-alpine, verified 2026-07-15); fix is 8.20.0-r0 which no
+# published nginx image contains yet. nginx here serves static assets only and
+# makes no outbound curl/libcurl requests under attacker control.
+CVE-2026-5773   # HIGH | curl/libcurl wrong file transfer via incorrect SMB connection reuse | upstream nginx-alpine not yet rebuilt with 8.20.0-r0 | Added: 2026-07-15 | Review: 2026-07-23
+CVE-2026-6276   # HIGH | curl/libcurl cookie leak when reusing connections | upstream nginx-alpine not yet rebuilt with 8.20.0-r0 | Added: 2026-07-15 | Review: 2026-07-23
