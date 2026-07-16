@@ -16,6 +16,18 @@ services:
       timeout: 5s
       retries: 5
 
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: orkyo-community-valkey
+    command: valkey-server --requirepass ${VALKEY_PASSWORD}
+    ports:
+      - "${VALKEY_PORT}:6379"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "-a", "${VALKEY_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   keycloak:
     image: quay.io/keycloak/keycloak:26.6.1
     container_name: orkyo-community-keycloak
@@ -40,18 +52,6 @@ services:
       timeout: 5s
       retries: 15
       start_period: 20s
-
-  valkey:
-    image: valkey/valkey:8-alpine
-    container_name: orkyo-community-valkey
-    command: valkey-server --requirepass ${VALKEY_PASSWORD}
-    ports:
-      - "${VALKEY_PORT}:6379"
-    healthcheck:
-      test: ["CMD", "valkey-cli", "-a", "${VALKEY_PASSWORD}", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
 
   mailhog:
     image: mailhog/mailhog:v1.0.1
@@ -86,43 +86,39 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      valkey:
-        condition: service_healthy
       migrator:
         condition: service_completed_successfully
       keycloak:
         condition: service_healthy
+      valkey:
+        condition: service_healthy
+    env_file: .env
     environment:
+      # Container-specific overrides — values that differ from .env (internal Docker
+      # hostnames, hardcoded ports). Everything else is inherited from env_file above.
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      # Single-tenant identity under the mixed-case config keys the app binds.
+      # .env carries these uppercase (COMMUNITY__*); keep the exact names stable.
       Community__TenantId: ${COMMUNITY__TENANTID}
       Community__TenantSlug: ${COMMUNITY__TENANTSLUG}
       Community__TenantName: ${COMMUNITY__TENANTNAME}
-      APP_BASE_URL: ${APP_BASE_URL}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
-      KEYCLOAK_URL: ${KEYCLOAK_URL}
       KEYCLOAK_INTERNAL_URL: http://keycloak:8080
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
-      KEYCLOAK_BACKEND_CLIENT_ID: ${KEYCLOAK_BACKEND_CLIENT_ID}
-      KEYCLOAK_BACKEND_CLIENT_SECRET: ${KEYCLOAK_BACKEND_CLIENT_SECRET}
-      OIDC_AUTHORITY: ${OIDC_AUTHORITY}
       OIDC_INTERNAL_AUTHORITY: http://keycloak:8080/realms/${KEYCLOAK_REALM}
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
       SMTP_USE_SSL: "false"
-      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL}
-      SMTP_FROM_NAME: ${SMTP_FROM_NAME}
+      VALKEY_CONNECTION: "valkey:6379,password=${VALKEY_PASSWORD},abortConnect=false"
       BFF_ENABLED: "true"
       BFF_COOKIE_DOMAIN: ""
       BFF_COOKIE_SECURE: "false"
       BFF_REDIRECT_URI: http://localhost:${API_PORT}/api/auth/bff/callback
       BFF_ALLOWED_HOSTS: localhost,*.localhost
-      VALKEY_CONNECTION: "valkey:6379,password=${VALKEY_PASSWORD},abortConnect=false"
-      ORKYO_MASTER_ENCRYPTION_KEY: ${ORKYO_MASTER_ENCRYPTION_KEY}
     ports:
       - "${API_PORT}:8080"
     healthcheck:
+      # The image installs curl (Dockerfile.local) but not wget — keep this in sync.
       test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
       interval: 5s
       timeout: 3s

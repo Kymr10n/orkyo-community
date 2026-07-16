@@ -3,16 +3,33 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-log()     { echo "[setup] $*"; }
-success() { echo "[setup] $*"; }
-warn()    { echo "[setup] WARNING: $*" >&2; }
-error()   { echo "[setup] ERROR: $*" >&2; }
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+log() {
+  echo -e "${BLUE}[setup]${NC} $*"
+}
+
+success() {
+  echo -e "${GREEN}[setup]${NC} $*"
+}
+
+warn() {
+  echo -e "${YELLOW}[setup]${NC} $*"
+}
+
+error() {
+  echo -e "${RED}[setup]${NC} $*" >&2
+}
 
 check_cmd() {
   if command -v "$1" >/dev/null 2>&1; then
     success "$1 found"
   else
-    error "$1 not found — please install it before continuing"
+    error "$1 not found"
     exit 1
   fi
 }
