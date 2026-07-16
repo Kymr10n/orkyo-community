@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace Orkyo.Community.Tests;
+namespace Orkyo.Community.Tests.Architecture;
 
 /// <summary>
 /// Asserts that the resource-model and people-resource endpoint groups are
@@ -19,6 +19,11 @@ namespace Orkyo.Community.Tests;
 /// Probe paths are chosen to be unique to that Map* call so a single missing
 /// Map produces exactly one failing case. Source of truth: the list mirrors
 /// FoundationWebApplicationFactory.cs lines ~417-452.
+///
+/// Keep in sync with the SaaS counterpart
+/// (orkyo-saas/backend/tests/Architecture/RouteInventoryTests.cs).
+/// The two deliberately differ where the editions differ (route inventory),
+/// so they are NOT G4-manifest-synced — port structural improvements both ways.
 /// </summary>
 [Collection("Database collection")]
 public class RouteInventoryTests

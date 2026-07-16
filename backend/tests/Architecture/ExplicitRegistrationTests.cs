@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace Orkyo.Community.Tests;
+namespace Orkyo.Community.Tests.Architecture;
 
 /// <summary>
 /// Enforces the explicit-registration rule (CLAUDE.md): if <c>Program.cs</c> calls
@@ -16,6 +16,11 @@ namespace Orkyo.Community.Tests;
 /// new middleware to classify it here.</para>
 ///
 /// See orkyo-infra/docs/optimization-plan-2026-07.md §Guardrails (G7).
+///
+/// Keep in sync with the SaaS counterpart (orkyo-saas/backend/tests/Architecture/
+/// ExplicitRegistrationTests.cs). The two deliberately differ where the editions'
+/// registrations differ, so they are NOT G4-manifest-synced — port structural
+/// improvements both ways.
 /// </summary>
 public partial class ExplicitRegistrationTests
 {

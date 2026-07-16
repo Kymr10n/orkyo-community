@@ -67,7 +67,7 @@ if grep -q '"@kymr10n/foundation"' "$PACKAGE_JSON"; then
   { echo "@kymr10n:registry=https://npm.pkg.github.com"
     echo "//npm.pkg.github.com/:_authToken=${_NPM_AUTH_TOKEN}"; } > "$NPMRC_FILE"
   log "Installing npm packages to regenerate package-lock.json..."
-  npm install --prefix frontend --include=optional --silent
+  npm install --prefix frontend --include=optional
   BUMPED+=("frontend/package-lock.json")
 fi
 
