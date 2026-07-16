@@ -3,12 +3,21 @@
 # This file is a REFERENCE ONLY. Nginx configuration is the operator's
 # responsibility. Adapt paths, server names, and TLS settings to your environment.
 #
-# Architecture:
+# Architecture (recommended: single domain, Keycloak under /auth):
 #   Internet → nginx (TLS termination) → frontend container (port 80)
-#                                          └── /api/* proxied internally to api container
+#                                          ├── /api/*  proxied internally to the api container
+#                                          └── /auth/* proxied internally to the keycloak container
 #
-# The frontend container's built-in nginx handles /api/ → backend routing.
-# No split-routing is needed here — proxy all traffic to port 80.
+# The frontend container's built-in nginx handles both /api/ → backend and
+# /auth/ → Keycloak routing, so this proxy forwards ALL traffic — including
+# Keycloak — to port 80. Set KEYCLOAK_URL=https://community.example.com/auth.
+#
+# Alternative — dedicated auth domain: serve Keycloak on its own hostname
+# instead, by proxying a second server block (mirroring the HTTPS one below,
+# server_name auth.example.com) to Keycloak's host port
+# (proxy_pass http://127.0.0.1:9080; — KEYCLOAK_PORT, default 9080) and setting
+# KEYCLOAK_URL=https://auth.example.com. See also the Caddy example in
+# docs/QUICKSTART.md.
 #
 # Prerequisites:
 #   - Obtain TLS certificates (Let's Encrypt / certbot recommended)
@@ -46,7 +55,8 @@ server {
     client_max_body_size 10M;
 
     # Proxy all traffic to the frontend container.
-    # The frontend's internal nginx handles /api/ → backend routing.
+    # The frontend's internal nginx handles /api/ → backend and
+    # /auth/ → Keycloak routing.
     location / {
         proxy_pass http://127.0.0.1:80;
         proxy_http_version 1.1;

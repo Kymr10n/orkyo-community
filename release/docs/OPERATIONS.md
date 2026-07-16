@@ -46,17 +46,20 @@ docker compose up -d
 
 > **Always back up before upgrading.** Migrations are forward-only.
 
+All images in `compose.yml` are pinned via `${ORKYO_VERSION:?}` — the version lives in exactly one place: your `.env` file (CLI) or the stack's environment variables (Portainer). Changing it and re-pulling is the whole upgrade.
+
 ### Portainer
 
-1. Stack → **Editor** → change `ORKYO_VERSION` to the new version
-2. **Update the stack** with **Re-pull image** enabled
+1. Stack → **Environment variables** → change `ORKYO_VERSION` to the new version
+2. **Update the stack** with **Re-pull image and redeploy** enabled
 
 The migrator runs automatically before the API starts (gated by `service_completed_successfully` in the depends_on chain).
 
 ### Docker Compose CLI
 
 ```bash
-# Edit .env: set ORKYO_VERSION=<new-version>
+# 1. Edit .env: set ORKYO_VERSION=<new-version>
+# 2. Pull the new images and restart
 docker compose pull
 docker compose up -d
 ```
@@ -76,12 +79,14 @@ docker logs orkyo_community_migrator
 
 ## Rollback
 
-If an upgrade fails, roll back the version and restore from your pre-upgrade backup:
+If an upgrade fails, roll back the version the same way it was changed, and restore from your pre-upgrade backup (migrations are forward-only — the old application version may not run against the new schema):
 
 ```bash
-# Edit .env / Portainer stack: set ORKYO_VERSION back to previous
+# 1. Edit .env (or the Portainer stack's environment variables):
+#    set ORKYO_VERSION back to the previous version
 docker compose pull
-# Restore database from pre-upgrade dump (see Restore section)
+# 2. Restore the database from the pre-upgrade dump (see Restore section)
+# 3. Restart on the rolled-back version
 docker compose up -d
 ```
 
@@ -129,8 +134,8 @@ Keycloak only imports the realm on first boot (it skips import if the realm alre
 
 ```bash
 docker compose stop keycloak
-docker volume rm orkyo_community_keycloak_data   # or the volume name from docker volume ls
-docker compose up -d keycloak                    # reimports realm with new secret
+docker volume rm orkyo_community_keycloak   # the named keycloak_data volume from compose.yml
+docker compose up -d keycloak               # reimports realm with new secret
 ```
 
 **Option B — update via admin console (preserves existing users and data):**

@@ -21,7 +21,7 @@ These have no defaults — deploy will refuse to start without them:
 | `KEYCLOAK_BACKEND_CLIENT_SECRET` | Secret for the `orkyo-backend` OIDC client |
 | `ORKYO_MASTER_ENCRYPTION_KEY` | AES-256-GCM master key (base64, 32 bytes) — generate with `openssl rand -base64 32` |
 | `APP_BASE_URL` | Public URL where users reach the app, e.g. `https://community.example.com` |
-| `KEYCLOAK_URL` | Public URL for Keycloak, e.g. `https://auth.example.com` |
+| `KEYCLOAK_URL` | Public URL for Keycloak — recommended: the app domain + `/auth` path, e.g. `https://community.example.com/auth` (see [HTTPS / Reverse Proxy](#https--reverse-proxy)) |
 | `BFF_COOKIE_DOMAIN` | Cookie domain, e.g. `community.example.com` |
 | `SMTP_HOST` | Outbound mail server |
 | `SMTP_FROM_EMAIL` | Sender address for system emails |
@@ -60,7 +60,8 @@ If a required value is missing, compose fails immediately with a message naming 
 |---|---|
 | Application | `${APP_BASE_URL}` (or `http://localhost` for local) |
 | Keycloak admin | `${KEYCLOAK_URL}` — sign in as `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD` |
-| API health | `${APP_BASE_URL}/health` |
+| API health | `http://<host>:8080/health` — the API's own health endpoint on the `API_PORT` mapping (default `8080`) |
+| Frontend liveness | `${APP_BASE_URL}/health` — static `OK` stub served by the frontend nginx; does **not** check the API |
 
 Default test accounts (pre-imported in the realm — change passwords before going to production):
 
@@ -72,15 +73,19 @@ Default test accounts (pre-imported in the realm — change passwords before goi
 
 ## HTTPS / Reverse Proxy
 
-The frontend listens on host port `80` and internally proxies `/api/` to the backend. Place a reverse proxy (nginx, Caddy, Traefik) in front of port 80 to terminate TLS. A reference nginx configuration is in [nginx/community.conf.example](../nginx/community.conf.example).
+The frontend listens on host port `80` and internally proxies `/api/` to the backend and `/auth/` to Keycloak. Place a reverse proxy (nginx, Caddy, Traefik) in front of port 80 to terminate TLS. A reference nginx configuration is in [nginx/community.conf.example](../nginx/community.conf.example).
 
-Caddy example (auto-TLS):
+**Recommended: single domain, Keycloak under `/auth`.** Because the frontend proxies `/auth/` to Keycloak, one domain covers everything — set `KEYCLOAK_URL=https://community.example.com/auth` (this is the layout release CI smoke-tests). Caddy example (auto-TLS):
 
 ```
 community.example.com {
     reverse_proxy localhost:80
 }
+```
 
+**Alternative: dedicated auth domain.** Expose Keycloak's own host port (`KEYCLOAK_PORT`, default `9080`) behind a second vhost and set `KEYCLOAK_URL=https://auth.example.com`:
+
+```
 auth.example.com {
     reverse_proxy localhost:9080
 }

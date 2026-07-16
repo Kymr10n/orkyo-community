@@ -20,8 +20,8 @@ Foundation services are designed to be consumed by both multi-tenant SaaS and si
 | Interface | SaaS implementation | Community implementation |
 |---|---|---|
 | `ITenantResolver` | `TenantResolver` (DB lookup by subdomain/header) | `SingleTenantResolver` (fixed config) |
-| `IDbConnectionFactory` | `DbConnectionFactory` (control-plane + per-tenant) | `CommunityDbConnectionFactory` (single DB) |
-| `IQuotaEnforcer` | `TierBasedQuotaEnforcer` (tier limits) | `CommunityQuotaEnforcer` (unlimited) |
+| `IDbConnectionFactory` | `DbConnectionFactory` (control-plane + per-tenant) | foundation's `SingleTenantDbConnectionFactory` (single DB) |
+| `IQuotaEnforcer` | `TierBasedQuotaEnforcer` (tier limits) | foundation's `NoOpQuotaEnforcer` (unlimited) |
 | `ITenantRegistry` | `SaasTenantRegistry` (queries tenant DB) | `CommunityTenantRegistry` (returns one entry) |
 
 ## Database Model
@@ -34,7 +34,7 @@ SaaS:                          Community:
   ...
 ```
 
-Community's `CommunityDbConnectionFactory` maps every connection type to `ConnectionStrings__DefaultConnection`.
+Community registers foundation's `SingleTenantDbConnectionFactory`, which maps every connection type to `ConnectionStrings__DefaultConnection`.
 
 ## Tenant Context
 
@@ -70,10 +70,10 @@ Community uses the same BFF (Backend-for-Frontend) OIDC cookie flow as SaaS, bac
 ```
 backend/
   api/          — ASP.NET Core 10 API host (Program.cs, appsettings)
-  src/          — Community adapters (SingleTenantResolver, CommunityDbConnectionFactory, etc.)
+  src/          — Community adapters (SingleTenantResolver, SingleTenantMiddleware, etc.)
   migrations/   — Community migration module and SQL scripts
   migrator/     — CLI migrator entry point
-  worker/       — Background job host (stub; UserLifecycleService pending foundation move)
+  worker/       — Background job host (daily GDPR user-lifecycle processing + announcement email broadcasts)
 
 frontend/
   src/

@@ -22,9 +22,11 @@ echo "Assembling ${BUNDLE_NAME}.zip..."
 cp -r "${REPO_ROOT}/release" "${STAGING_DIR}/${BUNDLE_NAME}"
 
 # ── 2. Stamp version ──────────────────────────────────────────────────────────
-# Replace any ${ORKYO_VERSION...} reference (with or without :? / :- modifiers)
-# in compose.yml so the bundled file is self-contained without ORKYO_VERSION env.
-sed -i "s|\${ORKYO_VERSION[^}]*}|${VERSION}|g" "${STAGING_DIR}/${BUNDLE_NAME}/compose.yml"
+# compose.yml keeps its fail-fast ${ORKYO_VERSION:?} references untouched — the
+# operator's .env is the single place the version lives, so editing
+# ORKYO_VERSION there and running `docker compose pull && docker compose up -d`
+# performs a real upgrade. Only the bundled .env.template gets the released
+# version stamped in as its default.
 sed -i "s|^ORKYO_VERSION=.*|ORKYO_VERSION=${VERSION}|" "${STAGING_DIR}/${BUNDLE_NAME}/.env.template"
 
 # ── 3. Copy README and LICENSE ───────────────────────────────────────────────

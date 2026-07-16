@@ -165,6 +165,9 @@ jobs:
     uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-npm.yml@a367c8115f0c402dc8535fd15e15629ad9b03860
     with:
       with-private-registry: true
+      # DELIBERATE: license scan ON — Community is distributed (AGPL self-host
+      # bundle), so the licenses of shipped dependencies must be checked.
+      # SaaS keeps it off (hosted, not distributed).
       with-license-scan: true
     secrets: inherit
 
@@ -398,6 +401,12 @@ jobs:
           dotnet run --no-build -c Release \
             --project backend/migrator/Orkyo.Community.Migrator.csproj \
             -- migrate --target all
+          dotnet run --no-build -c Release \
+            --project backend/migrator/Orkyo.Community.Migrator.csproj \
+            -- migrate --target all
+          dotnet run --no-build -c Release \
+            --project backend/migrator/Orkyo.Community.Migrator.csproj \
+            -- validate --target all
 
       - name: Start API and verify health
         env:
@@ -659,6 +668,12 @@ jobs:
           SMTP_FROM_EMAIL=noreply@ci.local
           SMTP_FROM_NAME=Orkyo CI
           EOF
+          # compose.yml pins images via fail-fast ${ORKYO_VERSION:?}; take the
+          # value from the stamped .env.template so the smoke also proves the
+          # bundle assembly stamped the released version correctly.
+          grep '^ORKYO_VERSION=' "$BUNDLE/.env.template" >> "$BUNDLE/.env"
+          grep -q "^ORKYO_VERSION=${{ steps.version.outputs.VERSION }}$" "$BUNDLE/.env" \
+            || (echo "::error::.env.template was not stamped with ${{ steps.version.outputs.VERSION }}" && exit 1)
 
       - name: Log in to GHCR
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
