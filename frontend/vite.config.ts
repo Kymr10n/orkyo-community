@@ -150,7 +150,8 @@ export default defineConfig({
       },
     },
     coverage: {
-      reporter: ["text", "lcov"],
+      // "cobertura" is required: release-ci.yml uploads coverage/cobertura-coverage.xml
+      reporter: ["text", "lcov", "cobertura"],
       include: ["src/**/*.{ts,tsx}"],
       exclude: ["src/main.tsx", "src/jsx-shim.d.ts", "src/test/**"],
       thresholds: {
