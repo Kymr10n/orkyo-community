@@ -114,6 +114,9 @@ services:
       COMMUNITY__TENANTID: ${COMMUNITY__TENANTID:-00000000-0000-0000-0000-000000000001}
       COMMUNITY__TENANTSLUG: ${COMMUNITY__TENANTSLUG:-community}
       COMMUNITY__TENANTNAME: ${COMMUNITY__TENANTNAME:-Orkyo Community}
+      # Optional Prometheus scrape auth. Fail-secure: when unset/empty the API does not
+      # map /metrics at all (404) — metrics stay OFF until you opt in with a token.
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
       ORKYO_VERSION: ${ORKYO_VERSION}
     # Operators behind a reverse proxy may remove this port and route all
     # traffic through the frontend.

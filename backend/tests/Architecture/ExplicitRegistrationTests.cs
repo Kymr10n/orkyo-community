@@ -49,7 +49,9 @@ public partial class ExplicitRegistrationTests
     [
         "UseRouting",
         "UseHttpsRedirection",
-        "UseHttpMetrics",
+        // Foundation's opt-in Prometheus helper (wraps prometheus-net UseHttpMetrics);
+        // the registry is process-wide static state — there is nothing to register.
+        "UseOrkyoMetrics",
     ];
 
     /// <summary>Documented, tracked deviations. Currently empty.</summary>
