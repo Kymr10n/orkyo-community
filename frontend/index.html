@@ -41,7 +41,7 @@
     <div id="root">
       <style>
         .app-loader{display:flex;align-items:center;justify-content:center;height:100vh;background:#09090b}
-        @media(prefers-color-scheme:light){.app-loader{background:#fff}}
+        html:not(.dark) .app-loader{background:#ffffff}
         .app-loader>div{width:24px;height:24px;border:2px solid #3b82f6;border-top-color:transparent;border-radius:50%;animation:l .6s linear infinite}
         @keyframes l{to{transform:rotate(360deg)}}
       </style>

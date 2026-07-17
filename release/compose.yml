@@ -93,7 +93,7 @@ services:
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-orkyo-community}
       KEYCLOAK_BACKEND_CLIENT_ID: ${KEYCLOAK_BACKEND_CLIENT_ID:-orkyo-backend}
       KEYCLOAK_BACKEND_CLIENT_SECRET: ${KEYCLOAK_BACKEND_CLIENT_SECRET:?set the orkyo-backend OIDC client secret}
-      KEYCLOAK_URL: ${KEYCLOAK_URL:?public Keycloak URL, e.g. https://auth.example.com}
+      KEYCLOAK_URL: ${KEYCLOAK_URL:?public Keycloak URL, e.g. https://community.example.com/auth}
       OIDC_AUTHORITY: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM:-orkyo-community}
       OIDC_INTERNAL_AUTHORITY: http://keycloak:8080/realms/${KEYCLOAK_REALM:-orkyo-community}
       VALKEY_CONNECTION: "valkey:6379,password=${VALKEY_PASSWORD},abortConnect=false"
@@ -114,6 +114,9 @@ services:
       COMMUNITY__TENANTID: ${COMMUNITY__TENANTID:-00000000-0000-0000-0000-000000000001}
       COMMUNITY__TENANTSLUG: ${COMMUNITY__TENANTSLUG:-community}
       COMMUNITY__TENANTNAME: ${COMMUNITY__TENANTNAME:-Orkyo Community}
+      # Optional Prometheus scrape auth. Fail-secure: when unset/empty the API does not
+      # map /metrics at all (404) — metrics stay OFF until you opt in with a token.
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
       ORKYO_VERSION: ${ORKYO_VERSION}
     # Operators behind a reverse proxy may remove this port and route all
     # traffic through the frontend.
@@ -141,7 +144,7 @@ services:
       ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB:-orkyo_community};Username=${POSTGRES_USER:-orkyo};Password=${POSTGRES_PASSWORD}"
       # Must match the api's key — both decrypt the same at-rest data.
       ORKYO_MASTER_ENCRYPTION_KEY: ${ORKYO_MASTER_ENCRYPTION_KEY:?AES-256-GCM master key (base64, 32 bytes) — generate with openssl rand -base64 32}
-      KEYCLOAK_URL: ${KEYCLOAK_URL:?public Keycloak URL, e.g. https://auth.example.com}
+      KEYCLOAK_URL: ${KEYCLOAK_URL:?public Keycloak URL, e.g. https://community.example.com/auth}
       KEYCLOAK_INTERNAL_URL: http://keycloak:8080
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-orkyo-community}
       KEYCLOAK_BACKEND_CLIENT_ID: ${KEYCLOAK_BACKEND_CLIENT_ID:-orkyo-backend}

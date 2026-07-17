@@ -1,3 +1,4 @@
+using Api.Integrations.Keycloak;
 using Api.Repositories;
 using Api.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,6 +31,11 @@ try
         {
             services.AddHttpClient();
             services.AddSingleton(KeycloakOptions.FromConfiguration(context.Configuration));
+            // Foundation's UserLifecycleService resolves IKeycloakAdminService per run-cycle
+            // (scope factory) for the disable/purge phases — register the typed client here,
+            // mirroring AddFoundationServices' registration (explicit-registration rule: the
+            // worker composes its own graph and must not rely on the API project's wiring).
+            services.AddHttpClient<IKeycloakAdminService, KeycloakAdminService>();
             // Single-tenant DB factory: all connection types map to the single community database.
             services.AddSingleton<IDbConnectionFactory>(
                 _ => SingleTenantDbConnectionFactory.FromConfiguration(context.Configuration));

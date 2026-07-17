@@ -48,7 +48,8 @@ The runner tracks applied migrations in `orkyo_schema_migrations`. Re-running th
 
 1. Create `backend/migrations/sql/tenant/{order}.community.{description}.sql`
 2. Use an order number in the 3000–3999 range
-3. Run `./dev.sh migrator` to apply
+3. Add the required `-- @migration-class:` header as the first line — deploy tooling rejects migrations without it. See `orkyo-infra/docs/migrations/classification.md` for the classes and how to pick one
+4. Run `./dev.sh migrator` to apply
 
 ## Community-Specific Tables
 

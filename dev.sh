@@ -28,10 +28,21 @@ fi
 # shellcheck source=/dev/null
 source "$DOTENV_LIB"
 
-log()     { echo -e "${BLUE}[dev]${NC} $*"; }
-success() { echo -e "${GREEN}[dev]${NC} $*"; }
-warn()    { echo -e "${YELLOW}[dev]${NC} $*"; }
-error()   { echo -e "${RED}[dev]${NC} $*" >&2; }
+log() {
+  echo -e "${BLUE}[dev]${NC} $*"
+}
+
+success() {
+  echo -e "${GREEN}[dev]${NC} $*"
+}
+
+warn() {
+  echo -e "${YELLOW}[dev]${NC} $*"
+}
+
+error() {
+  echo -e "${RED}[dev]${NC} $*" >&2
+}
 
 show_help() {
   cat <<'EOF'
@@ -73,7 +84,7 @@ ensure_env() {
 
 ensure_local_compose() {
   if [[ ! -f "$LOCAL_COMPOSE_FILE" ]]; then
-    error "Local compose file not found: $LOCAL_COMPOSE_FILE"
+    error "Local infra compose file not found: $LOCAL_COMPOSE_FILE"
     exit 1
   fi
 }
@@ -85,6 +96,7 @@ sync_assets() {
     "$sync_script"
   else
     warn "orkyo-foundation/scripts/sync-assets.sh not found — skipping asset sync"
+    warn "Clone orkyo-foundation as a sibling of orkyo-community and re-run"
   fi
 }
 
@@ -93,6 +105,7 @@ load_env() {
 
   load_dotenv "$ROOT_DIR/.env"
 
+  # Derived vars assembled from .env values — no defaults; missing vars fail loudly.
   export ASPNETCORE_ENVIRONMENT=Development
   export ASPNETCORE_URLS="http://localhost:${API_PORT}"
   # Single community DB — aliased to both names so foundation's validator is satisfied.
@@ -104,7 +117,7 @@ load_env() {
   # Valkey — used by API for BFF sessions and Data Protection keys
   export VALKEY_CONNECTION="localhost:${VALKEY_PORT},password=${VALKEY_PASSWORD},abortConnect=false"
 
-  # BFF auth constants for host-mode API
+  # BFF auth constants for host-mode API (fixed dev values, not user-configurable)
   export BFF_ENABLED=true
   export BFF_COOKIE_DOMAIN=""
   export BFF_COOKIE_SECURE=false
@@ -141,7 +154,16 @@ wait_for_url() {
     sleep 2
   done
   echo ""
+
   success "${description} is healthy"
+}
+
+print_stack_urls() {
+  echo "Frontend: http://localhost:${FRONTEND_PORT}  (Community)"
+  echo "API:      http://localhost:${API_PORT}"
+  echo "Swagger:  http://localhost:${API_PORT}/swagger"
+  echo "Keycloak: http://localhost:${KEYCLOAK_PORT}"
+  echo "MailHog:  http://localhost:${MAILHOG_UI_PORT}"
 }
 
 cmd_up() {
@@ -157,49 +179,7 @@ cmd_up() {
   wait_for_url "http://localhost:${API_PORT}/health" "API"
 
   success "Full stack is up"
-  echo "Frontend: http://localhost:${FRONTEND_PORT}  (Community)"
-  echo "API:      http://localhost:${API_PORT}"
-  echo "Swagger:  http://localhost:${API_PORT}/swagger"
-  echo "Keycloak: http://localhost:${KEYCLOAK_PORT}"
-  echo "MailHog:  http://localhost:${MAILHOG_UI_PORT}"
-}
-
-cmd_down() {
-  ensure_local_compose
-  "${COMPOSE_CMD[@]}" down
-  success "Stack stopped"
-}
-
-cmd_restart() { cmd_down; cmd_up; }
-
-cmd_rebuild() {
-  ensure_local_compose
-  load_env
-  log "Rebuilding containers..."
-  "${COMPOSE_CMD[@]}" build
-  cmd_up
-}
-
-cmd_logs() {
-  ensure_local_compose
-  shift || true
-  "${COMPOSE_CMD[@]}" logs -f "$@"
-}
-
-cmd_status() {
-  ensure_local_compose
-  "${COMPOSE_CMD[@]}" ps
-}
-
-cmd_reset() {
-  ensure_local_compose
-  warn "This removes local Docker volumes for the stack."
-  read -r -p "Proceed? (y/N) " reply
-  if [[ ! "$reply" =~ ^[Yy]$ ]]; then
-    echo "Cancelled"; exit 0
-  fi
-  "${COMPOSE_CMD[@]}" down -v
-  success "Volumes removed"
+  print_stack_urls
 }
 
 cmd_infra() {
@@ -222,12 +202,57 @@ cmd_infra() {
   cmd_doctor
 }
 
+cmd_down() {
+  ensure_local_compose
+  "${COMPOSE_CMD[@]}" down
+  success "Stack stopped"
+}
+
+cmd_restart() {
+  cmd_down
+  cmd_up
+}
+
+cmd_logs() {
+  ensure_local_compose
+  shift || true
+  "${COMPOSE_CMD[@]}" logs -f "$@"
+}
+
+cmd_status() {
+  ensure_local_compose
+  "${COMPOSE_CMD[@]}" ps
+}
+
 run_dotnet_project() {
   local project_dir="$1"
   shift
   load_env
   cd "$project_dir"
   dotnet run -- "$@"
+}
+
+cmd_reset() {
+  ensure_local_compose
+  warn "This removes local Docker volumes for the stack."
+  read -r -p "Proceed? (y/N) " reply
+  if [[ ! "$reply" =~ ^[Yy]$ ]]; then
+    echo "Cancelled"
+    exit 0
+  fi
+
+  "${COMPOSE_CMD[@]}" down -v
+  success "Volumes removed"
+}
+
+# Unlike SaaS (single `up -d --build --force-recreate`), community rebuilds via
+# `build` + cmd_up — kept as-is to preserve behavior (no forced recreate).
+cmd_rebuild() {
+  ensure_local_compose
+  load_env
+  log "Rebuilding containers..."
+  "${COMPOSE_CMD[@]}" build
+  cmd_up
 }
 
 cmd_migrator() {
@@ -248,11 +273,15 @@ cmd_seed() {
 
 cmd_frontend() {
   load_env
-  if [[ ! -f "$FRONTEND_ROOT/package.json" ]]; then
-    error "No frontend found in orkyo-community/frontend"
+
+  local target_dir="$FRONTEND_ROOT"
+  if [[ ! -f "$target_dir/package.json" ]]; then
+    error "No frontend application found in orkyo-community/frontend"
+    error "Frontend application must be present in orkyo-community/frontend (current: $target_dir)"
     exit 1
   fi
-  cd "$FRONTEND_ROOT"
+
+  cd "$target_dir"
   npm run dev -- --host 0.0.0.0 --port "${FRONTEND_PORT}"
 }
 

@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
-using Orkyo.Community.Tests.Mocks;
+using Orkyo.Tests.Mocks;
 
 namespace Orkyo.Community.Tests;
 

@@ -1,8 +1,8 @@
 /**
  * Configuration tab for the community admin page.
- * In community there is a single tenant; this tab surfaces its configurable settings
- * through the tenant-settings API (same surface as the in-app Settings panel,
- * but accessible here to the site-admin without needing to be a tenant member first).
+ * A static info card — it calls no API. Platform configuration in community is
+ * applied via environment variables at startup, and runtime-adjustable settings
+ * live in the in-app Settings panel; this tab just points the site-admin there.
  */
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@kymr10n/foundation/src/components/ui/card';

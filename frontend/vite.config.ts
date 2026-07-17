@@ -55,7 +55,10 @@ export default defineConfig({
           if (id.includes("@radix-ui")) return "vendor-radix";
           if (id.includes("@fullcalendar")) return "vendor-fullcalendar";
           if (id.includes("@dnd-kit")) return "vendor-dnd";
-          if (id.includes("@tanstack/react-query")) return "vendor-query";
+          // react-query (+ its query-core dep) loads at entry; keep it apart from
+          // the table/virtual packages so they stay out of the initial load.
+          if (id.includes("@tanstack/react-query") || id.includes("@tanstack/query-core"))
+            return "vendor-query";
           if (id.includes("@tanstack")) return "vendor-tanstack";
           if (id.includes("jspdf")) return "vendor-jspdf";
           if (id.includes("recharts") || id.includes("d3-")) return "vendor-recharts";

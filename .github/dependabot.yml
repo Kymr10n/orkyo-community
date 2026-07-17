@@ -1,0 +1,23 @@
+# Keeps the digest-pinned base images in the Dockerfiles fresh (W0.7 / CO-2):
+# the runtime bases are pinned by sha256 digest, so without automation every
+# upstream rebuild silently ages our pins until trivy findings pile up.
+# backend/keycloak/Dockerfile is excluded — its base comes from the
+# FOUNDATION_KC_IMAGE build arg, not a pinned digest.
+version: 2
+updates:
+  - package-ecosystem: docker
+    directory: /backend/api
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /backend/worker
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /backend/migrator
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /frontend
+    schedule:
+      interval: weekly

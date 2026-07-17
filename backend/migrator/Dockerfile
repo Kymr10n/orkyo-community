@@ -22,7 +22,7 @@ RUN dotnet publish backend/migrator/Orkyo.Community.Migrator.csproj \
     -c Release -o /app/publish --no-restore \
     -r linux-musl-x64 --no-self-contained /p:PublishReadyToRun=true
 
-FROM mcr.microsoft.com/dotnet/runtime:10.0-alpine@sha256:9c8ae7f4979a26a18ec854df74c74c39f31f50956a77fd518046d75dbeeb1370 AS runtime
+FROM mcr.microsoft.com/dotnet/runtime:10.0-alpine@sha256:036b39f319141abc97fb32652ecfa97294e8108840f807999a0d467f4f1118ab AS runtime
 LABEL org.opencontainers.image.source=https://github.com/Kymr10n/orkyo-community
 WORKDIR /app
 COPY --from=build /app/publish .

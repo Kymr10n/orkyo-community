@@ -49,3 +49,11 @@ repos:
         language: system
         pass_filenames: false
         files: '^frontend/.*\.(ts|tsx)$'
+
+      - id: frontend-test
+        name: frontend vitest
+        entry: bash -c 'cd frontend && npm test'
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+        files: '^frontend/.*\.(ts|tsx)$'

@@ -135,6 +135,9 @@ try
     app.UseCors();
     app.UseMiddleware<SecurityHeadersMiddleware>();
     app.UseRouting();
+    // Prometheus HTTP request metrics (foundation opt-in helper wrapping UseHttpMetrics;
+    // needs no DI registration — prometheus-net's registry is process-wide static state).
+    app.UseOrkyoMetrics();
     app.UseAuthentication();
     app.UseMiddleware<CsrfMiddleware>();
     app.UseAuthorization();
@@ -146,6 +149,12 @@ try
 
     // ── Endpoints ─────────────────────────────────────────────────────────────
     app.MapOrkyoHealthEndpoints();
+
+    // Prometheus scrape endpoint — Basic-auth gated by METRICS_TOKEN, fail-secure:
+    // with no token configured the helper maps nothing (/metrics → 404). Self-hosters
+    // opt in by setting METRICS_TOKEN; nothing is exposed otherwise.
+    app.MapOrkyoMetricsEndpoint(app.Configuration[ConfigKeys.MetricsToken]);
+
     app.UseOrkyoReportingSwaggerUI();
 
     // Foundation endpoints
