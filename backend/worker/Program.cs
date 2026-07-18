@@ -1,3 +1,4 @@
+using Api.Configuration;
 using Api.Integrations.Keycloak;
 using Api.Repositories;
 using Api.Services;
@@ -29,24 +30,12 @@ try
         .UseSerilog()
         .ConfigureServices((context, services) =>
         {
-            services.AddHttpClient();
-            services.AddSingleton(KeycloakOptions.FromConfiguration(context.Configuration));
-            // Foundation's UserLifecycleService resolves IKeycloakAdminService per run-cycle
-            // (scope factory) for the disable/purge phases — register the typed client here,
-            // mirroring AddFoundationServices' registration (explicit-registration rule: the
-            // worker composes its own graph and must not rely on the API project's wiring).
-            services.AddHttpClient<IKeycloakAdminService, KeycloakAdminService>();
-            // Single-tenant DB factory: all connection types map to the single community database.
+            // Edition-specific: single-tenant DB factory (all connection types map to the one community DB).
             services.AddSingleton<IDbConnectionFactory>(
                 _ => SingleTenantDbConnectionFactory.FromConfiguration(context.Configuration));
-            services.AddSingleton<IOrgDbConnectionFactory>(sp =>
-                sp.GetRequiredService<IDbConnectionFactory>());
-            services.AddSingleton<UserLifecycleService>();
-            // Email broadcast for announcements (worker has no tenant context → default branding).
-            services.AddSingleton<ITenantSettingsService, WorkerTenantSettingsService>();
-            services.AddSingleton<IEmailService, EmailService>();
-            services.AddSingleton<IAnnouncementRepository, AnnouncementRepository>();
-            services.AddSingleton<IAnnouncementBroadcastService, AnnouncementBroadcastService>();
+            // Shared worker graph (HTTP client, Keycloak, email, announcements, user lifecycle).
+            services.AddFoundationWorkerServices(context.Configuration);
+            // Community-only hosted service.
             services.AddHostedService<CommunityWorkerService>();
         })
         .Build();
