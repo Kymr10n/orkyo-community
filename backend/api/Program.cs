@@ -7,7 +7,6 @@ using Orkyo.Community;
 using Orkyo.Community.Api.Endpoints;
 using Orkyo.Community.Middleware;
 using Orkyo.Community.Migrations;
-using Orkyo.Community.Services;
 using Orkyo.Community.Tenant;
 using Orkyo.Foundation.Migrations;
 using Orkyo.Foundation.Observability;
@@ -74,7 +73,7 @@ try
     // Foundation provides the no-op enforcer — community has no tier-based limits.
     builder.Services.AddScoped<IQuotaEnforcer, NoOpQuotaEnforcer>();
 
-    builder.Services.AddScoped<IAdminAuditService, CommunityAuditService>();
+    builder.Services.AddScoped<IAdminAuditService, AdminAuditService>();
 
     var valkeyCs = builder.Configuration[ConfigKeys.ValkeyConnection]
         ?? throw new InvalidOperationException($"Valkey connection string is required. Set {ConfigKeys.ValkeyConnection}.");

@@ -1,4 +1,5 @@
 using Api.Constants;
+using Api.Helpers;
 using Api.Services;
 
 namespace Orkyo.Community.Middleware;
@@ -32,7 +33,11 @@ public sealed class SingleTenantMiddleware
         {
             _logger.LogError("SingleTenantResolver returned null — community tenant not configured");
             context.Response.StatusCode = 503;
-            await context.Response.WriteAsJsonAsync(new { error = "Community tenant not configured" });
+            await context.Response.WriteAsJsonAsync(new ErrorResponse
+            {
+                Error = "Community tenant not configured",
+                Code = "community_tenant_unconfigured",
+            });
             return;
         }
 
