@@ -5,6 +5,9 @@ cd "$(dirname "$0")"
 
 ROOT_DIR="$PWD"
 LOCAL_COMPOSE_FILE="$ROOT_DIR/compose.local.yml"
+# Optional, gitignored per-developer overrides (e.g. a LAN hostname for phone
+# testing). Merged after the base file when present; absent for normal localhost dev.
+LOCAL_COMPOSE_OVERRIDE="$ROOT_DIR/compose.local.override.yml"
 FRONTEND_ROOT="$ROOT_DIR/frontend"
 # Host mapping of Keycloak's management port — must track the keycloak `ports:`
 # entry in compose.local.yml (community maps 9001:9000; SaaS uses 9000 so both
@@ -17,7 +20,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-COMPOSE_CMD=(docker compose -f "$LOCAL_COMPOSE_FILE" --env-file "$ROOT_DIR/.env")
+COMPOSE_CMD=(docker compose -f "$LOCAL_COMPOSE_FILE")
+[[ -f "$LOCAL_COMPOSE_OVERRIDE" ]] && COMPOSE_CMD+=(-f "$LOCAL_COMPOSE_OVERRIDE")
+COMPOSE_CMD+=(--env-file "$ROOT_DIR/.env")
 
 # Shared .env loader (parses base64/`=`-bearing values correctly; see the helper's header).
 DOTENV_LIB="$ROOT_DIR/../orkyo-foundation/scripts/load-dotenv.sh"

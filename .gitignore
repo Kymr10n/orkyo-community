@@ -6,6 +6,9 @@
 **/coverage/
 **/TestResults/
 .env
+# Per-developer local dev overrides (e.g. LAN hostname for phone testing)
+compose.local.override.yml
+infra/compose/keycloak-override/
 frontend/.npmrc
 # Compiled JS/decls tsc can emit next to sources when run without --outDir.
 # Sources are .ts/.tsx; a .js under src is always build output (parity with

@@ -126,6 +126,9 @@ export default defineConfig({
     host: true,
     port: 5173,
     strictPort: true,
+    // Extra dev-server hostnames (e.g. a LAN hostname for phone testing),
+    // comma-separated. Unset = Vite's default localhost-only behavior.
+    allowedHosts: process.env.VITE_EXTRA_ALLOWED_HOSTS?.split(",") ?? [],
     fs: {
       // Foundation source lands outside the Vite root (/app) in the dev
       // container: the compose volume mounts it at /foundation, and
