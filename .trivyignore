@@ -9,31 +9,48 @@
 # ── nginx:1.30-alpine — libexpat 2.8.2-r0 not yet in any published nginx image ──
 # All nginx-alpine lines (1.30/1.31/mainline, Alpine 3.23) still ship libexpat
 # 2.8.1-r0 (verified across tags 2026-07-09). nginx serves static assets only and
-# parses no attacker-supplied XML via libexpat here.
-CVE-2026-56131  # HIGH | libexpat <2.8.2 handler call depth (DoS) | upstream nginx-alpine not yet rebuilt with 2.8.2-r0 | Added: 2026-07-09 | Review: 2026-07-23
-CVE-2026-56407  # HIGH | libexpat <2.8.2 integer overflow doProlog | upstream nginx-alpine not yet rebuilt with 2.8.2-r0 | Added: 2026-07-09 | Review: 2026-07-23
-CVE-2026-56408  # HIGH | libexpat <2.8.2 integer overflow copyString | upstream nginx-alpine not yet rebuilt with 2.8.2-r0 | Added: 2026-07-09 | Review: 2026-07-23
+# parses no attacker-supplied XML via libexpat here. (Re-reviewed 2026-07-25.)
+CVE-2026-56131  # HIGH | libexpat <2.8.2 handler call depth (DoS) | upstream nginx-alpine not yet rebuilt with 2.8.2-r0 | Added: 2026-07-09 | Review: 2026-08-08
+CVE-2026-56407  # HIGH | libexpat <2.8.2 integer overflow doProlog | upstream nginx-alpine not yet rebuilt with 2.8.2-r0 | Added: 2026-07-09 | Review: 2026-08-08
+CVE-2026-56408  # HIGH | libexpat <2.8.2 integer overflow copyString | upstream nginx-alpine not yet rebuilt with 2.8.2-r0 | Added: 2026-07-09 | Review: 2026-08-08
 
 # ── Keycloak 26.6.4 — jackson-databind 2.21.4 not shipped by upstream ─────────
 # Upstream KC 26.6 line has no patch release (26.6.5+ does not exist; 26.7.0 is
 # a minor upgrade needing its own validation — tracked separately). The affected
 # deserialization sits in KC's own jars; no Orkyo-controlled input path.
-CVE-2026-54512  # HIGH | jackson-databind PolymorphicTypeValidator bypass (RCE) in upstream keycloak 26.6.4 jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-09 | Review: 2026-07-23
-CVE-2026-54513  # HIGH | jackson-databind security bypass (RCE) in upstream keycloak 26.6.4 jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-09 | Review: 2026-07-23
+CVE-2026-54512  # HIGH | jackson-databind PolymorphicTypeValidator bypass (RCE) in upstream keycloak 26.6.4 jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-09 | Review: 2026-08-08
+CVE-2026-54513  # HIGH | jackson-databind security bypass (RCE) in upstream keycloak 26.6.4 jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-09 | Review: 2026-08-08
 
 # ── Trivy false positive ───────────────────────────────────────────────────────
 # Trivy reports fix as 12.6.5 but KC ships mssql-jdbc 13.2.1.jre11 (newer); false positive.
-CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy lists fix as 12.6.5 but KC ships 13.2.1.jre11 (newer); false positive | Added: 2026-05-21 | Review: 2026-06-20
+CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy lists fix as 12.6.5 but KC ships 13.2.1.jre11 (newer); false positive | Added: 2026-05-21 | Review: 2026-08-08
 
 # 2026-07-11: c-ares in nginx-alpine (all published lines: 1.30/1.31/mainline,
 # Alpine 3.23) still ships 1.34.6-r0; fix is 1.34.8-r0 which no published nginx
 # image contains yet (verified across tags 2026-07-11). nginx here serves static
 # assets only and performs no outbound DNS via c-ares under attacker control.
-CVE-2026-33630  # HIGH | c-ares use-after-free/double-free in query-completion handling | upstream nginx-alpine not yet rebuilt with 1.34.8-r0 | Added: 2026-07-11 | Review: 2026-07-23
+CVE-2026-33630  # HIGH | c-ares use-after-free/double-free in query-completion handling | upstream nginx-alpine not yet rebuilt with 1.34.8-r0 | Added: 2026-07-11 | Review: 2026-08-08
 
 # 2026-07-15: curl/libcurl 8.19.0-r0 in nginx-alpine (pinned digest = latest
 # published 1.30-alpine, verified 2026-07-15); fix is 8.20.0-r0 which no
 # published nginx image contains yet. nginx here serves static assets only and
 # makes no outbound curl/libcurl requests under attacker control.
-CVE-2026-5773   # HIGH | curl/libcurl wrong file transfer via incorrect SMB connection reuse | upstream nginx-alpine not yet rebuilt with 8.20.0-r0 | Added: 2026-07-15 | Review: 2026-07-23
-CVE-2026-6276   # HIGH | curl/libcurl cookie leak when reusing connections | upstream nginx-alpine not yet rebuilt with 8.20.0-r0 | Added: 2026-07-15 | Review: 2026-07-23
+CVE-2026-5773   # HIGH | curl/libcurl wrong file transfer via incorrect SMB connection reuse | upstream nginx-alpine not yet rebuilt with 8.20.0-r0 | Added: 2026-07-15 | Review: 2026-08-08
+CVE-2026-6276   # HIGH | curl/libcurl cookie leak when reusing connections | upstream nginx-alpine not yet rebuilt with 8.20.0-r0 | Added: 2026-07-15 | Review: 2026-08-08
+
+# ── Keycloak 26.6 image — bundled runtime deps (OpenJDK/jackson/netty/pgjdbc) ──
+# 2026-07-25: newly surfaced once container-scan began running again (the audit
+# gates had been failing before it, so the image scan was skipped). All are in
+# Keycloak's own bundled runtime (JVM + jars) or the KC base OS layer; the fixes
+# ship only in newer OpenJDK / jar versions that a KC release bundles — there is
+# no 26.6.x patch. Cleared by the KC 26.7 upgrade (tracked separately), which
+# removes these. No Orkyo-controlled input path reaches these components.
+CVE-2026-47063  # HIGH | OpenJDK 21.0.11 Jar handling (fix 21.0.12) in KC base JDK | no KC 26.6.x rebuild with 21.0.12; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
+CVE-2026-54369  # HIGH | libacl (KC base OS layer), fix 2.3.1-4.el9 | no KC 26.6.x rebuild; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
+GHSA-r7wm-3cxj-wff9  # HIGH | jackson-core in KC bundled jars (fix 2.21.4/2.22.1) | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
+CVE-2026-54291  # HIGH | postgresql JDBC in KC bundled jars (fix 42.7.11) | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
+CVE-2026-55831  # HIGH | netty-codec-http in KC bundled jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
+CVE-2026-55833  # HIGH | netty-codec in KC bundled jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
+CVE-2026-55851  # HIGH | netty-codec-haproxy in KC bundled jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
+CVE-2026-56745  # HIGH | netty-codec in KC bundled jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
+CVE-2026-59901  # HIGH | netty-codec (fix 4.1.135.Final) in KC bundled jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
