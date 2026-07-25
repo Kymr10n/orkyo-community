@@ -6,7 +6,7 @@
  * meaningful for a self-hosted single-tenant deployment.
  */
 
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { TabsContent } from '@kymr10n/foundation/src/components/ui/tabs';
 import { PageTabs } from '@kymr10n/foundation/src/components/layout/PageTabs';
 import { Button } from '@kymr10n/foundation/src/components/ui/button';

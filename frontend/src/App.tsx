@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, useLocation } from "react-router-dom";
+import { BrowserRouter, useLocation } from "react-router";
 import { AuthProvider, useAuth } from "@kymr10n/foundation/src/contexts/AuthContext";
 import { ApexGateway } from "@kymr10n/foundation/src/components/auth/ApexGateway";
 import { TenantApp } from "@kymr10n/foundation/src/components/auth/TenantApp";

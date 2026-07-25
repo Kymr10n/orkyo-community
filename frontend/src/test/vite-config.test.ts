@@ -31,7 +31,7 @@ describe("vite.config", () => {
 // list) so a NEW @radix-ui/* or @tanstack/* foundation dep is caught automatically;
 // stateless utilities (date-fns, clsx, jspdf, …) are intentionally not required.
 const CONTEXT_DEP_PATTERNS = [
-  /^react$/, /^react-dom$/, /^react-router-dom$/, /^react-day-picker$/,
+  /^react$/, /^react-dom$/, /^react-router$/, /^react-day-picker$/,
   /^@radix-ui\//, /^@tanstack\/react-/, /^@dnd-kit\//, /^@fullcalendar\//,
   /^@xstate\//, /^xstate$/, /^zustand$/, /^sonner$/, /^recharts$/, /^lucide-react$/,
 ];

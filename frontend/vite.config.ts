@@ -50,7 +50,7 @@ export default defineConfig({
         // them. Grouping mirrors the dedupe list below.
         manualChunks: (id: string) => {
           if (!id.includes("node_modules")) return undefined;
-          if (/[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id))
+          if (/[\\/]node_modules[\\/](react|react-dom|react-router|scheduler)[\\/]/.test(id))
             return "vendor-react";
           if (id.includes("@radix-ui")) return "vendor-radix";
           if (id.includes("@fullcalendar")) return "vendor-fullcalendar";
@@ -85,7 +85,7 @@ export default defineConfig({
     dedupe: [
       "react",
       "react-dom",
-      "react-router-dom",
+      "react-router",
       "@fullcalendar/core",
       "@fullcalendar/daygrid",
       "@fullcalendar/timegrid",

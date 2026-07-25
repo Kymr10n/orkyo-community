@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { CommunityAdminPage } from './CommunityAdminPage';
 
@@ -14,7 +14,7 @@ const mockAuth = {
   logout: vi.fn(),
 };
 
-vi.mock('react-router-dom', async (importOriginal) => {
+vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<object>();
   return { ...actual, useNavigate: () => vi.fn() };
 });
