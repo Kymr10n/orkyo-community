@@ -90,6 +90,7 @@ export default defineConfig({
       "@fullcalendar/daygrid",
       "@fullcalendar/timegrid",
       "@fullcalendar/interaction",
+      "@fullcalendar/list",
       "@fullcalendar/react",
       "@tanstack/react-query",
       "@tanstack/react-table",
