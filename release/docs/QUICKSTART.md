@@ -63,13 +63,17 @@ If a required value is missing, compose fails immediately with a message naming 
 | API health | `http://<host>:8080/health` — the API's own health endpoint on the `API_PORT` mapping (default `8080`) |
 | Frontend liveness | `${APP_BASE_URL}/health` — static `OK` stub served by the frontend nginx; does **not** check the API |
 
-Default test accounts (pre-imported in the realm — change passwords before going to production):
+Default accounts (pre-imported in the realm). Their passwords are marked
+**temporary** — Keycloak forces a password change on first login, so the shipped
+`admin123` / `editor123` / `viewer123` credentials cannot survive into a running
+deployment. Log in as each once and set a real password (or delete the accounts
+you don't need):
 
-| Username | Role |
-|---|---|
-| `admin` | Site admin |
-| `editor` | Editor |
-| `viewer` | Viewer |
+| Username | Initial password | Role |
+|---|---|---|
+| `admin` | `admin123` (temporary) | Site admin |
+| `editor` | `editor123` (temporary) | Editor |
+| `viewer` | `viewer123` (temporary) | Viewer |
 
 ## HTTPS / Reverse Proxy
 

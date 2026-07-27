@@ -471,7 +471,7 @@
         {
           "type": "password",
           "value": "admin123",
-          "temporary": false
+          "temporary": true
         }
       ]
     },
@@ -490,7 +490,7 @@
         {
           "type": "password",
           "value": "editor123",
-          "temporary": false
+          "temporary": true
         }
       ]
     },
@@ -509,7 +509,7 @@
         {
           "type": "password",
           "value": "viewer123",
-          "temporary": false
+          "temporary": true
         }
       ]
     },
