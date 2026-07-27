@@ -58,38 +58,49 @@ internal sealed class CommunityWorkerService : BackgroundService
     private readonly ILogger<CommunityWorkerService> _logger;
     private readonly UserLifecycleService _userLifecycle;
     private readonly IAnnouncementBroadcastService _announcementBroadcast;
-    private DateTime _lastDailyCheck = DateTime.MinValue;
+    private readonly IWorkerJobCoordinator _jobs;
 
     public CommunityWorkerService(
         ILogger<CommunityWorkerService> logger,
         UserLifecycleService userLifecycle,
-        IAnnouncementBroadcastService announcementBroadcast)
+        IAnnouncementBroadcastService announcementBroadcast,
+        IWorkerJobCoordinator jobs)
     {
         _logger = logger;
         _userLifecycle = userLifecycle;
         _announcementBroadcast = announcementBroadcast;
+        _jobs = jobs;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("Community worker started");
 
+        // Cadence state lives in the worker_job_runs journal (via IWorkerJobCoordinator):
+        // a restart resumes the schedule instead of immediately re-running the daily GDPR
+        // pass, and a second worker instance skips instead of double-running.
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                var nowUtc = DateTime.UtcNow;
-
                 // Run GDPR user lifecycle once per day
-                if (WorkerSchedulePolicy.ShouldRunUserLifecycle(nowUtc, _lastDailyCheck))
-                {
-                    _logger.LogInformation("Running user lifecycle check");
-                    await _userLifecycle.ProcessAsync(stoppingToken);
-                    _lastDailyCheck = nowUtc;
-                }
+                await _jobs.RunIfDueAsync(
+                    WorkerJobNames.UserLifecycle,
+                    WorkerSchedulePolicy.ShouldRunUserLifecycle,
+                    async ct =>
+                    {
+                        _logger.LogInformation("Running user lifecycle check");
+                        await _userLifecycle.ProcessAsync(ct);
+                    },
+                    stoppingToken);
 
-                // Announcement email broadcasts are time-sensitive — process every loop.
-                await _announcementBroadcast.ProcessPendingBroadcastsAsync(stoppingToken);
+                // Announcement email broadcasts are time-sensitive — attempt every loop,
+                // but single-flight across instances so replicas cannot double-send.
+                await _jobs.RunIfDueAsync(
+                    WorkerJobNames.AnnouncementBroadcast,
+                    (_, _) => true,
+                    ct => _announcementBroadcast.ProcessPendingBroadcastsAsync(ct),
+                    stoppingToken);
 
                 var jitter = TimeSpan.FromSeconds(Random.Shared.Next(0, 15));
                 await Task.Delay(WorkerSchedulePolicy.GetLoopDelay(jitter), stoppingToken);
