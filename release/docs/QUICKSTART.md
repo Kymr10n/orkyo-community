@@ -63,17 +63,31 @@ If a required value is missing, compose fails immediately with a message naming 
 | API health | `http://<host>:8080/health` — the API's own health endpoint on the `API_PORT` mapping (default `8080`) |
 | Frontend liveness | `${APP_BASE_URL}/health` — static `OK` stub served by the frontend nginx; does **not** check the API |
 
-Default accounts (pre-imported in the realm). Their passwords are marked
-**temporary** — Keycloak forces a password change on first login, so the shipped
-`admin123` / `editor123` / `viewer123` credentials cannot survive into a running
-deployment. Log in as each once and set a real password (or delete the accounts
-you don't need):
+Default accounts (pre-imported in the realm). Each carries the
+`UPDATE_PASSWORD` required action, so Keycloak forces a password change at first
+login and the shipped credentials cannot survive into a running deployment. The
+new password must satisfy the realm policy (12+ characters, upper case, digit,
+special character). Log in as each once and set a real password, or delete the
+accounts you don't need:
 
 | Username | Initial password | Role |
 |---|---|---|
-| `admin` | `admin123` (temporary) | Site admin |
-| `editor` | `editor123` (temporary) | Editor |
-| `viewer` | `viewer123` (temporary) | Viewer |
+| `admin@example.com` | `ChangeMe-Admin-1` | Site admin |
+| `editor@example.com` | `ChangeMe-Editor-1` | Editor |
+| `viewer@example.com` | `ChangeMe-Viewer-1` | Viewer |
+
+> **Upgrading from an earlier version?** Installs created before 0.12.0 shipped with
+> self-registration enabled, which on an internet-reachable install allowed anyone to
+> sign up and be granted admin. Changing the shipped default does not fix an existing
+> install — see [SECURITY-ADVISORY-2026-07.md](SECURITY-ADVISORY-2026-07.md) for the
+> check and the remediation steps.
+
+**Self-registration is disabled by default.** Add people through Settings →
+Users → Invite rather than a public sign-up page. This matters because every
+user of a Community install is automatically an admin of the single
+organisation — so an open sign-up page on an internet-reachable install would
+let anyone become an admin. Enable registration only if that is genuinely what
+you want (Keycloak admin console → Realm settings → Login → User registration).
 
 ## HTTPS / Reverse Proxy
 

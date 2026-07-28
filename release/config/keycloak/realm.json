@@ -8,7 +8,7 @@
   "adminTheme": "keycloak.v2",
   "emailTheme": "keycloak",
   "sslRequired": "external",
-  "registrationAllowed": true,
+  "registrationAllowed": false,
   "registrationEmailAsUsername": true,
   "rememberMe": true,
   "verifyEmail": true,
@@ -210,7 +210,9 @@
       "lastName": "User",
       "enabled": true,
       "emailVerified": true,
-      "requiredActions": [],
+      "requiredActions": [
+        "UPDATE_PASSWORD"
+      ],
       "realmRoles": [
         "user",
         "admin",
@@ -219,7 +221,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "admin123",
+          "value": "ChangeMe-Admin-1",
           "temporary": true
         }
       ]
@@ -231,14 +233,16 @@
       "lastName": "User",
       "enabled": true,
       "emailVerified": true,
-      "requiredActions": [],
+      "requiredActions": [
+        "UPDATE_PASSWORD"
+      ],
       "realmRoles": [
         "user"
       ],
       "credentials": [
         {
           "type": "password",
-          "value": "editor123",
+          "value": "ChangeMe-Editor-1",
           "temporary": true
         }
       ]
@@ -250,14 +254,16 @@
       "lastName": "User",
       "enabled": true,
       "emailVerified": true,
-      "requiredActions": [],
+      "requiredActions": [
+        "UPDATE_PASSWORD"
+      ],
       "realmRoles": [
         "user"
       ],
       "credentials": [
         {
           "type": "password",
-          "value": "viewer123",
+          "value": "ChangeMe-Viewer-1",
           "temporary": true
         }
       ]
@@ -290,5 +296,6 @@
     "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';",
     "xXSSProtection": "1; mode=block",
     "strictTransportSecurity": "max-age=31536000; includeSubDomains"
-  }
+  },
+  "passwordPolicy": "length(12) and notUsername and notEmail and specialChars(1) and upperCase(1) and digits(1) and passwordHistory(3)"
 }

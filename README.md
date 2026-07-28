@@ -73,7 +73,7 @@ docker compose up -d
 open http://localhost          # port 80 by default; override with FRONTEND_PORT
 ```
 
-Default login `admin@example.com` / `admin123` — **change it before any non-local deployment.** Images are published to GitHub Container Registry (`ghcr.io/kymr10n/orkyo-community-*`).
+Default login `admin@example.com` / `ChangeMe-Admin-1` — Keycloak forces a password change at first login, and self-registration is disabled by default (invite users from Settings → Users). Images are published to GitHub Container Registry (`ghcr.io/kymr10n/orkyo-community-*`).
 
 - **Portainer:** paste [`release/compose.yml`](release/compose.yml) into the stack editor, fill in the prompted env vars, deploy.
 - **Upgrade:** `docker compose pull && docker compose up -d` (migrations run on startup).
