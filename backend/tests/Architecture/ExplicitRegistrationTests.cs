@@ -40,6 +40,9 @@ public partial class ExplicitRegistrationTests
         ["UseAuthenticatedRateLimiting"] = ["AddOrkyoRateLimiting", "AddOrkYoRateLimiting"],
         ["UseBotProtectionRateLimiting"] = ["AddBotProtection"],
         ["UseFoundationMiddleware"] = ["AddFoundationServices"],
+        // Composed shared pipeline (foundation#97) — everything it mounts is
+        // registered by AddFoundationServices (auth, CSRF, context enrichment).
+        ["UseOrkyoPipeline"] = ["AddFoundationServices"],
         ["UseResponseCompression"] = ["AddResponseCompression"],
         ["UseOrkyoReportingSwaggerUI"] = ["AddOrkyoReportingSwagger"],
     };

@@ -129,22 +129,22 @@ try
     var app = builder.Build();
 
     // ── Middleware pipeline ───────────────────────────────────────────────────
-    app.UseFoundationMiddleware();
-    app.UseResponseCompression();
-    app.UseCors();
-    app.UseMiddleware<SecurityHeadersMiddleware>();
-    app.UseRouting();
-    // Prometheus HTTP request metrics (foundation opt-in helper wrapping UseHttpMetrics;
-    // needs no DI registration — prometheus-net's registry is process-wide static state).
-    app.UseOrkyoMetrics();
-    app.UseAuthentication();
-    app.UseMiddleware<CsrfMiddleware>();
-    app.UseAuthorization();
-    if (!builder.Configuration.GetValue<bool>(ConfigKeys.DisableRateLimiting))
-        app.UseRateLimiter();
-    app.UseMiddleware<CommunityJitProvisioningMiddleware>();
-    app.UseMiddleware<SingleTenantMiddleware>();
-    app.UseMiddleware<ContextEnrichmentMiddleware>();
+    // Shared sequence lives in foundation's UseOrkyoPipeline (foundation#97);
+    // only the Community-specific points are parameterized here.
+    app.UseOrkyoPipeline(new OrkyoPipelineOptions
+    {
+        // Single-tenant self-host serves plain HTTP on the LAN by design — a
+        // redirect to a non-existent HTTPS endpoint would brick the deployment.
+        UseHttpsRedirection = false,
+        RateLimitingDisabled = builder.Configuration.GetValue<bool>(ConfigKeys.DisableRateLimiting),
+        // No bot-protection / authenticated rate-limit passes: those middlewares are
+        // SaaS-owned and exist for the public multi-tenant edge, not a LAN deployment.
+        TenantResolution = a =>
+        {
+            a.UseMiddleware<CommunityJitProvisioningMiddleware>();
+            a.UseMiddleware<SingleTenantMiddleware>();
+        },
+    });
 
     // ── Endpoints ─────────────────────────────────────────────────────────────
     app.MapOrkyoHealthEndpoints();
