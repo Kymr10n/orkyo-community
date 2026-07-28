@@ -69,7 +69,7 @@
       "publicClient": false,
       "secret": "changeme",
       "protocol": "openid-connect",
-      "directAccessGrantsEnabled": true,
+      "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": true,
       "standardFlowEnabled": true,
       "fullScopeAllowed": true,
