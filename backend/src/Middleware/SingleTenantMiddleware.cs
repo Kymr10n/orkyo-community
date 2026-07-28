@@ -32,11 +32,16 @@ public sealed class SingleTenantMiddleware
         if (tenant is null)
         {
             _logger.LogError("SingleTenantResolver returned null — community tenant not configured");
-            context.Response.StatusCode = 503;
-            await context.Response.WriteAsJsonAsync(new ErrorResponse
+            const string code = "community_tenant_unconfigured";
+            context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsJsonAsync(new OrkyoProblemDetails
             {
-                Error = "Community tenant not configured",
-                Code = "community_tenant_unconfigured",
+                Type = OrkyoProblemDetails.TypeFor(code),
+                Title = "Service Unavailable",
+                Detail = "Community tenant not configured",
+                Status = StatusCodes.Status503ServiceUnavailable,
+                Code = code,
             });
             return;
         }
