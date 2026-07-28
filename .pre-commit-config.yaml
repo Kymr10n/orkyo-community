@@ -57,3 +57,11 @@ repos:
         pass_filenames: false
         stages: [pre-push]
         files: '^frontend/.*\.(ts|tsx)$'
+
+      - id: foundation-package-parity
+        name: foundation package parity (CI-mode build)
+        entry: scripts/check-foundation-parity.sh
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+        files: '\.(cs|csproj|slnx|props)$'

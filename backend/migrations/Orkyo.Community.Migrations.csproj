@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <Choose>
-    <When Condition="Exists('..\..\..\orkyo-foundation\backend\migration-abstractions\Orkyo.Migration.Abstractions.csproj')">
+    <When Condition="'$(OrkyoUseFoundationPackage)' != 'true' AND Exists('..\..\..\orkyo-foundation\backend\migration-abstractions\Orkyo.Migration.Abstractions.csproj')">
       <ItemGroup>
         <ProjectReference Include="..\..\..\orkyo-foundation\backend\migration-abstractions\Orkyo.Migration.Abstractions.csproj" />
         <ProjectReference Include="..\..\..\orkyo-foundation\backend\migrator-runtime\Orkyo.Migrator.csproj" />
