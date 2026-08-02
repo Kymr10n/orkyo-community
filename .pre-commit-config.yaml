@@ -1,5 +1,12 @@
 # Run before commit: pre-commit run --all-files
 # Install: pip install pre-commit && pre-commit install
+#
+# default_install_hook_types is load-bearing: the docs-impact check runs at the
+# commit-msg stage, and a plain `pre-commit install` only wires up pre-commit unless
+# the types are declared here. Without it the hook exists in config and never fires —
+# worse than no hook, because it looks enforced.
+default_install_hook_types: [pre-commit, commit-msg]
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -65,3 +72,8 @@ repos:
         pass_filenames: false
         stages: [pre-push]
         files: '\.(cs|csproj|slnx|props)$'
+      - id: docs-impact
+        name: docs impact recorded (user-visible changes)
+        entry: scripts/check-docs-impact.sh
+        language: system
+        stages: [commit-msg]

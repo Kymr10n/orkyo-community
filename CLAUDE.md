@@ -56,3 +56,23 @@ Local ports: API `5002` · Keycloak `8082` · Postgres `5433` · Frontend `5174`
 ## Explicit-registration rule
 
 If `Program.cs` calls `UseX()`, it must call `AddX()` in the same file — never rely on `AddFoundationServices` to register a service that the API project uses directly. Foundation owns implementations; the API project owns how it exposes them. This rule exists because Foundation is consumed as a NuGet package in CI/Docker, and there is always a window between a Foundation change landing and the package being published. Any implicit dependency on Foundation registering a service will silently break CI during that window.
+
+## Documentation impact (enforced)
+
+Every commit touching a user-visible surface must record its documentation impact as a
+commit trailer — the Definition of Done from orkyo-documentation `SPECIFICATION.md` §12:
+
+```
+Docs-impact: none
+Docs-impact: docs/user-guide/insights.md
+Docs-impact: orkyo-documentation#12
+```
+
+`none` is a legitimate answer; the point is a recorded decision, not a mandatory edit.
+A `commit-msg` hook (`scripts/check-docs-impact.sh`) blocks commits that touch endpoints,
+domain models, components or pages without one. `test:`/`ci:`/`build:`/`docs:` commits and
+merges are exempt.
+
+This exists because the published documentation quotes UI strings verbatim, so a behaviour
+change falsifies pages silently. The rule was already written down and unenforced, and one
+afternoon of work left four pages describing things the product no longer does.
