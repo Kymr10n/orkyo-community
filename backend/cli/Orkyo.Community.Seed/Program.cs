@@ -48,7 +48,7 @@ public static class Program
 
         Console.WriteLine(
             $"Seeding Community DB ({new NpgsqlConnectionStringBuilder(connString).Database}) — " +
-            $"profile={opts.Profile}, scale={opts.Scale}, mode={seedOpts.Mode}, floorplans={opts.Floorplans}, tools={opts.Tools}.");
+            $"profile={opts.Profile}, scale={opts.Scale}, mode={seedOpts.Mode}, floorplans={opts.Floorplans}.");
 
         try
         {
