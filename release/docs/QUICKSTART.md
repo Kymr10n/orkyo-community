@@ -109,6 +109,24 @@ auth.example.com {
 }
 ```
 
+**Traefik (v3) example (auto-TLS via Let's Encrypt).** Add labels to `compose.yml` on the `frontend` service, alongside an appropriately configured Traefik with an `https` entrypoint and a `letsencrypt` cert resolver:
+
+```yaml
+labels:
+  - "traefik.enable=true"
+  - "traefik.http.routers.orkyo.rule=Host(`community.example.com`)"
+  - "traefik.http.routers.orkyo.entrypoints=https"
+  - "traefik.http.routers.orkyo.tls.certresolver=letsencrypt"
+  - "traefik.http.services.orkyo.loadbalancer.server.port=80"
+```
+
+**Nginx Proxy Manager (NPM).** Add a **Proxy Host**:
+
+- *Domain Names:* `community.example.com`
+- *Scheme:* `http`, *Forward Hostname / IP:* the docker host's LAN IP (not `127.0.0.1` — NPM runs in its own container), *Forward Port:* `80`
+- *Block Common Exploits:* on. *Websockets Support:* on.
+- *SSL* tab: request a new Let's Encrypt certificate, force SSL, HSTS enabled.
+
 ## Next steps
 
 - [OPERATIONS.md](OPERATIONS.md) — backup, upgrade, restore
