@@ -54,3 +54,4 @@ CVE-2026-55833  # HIGH | netty-codec in KC bundled jars | no upstream 26.6.x pat
 CVE-2026-55851  # HIGH | netty-codec-haproxy in KC bundled jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
 CVE-2026-56745  # HIGH | netty-codec in KC bundled jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
 CVE-2026-59901  # HIGH | netty-codec (fix 4.1.135.Final) in KC bundled jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
+CVE-2026-56819  # HIGH | netty-codec-http2 DoS (fix 4.1.136.Final) in KC bundled jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-08-04 | Review: 2026-08-08
