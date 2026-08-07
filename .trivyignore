@@ -21,6 +21,7 @@ CVE-2026-56408  # HIGH | libexpat <2.8.2 integer overflow copyString | upstream 
 CVE-2026-54512  # HIGH | jackson-databind PolymorphicTypeValidator bypass (RCE) in upstream keycloak 26.6.4 jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-09 | Review: 2026-08-08
 CVE-2026-54513  # HIGH | jackson-databind security bypass (RCE) in upstream keycloak 26.6.4 jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-09 | Review: 2026-08-08
 CVE-2026-40983  # HIGH | micrometer-core DoS in upstream keycloak 26.6.4 jars (fix 1.16.6/1.15.12 ships with a KC bump) | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-08-07 | Review: 2026-09-07
+CVE-2026-40984  # HIGH | micrometer-core/jetty DoS sibling of 40983 in upstream keycloak 26.6.4 jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-08-07 | Review: 2026-09-07
 
 # ── Trivy false positive ───────────────────────────────────────────────────────
 # Trivy reports fix as 12.6.5 but KC ships mssql-jdbc 13.2.1.jre11 (newer); false positive.
