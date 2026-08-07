@@ -30,6 +30,7 @@ Local ports: API `5002` · Keycloak `8082` · Postgres `5433` · Frontend `5174`
 - **Foundation reference is conditional**: project ref in local dev, NuGet pin in CI / Docker. Don't change the csproj conditional without coordination.
 - **Migrations** must carry the `-- @migration-class:` header. See `orkyo-infra/docs/migrations/classification.md`.
 - **Release bundle** (`release/`) is the self-hosted artifact. Changes there are user-facing for self-hosters; smoke-test before tagging.
+- **Releasing**: this repo is tagged by `orkyo-infra`'s `release-promote.yml` alongside orkyo-saas (runbook: `orkyo-infra/docs/runbooks/deploy.md`); never tag by hand. The `v*` tag run builds and publishes the bundle.
 - **Observability**: structured Serilog logging is wired (same foundation helper as SaaS — `OrkyoObservability.InitBootstrapLogger()` + `UseOrkyoLogging` in `backend/api/Program.cs`; the Loki sink comes transitively from foundation). Prometheus metrics are wired via the foundation helpers too: `UseOrkyoMetrics()` + `MapOrkyoMetricsEndpoint(METRICS_TOKEN)` in `backend/api/Program.cs`. The `/metrics` endpoint is fail-secure — with no `METRICS_TOKEN` configured it is not mapped at all (404), so self-hosters opt in explicitly (see `release/.env.template`).
 
 ## Where things live
