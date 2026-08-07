@@ -48,6 +48,7 @@ Orkyo replaces that with a shared, visual plan: requests, assignments, conflicts
 - **Conflict detection** — catch double-bookings and overloads before they're committed
 - **Utilisation tracking** — see where capacity goes, and where it's wasted
 - **Request workflow** — teams submit requests; Orkyo matches them to available resources
+- **Calendar feeds** — subscribe to schedules from external calendars via iCal
 
 ## Screenshots
 
@@ -136,7 +137,7 @@ Shared domain logic — endpoints, repositories, scheduling, UI components — l
 
 ## Roadmap
 
-Active development, pre-1.0. Near-term: availability & absence model, notifications, calendar/iCal integration. See [ROADMAP.md](ROADMAP.md) — and [open an issue](https://github.com/Kymr10n/orkyo-community/issues) or [discussion](https://github.com/Kymr10n/orkyo-community/discussions) with requests.
+Active development, pre-1.0. Near-term: notifications & reminders. See [ROADMAP.md](ROADMAP.md) — and [open an issue](https://github.com/Kymr10n/orkyo-community/issues) or [discussion](https://github.com/Kymr10n/orkyo-community/discussions) with requests.
 
 ## Support
 
