@@ -28,8 +28,16 @@ on:
     types: [foundation_updated]
 
 concurrency:
-  group: release-ci-${{ github.ref }}
-  cancel-in-progress: true
+  # repository_dispatch runs report github.ref = refs/heads/main, so they used to share a
+  # group with pushes to main: a dispatch could cancel an in-flight push build (and vice
+  # versa), and a same-window nightly + stable foundation_updated dispatch could cancel each
+  # other, unordered. Key dispatch runs by channel instead, and never cancel one — the
+  # auto-bump it produces is idempotent, so a redundant dispatch queues harmlessly.
+  group: >-
+    release-ci-${{ github.event_name == 'repository_dispatch'
+      && format('bump-{0}', github.event.client_payload.channel)
+      || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'repository_dispatch' }}
 
 permissions: {}
 
