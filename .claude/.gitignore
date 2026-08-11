@@ -1,0 +1,3 @@
+# Python bytecode from the vendored ste_lint.py / ste-check.py
+__pycache__/
+*.pyc

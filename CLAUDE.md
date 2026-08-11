@@ -32,6 +32,13 @@ Local ports: API `5002` · Keycloak `8082` · Postgres `5433` · Frontend `5174`
 - **Release bundle** (`release/`) is the self-hosted artifact. Changes there are user-facing for self-hosters; smoke-test before tagging.
 - **Never reference a foundation API that is not in the PINNED package version** — local project references compile against foundation `main`; CI builds the package and fails. Downstream changes depending on new foundation APIs land only after the version bump does.
 - **Releasing**: this repo is tagged by `orkyo-infra`'s `release-promote.yml` alongside orkyo-saas (runbook: `orkyo-infra/docs/runbooks/deploy.md`); never tag by hand. The `v*` tag run builds and publishes the bundle.
+- **Documentation language is ASD-STE100 Simplified Technical English.** Applies to `docs/` and
+  `release/docs/`. `release/docs/QUICKSTART.md` and `release/docs/OPERATIONS.md` are procedural:
+  imperative, one instruction per sentence, 20 words maximum, condition before the command.
+  Everything else is descriptive: simple tenses, 25 words maximum. Approved modals are
+  can/will/must. The 53 rules are in `.claude/skills/simple-english/SKILL.md`; the scope table
+  and the Orkyo term list are in `orkyo-documentation/docs/LANGUAGE-STANDARD.md`. A
+  `PostToolUse` hook (`.claude/hooks/ste-check.py`) reports violations — advisory, no CI gate.
 - **Observability**: structured Serilog logging is wired (same foundation helper as SaaS — `OrkyoObservability.InitBootstrapLogger()` + `UseOrkyoLogging` in `backend/api/Program.cs`; the Loki sink comes transitively from foundation). Prometheus metrics are wired via the foundation helpers too: `UseOrkyoMetrics()` + `MapOrkyoMetricsEndpoint(METRICS_TOKEN)` in `backend/api/Program.cs`. The `/metrics` endpoint is fail-secure — with no `METRICS_TOKEN` configured it is not mapped at all (404), so self-hosters opt in explicitly (see `release/.env.template`).
 
 ## Where things live

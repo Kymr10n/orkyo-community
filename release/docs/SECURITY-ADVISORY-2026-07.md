@@ -10,9 +10,9 @@ checked by hand; see below.
 
 ## What the problem is
 
-Community is single-tenant, and by design *every user of an install is an admin
-of that install's organisation* — a database trigger grants admin membership
-whenever a user record is created. That is reasonable on a private network.
+Community holds one workspace per installation. By design, *every user of an
+install is an admin of that install's organization* — a database trigger grants
+admin membership whenever a user record is created. That is reasonable on a private network.
 
 Realms shipped before 0.12.0 also enabled **Keycloak self-registration** with no
 password policy. Together, those two facts mean anyone who could reach the
