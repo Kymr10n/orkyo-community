@@ -56,6 +56,37 @@ Local ports: API `5002` · Keycloak `8082` · Postgres `5433` · Frontend `5174`
 3. `.github/workflows/release-ci.yml` — release model
 4. `orkyo-infra/docs/structural-hardening-2026-05.md` — current cross-repo hardening plan
 
+## Test coverage (every code change)
+
+**Every change ships at or above 80% patch coverage.** Measure locally before opening a PR —
+codecov reporting it afterwards means a review round trip that a two-minute local run avoids:
+
+```bash
+dotnet test backend/tests/Orkyo.Community.Tests.csproj --collect:"XPlat Code Coverage"
+# then read the cobertura report for the files you touched
+npx vitest run --coverage        # frontend
+```
+
+Cover the paths that carry risk first: rejection and error branches, authorization decisions,
+and anything a security control depends on. A happy path with no failure case tested is the
+usual reason a patch lands under 80%.
+
+Three exemptions, and nothing else. State the reason in the PR:
+
+- **Unreachable code.** If a branch cannot execute, the fix is to delete it, not to test it —
+  see "no error handling for impossible scenarios" below. A coverage gap is often how dead
+  code announces itself.
+- **Composition-root wiring** whose only assertion would restate the registration line.
+  Registrations that encode a rule — which implementation a config key selects — are behavior
+  and must be tested.
+- **Third-party integration surfaces** that cannot run under the test host: a browser widget
+  loading a remote script, a container entrypoint. Test the decision around them (does the
+  widget render at all?) rather than the vendor's code.
+
+This is a rule of practice, not a CI gate. Codecov reports the number and does not block the
+merge; deliberately, because a hard threshold turns into a treadmill of tests written to move
+a percentage rather than to catch a defect.
+
 ## Things not to do
 
 - Don't add tenant-shaped code here. This is single-tenant.
