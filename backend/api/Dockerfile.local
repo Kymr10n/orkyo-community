@@ -7,6 +7,14 @@ WORKDIR /src
 
 # Foundation source — satisfies Exists() condition in Orkyo.Community.csproj,
 # activating project references instead of NuGet packages.
+# Central Package Management (foundation #118 / saas #194 / community #78):
+# every PackageReference is versionless; restore fails with NU1015 unless each
+# repo's Directory.Packages.props is in the context. Build.props rides along for
+# the shared MSBuild settings the projects assume.
+COPY orkyo-foundation/Directory.Packages.props           orkyo-foundation/
+COPY orkyo-community/Directory.Packages.props                 orkyo-community/
+COPY orkyo-community/Directory.Build.props                    orkyo-community/
+
 COPY orkyo-foundation/backend/shared                  orkyo-foundation/backend/shared/
 COPY orkyo-foundation/backend/core                    orkyo-foundation/backend/core/
 COPY orkyo-foundation/backend/src                     orkyo-foundation/backend/src/

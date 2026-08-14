@@ -2,7 +2,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:ed034a8bf0b24ded0cbbac07e17825d8e9ebfe21e308191d0f7421eaf5ad4664 AS build
 WORKDIR /src
 
-COPY Directory.Build.props ./
+# Central Package Management: every PackageReference is versionless, so restore
+# fails with NU1015 without the central version list in the context.
+COPY Directory.Build.props Directory.Packages.props ./
 COPY backend/migrations/Orkyo.Community.Migrations.csproj backend/migrations/
 COPY backend/src/Orkyo.Community.csproj backend/src/
 COPY backend/api/Orkyo.Community.Api.csproj backend/api/
