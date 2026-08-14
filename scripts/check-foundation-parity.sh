@@ -54,9 +54,11 @@ fi
 [[ -n "${TOKEN}" ]] || fail "no GitHub Packages token (set GITHUB_TOKEN, put one in .env, or 'gh auth login')"
 
 # ── Temp NuGet config with the GitHub feed ────────────────────────────────────
-# The repo's nuget.config deliberately has no GitHub source (absent credentials
-# would break normal restores); package-mode restore needs one, so it goes in a
-# throwaway config that never touches the tree.
+# --configfile REPLACES the whole config chain, so the repo's sources, mapping and
+# credentials do not apply here — this file must be self-contained. It carries the
+# token, which is why it is a throwaway that never touches the tree.
+# The mapping is not optional: under Central Package Management two unmapped
+# sources fail restore outright with NU1507.
 TMP_CFG=$(mktemp -d)
 trap 'rm -rf "${TMP_CFG}"' EXIT
 export ORKYO_PARITY_TOKEN="${TOKEN}"
@@ -64,9 +66,18 @@ cat > "${TMP_CFG}/nuget.config" <<'CFG'
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <packageSources>
+    <clear />
     <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
     <add key="github" value="https://nuget.pkg.github.com/kymr10n/index.json" />
   </packageSources>
+  <packageSourceMapping>
+    <packageSource key="nuget.org">
+      <package pattern="*" />
+    </packageSource>
+    <packageSource key="github">
+      <package pattern="Orkyo.*" />
+    </packageSource>
+  </packageSourceMapping>
   <packageSourceCredentials>
     <github>
       <add key="Username" value="kymr10n" />

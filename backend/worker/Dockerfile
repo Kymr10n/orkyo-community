@@ -6,11 +6,13 @@ WORKDIR /src
 # fails with NU1015 without the central version list in the context.
 COPY Directory.Build.props Directory.Packages.props ./
 COPY backend/worker/Orkyo.Community.Worker.csproj backend/worker/
+# nuget.config declares the `github` source (adding it again would fail); this
+# only attaches the credentials, which are never stored in the repo.
 COPY nuget.config ./
 
 RUN --mount=type=secret,id=nuget_token,required=true \
-    dotnet nuget add source https://nuget.pkg.github.com/Kymr10n/index.json \
-      --name github --username Kymr10n \
+    dotnet nuget update source github \
+      --username Kymr10n \
       --password "$(cat /run/secrets/nuget_token)" \
       --store-password-in-clear-text \
     && dotnet restore backend/worker/Orkyo.Community.Worker.csproj -r linux-musl-x64 /p:PublishReadyToRun=true

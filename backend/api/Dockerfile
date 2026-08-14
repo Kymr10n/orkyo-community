@@ -8,11 +8,13 @@ COPY Directory.Build.props Directory.Packages.props ./
 COPY backend/migrations/Orkyo.Community.Migrations.csproj backend/migrations/
 COPY backend/src/Orkyo.Community.csproj backend/src/
 COPY backend/api/Orkyo.Community.Api.csproj backend/api/
+# nuget.config declares the `github` source (adding it again would fail); this
+# only attaches the credentials, which are never stored in the repo.
 COPY nuget.config ./
 
 RUN --mount=type=secret,id=nuget_token,required=true \
-    dotnet nuget add source https://nuget.pkg.github.com/Kymr10n/index.json \
-      --name github --username Kymr10n \
+    dotnet nuget update source github \
+      --username Kymr10n \
       --password "$(cat /run/secrets/nuget_token)" \
       --store-password-in-clear-text \
     && dotnet restore backend/api/Orkyo.Community.Api.csproj -r linux-musl-x64 /p:PublishReadyToRun=true

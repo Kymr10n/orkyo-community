@@ -43,6 +43,18 @@ check_cmd dotnet
 check_cmd node
 check_cmd npm
 
+# The backend consumes Orkyo.Foundation through the sibling checkout, not the package
+# feed: the csproj picks a ProjectReference when ../orkyo-foundation exists and falls back
+# to a PackageReference otherwise. Without the sibling AND without feed credentials the
+# restore below dies in an opaque NU1101, so say what is actually wrong.
+if [ ! -f "../orkyo-foundation/backend/src/Orkyo.Foundation.Web.csproj" ]; then
+  error "orkyo-foundation is not checked out next to this repo."
+  error "  expected: $(cd .. && pwd)/orkyo-foundation"
+  error "  clone it there, or restore in package mode with feed credentials:"
+  error "    OrkyoUseFoundationPackage=true dotnet restore Orkyo.Community.slnx"
+  exit 1
+fi
+
 log "Restoring backend dependencies"
 dotnet restore Orkyo.Community.slnx
 

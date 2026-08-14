@@ -13,6 +13,20 @@
 # Dependabot security updates out of the groups, so an advisory-driven fix
 # arrives on its own and immediately.
 version: 2
+
+# The Orkyo.* packages live on GitHub Packages, not nuget.org. Without these
+# credentials Dependabot cannot restore the dependency graph at all, so the whole
+# nuget run aborts and NO update is raised — which is why this repo saw docker and
+# npm pull requests but never a nuget one.
+# The token is a Dependabot-scoped secret (Settings → Secrets and variables →
+# Dependabot), separate from Actions secrets, and needs only `read:packages`.
+registries:
+  orkyo-github-packages:
+    type: nuget-feed
+    url: https://nuget.pkg.github.com/Kymr10n/index.json
+    username: Kymr10n
+    password: ${{secrets.DEPENDABOT_PACKAGES_TOKEN}}
+
 updates:
   - package-ecosystem: docker
     directories:
@@ -22,6 +36,8 @@ updates:
       - /frontend
     schedule:
       interval: weekly
+
+    open-pull-requests-limit: 5
     groups:
       docker-minor-patch:
         applies-to: version-updates
@@ -31,11 +47,27 @@ updates:
         applies-to: version-updates
         patterns: ["*"]
         update-types: ["major"]
+      docker-digest:
+        # A digest-only bump has no semver update-type, so it matches neither group
+        # above and Dependabot raises one pull request PER DIRECTORY — four identical
+        # dotnet/sdk bumps in this repo before this group existed. Patterns-only
+        # catches them and batches them into one.
+        applies-to: version-updates
+        patterns: ["*"]
 
   - package-ecosystem: nuget
     directory: /
+    registries:
+      - orkyo-github-packages
     schedule:
       interval: weekly
+
+    # The Orkyo.* pins resolve from $(OrkyoFoundationVersion) in Directory.Build.props
+    # and are owned by the release train (reusable-auto-bump.yml). Dependabot would
+    # replace that property reference with a literal version and race the train.
+    ignore:
+      - dependency-name: "Orkyo.*"
+    open-pull-requests-limit: 5
     groups:
       nuget-minor-patch:
         applies-to: version-updates
@@ -50,6 +82,8 @@ updates:
     directory: /frontend
     schedule:
       interval: weekly
+
+    open-pull-requests-limit: 5
     groups:
       npm-minor-patch:
         applies-to: version-updates
@@ -64,6 +98,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+
+    open-pull-requests-limit: 5
     groups:
       actions-minor-patch:
         applies-to: version-updates

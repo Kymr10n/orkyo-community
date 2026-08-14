@@ -7,29 +7,40 @@ WORKDIR /src
 
 # Foundation source — satisfies Exists() condition in Orkyo.Community.csproj,
 # activating project references instead of NuGet packages.
-# Central Package Management (foundation #118 / saas #194 / community #78):
-# every PackageReference is versionless; restore fails with NU1015 unless each
-# repo's Directory.Packages.props is in the context. Build.props rides along for
-# the shared MSBuild settings the projects assume.
-COPY orkyo-foundation/Directory.Packages.props           orkyo-foundation/
-COPY orkyo-community/Directory.Packages.props                 orkyo-community/
-COPY orkyo-community/Directory.Build.props                    orkyo-community/
 
+# Restore layer: version lists, NuGet config and project files ONLY. Source is copied
+# after the restore below, so editing code does not invalidate it — the same shape the
+# CI Dockerfile uses, and the cache the dev loop leans on hardest.
+COPY orkyo-foundation/Directory.Build.props    orkyo-foundation/
+COPY orkyo-foundation/Directory.Packages.props  orkyo-foundation/
+COPY orkyo-foundation/nuget.config              orkyo-foundation/
+COPY orkyo-community/Directory.Packages.props  orkyo-community/
+COPY orkyo-community/Directory.Build.props     orkyo-community/
+COPY orkyo-community/nuget.config              orkyo-community/
+COPY orkyo-community/backend/api/Orkyo.Community.Api.csproj  orkyo-community/backend/api/
+COPY orkyo-community/backend/migrations/Orkyo.Community.Migrations.csproj  orkyo-community/backend/migrations/
+COPY orkyo-community/backend/src/Orkyo.Community.csproj  orkyo-community/backend/src/
+COPY orkyo-foundation/backend/core/Orkyo.Foundation.Core.csproj  orkyo-foundation/backend/core/
+COPY orkyo-foundation/backend/migration-abstractions/Orkyo.Migration.Abstractions.csproj  orkyo-foundation/backend/migration-abstractions/
+COPY orkyo-foundation/backend/migrations-foundation/Orkyo.Foundation.Migrations.csproj  orkyo-foundation/backend/migrations-foundation/
+COPY orkyo-foundation/backend/migrator-runtime/Orkyo.Migrator.csproj  orkyo-foundation/backend/migrator-runtime/
+COPY orkyo-foundation/backend/shared/Orkyo.Shared.csproj  orkyo-foundation/backend/shared/
+COPY orkyo-foundation/backend/src/Orkyo.Foundation.Web.csproj  orkyo-foundation/backend/src/
+
+RUN dotnet restore orkyo-community/backend/api/Orkyo.Community.Api.csproj
+
+# Source last: an edit invalidates only this layer and the publish that follows.
 COPY orkyo-foundation/backend/shared                  orkyo-foundation/backend/shared/
 COPY orkyo-foundation/backend/core                    orkyo-foundation/backend/core/
 COPY orkyo-foundation/backend/src                     orkyo-foundation/backend/src/
 COPY orkyo-foundation/backend/migration-abstractions  orkyo-foundation/backend/migration-abstractions/
 COPY orkyo-foundation/backend/migrator-runtime        orkyo-foundation/backend/migrator-runtime/
 COPY orkyo-foundation/backend/migrations-foundation   orkyo-foundation/backend/migrations-foundation/
-
-# Community source
 COPY orkyo-community/backend/migrations  orkyo-community/backend/migrations/
 COPY orkyo-community/backend/src         orkyo-community/backend/src/
 COPY orkyo-community/backend/api         orkyo-community/backend/api/
 
-WORKDIR /src/orkyo-community/backend/api
-RUN dotnet restore Orkyo.Community.Api.csproj
-RUN dotnet publish Orkyo.Community.Api.csproj -c Release -o /app/publish --no-restore
+RUN dotnet publish orkyo-community/backend/api/Orkyo.Community.Api.csproj -c Release -o /app/publish --no-restore
 
 # Runtime stage — identical to Dockerfile (production)
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
