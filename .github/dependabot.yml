@@ -5,33 +5,71 @@
 # FOUNDATION_KC_IMAGE build arg, not a pinned digest.
 # Also covers NuGet (central versions in Directory.Packages.props), npm, and
 # the SHA-pinned GitHub Actions in workflows.
+#
+# Each ecosystem raises at most two pull requests per run: one batching all
+# minor and patch updates, and one batching majors. Majors are grouped, never
+# ignored — an ignore rule also suppresses the security pull request when an
+# advisory is only fixed in a new major. `applies-to: version-updates` keeps
+# Dependabot security updates out of the groups, so an advisory-driven fix
+# arrives on its own and immediately.
 version: 2
 updates:
+  - package-ecosystem: docker
+    directories:
+      - /backend/api
+      - /backend/worker
+      - /backend/migrator
+      - /frontend
+    schedule:
+      interval: weekly
+    groups:
+      docker-minor-patch:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      docker-major:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["major"]
+
   - package-ecosystem: nuget
     directory: /
     schedule:
       interval: weekly
+    groups:
+      nuget-minor-patch:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      nuget-major:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["major"]
+
   - package-ecosystem: npm
     directory: /frontend
     schedule:
       interval: weekly
+    groups:
+      npm-minor-patch:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      npm-major:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["major"]
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
-  - package-ecosystem: docker
-    directory: /backend/api
-    schedule:
-      interval: weekly
-  - package-ecosystem: docker
-    directory: /backend/worker
-    schedule:
-      interval: weekly
-  - package-ecosystem: docker
-    directory: /backend/migrator
-    schedule:
-      interval: weekly
-  - package-ecosystem: docker
-    directory: /frontend
-    schedule:
-      interval: weekly
+    groups:
+      actions-minor-patch:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      actions-major:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["major"]
