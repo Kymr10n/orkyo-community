@@ -43,7 +43,30 @@ export default defineConfig(
       'react-refresh': reactRefresh,
     },
     rules: {
-      ...reactHooks.configs.recommended.rules,
+      // react-hooks rules enumerated one by one rather than spread from
+      // `reactHooks.configs.recommended.rules`: the spread inherits whatever the installed
+      // plugin considers recommended, and the 5 → 7 bump silently grew that set from 2 rules
+      // to 16 (the React Compiler rules joined the preset in v6), breaking CI with findings
+      // in files no commit touched. Enumerating them makes the next plugin major a diff to
+      // THIS list. Mirrors foundation's eslint.config.js — keep the two in sync.
+      // Preset ships exhaustive-deps, incompatible-library and unsupported-syntax at 'warn';
+      // promoted to 'error' here like the rest.
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'error',
+      'react-hooks/static-components': 'error',
+      'react-hooks/use-memo': 'error',
+      'react-hooks/preserve-manual-memoization': 'error',
+      'react-hooks/incompatible-library': 'error',
+      'react-hooks/immutability': 'error',
+      'react-hooks/globals': 'error',
+      'react-hooks/refs': 'error',
+      'react-hooks/set-state-in-effect': 'error',
+      'react-hooks/error-boundaries': 'error',
+      'react-hooks/purity': 'error',
+      'react-hooks/set-state-in-render': 'error',
+      'react-hooks/unsupported-syntax': 'error',
+      'react-hooks/config': 'error',
+      'react-hooks/gating': 'error',
       'react/prop-types': 'off',
       'react/display-name': 'off',
       'react/no-unescaped-entities': 'off',

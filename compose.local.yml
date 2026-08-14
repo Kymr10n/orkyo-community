@@ -29,7 +29,7 @@ services:
       retries: 10
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.6.1
+    image: quay.io/keycloak/keycloak:26.6.4
     container_name: orkyo-community-keycloak
     command: start-dev --import-realm
     environment:

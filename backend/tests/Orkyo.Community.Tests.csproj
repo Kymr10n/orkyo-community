@@ -16,12 +16,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GitHubActionsTestLogger" Version="3.0.4" />
+    <PackageReference Include="GitHubActionsTestLogger" />
     <ProjectReference Include="..\api\Orkyo.Community.Api.csproj" />
-    <PackageReference Include="AwesomeAssertions" Version="9.4.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
-    <PackageReference Include="Testcontainers.PostgreSql" Version="4.13.0" />
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
     <!--
       Transitive security pin, not a dependency this project uses directly. Testcontainers
       pulls SSH.NET, and every version <= 2025.1.0 carries GHSA-q939-rpr3-3284 (High).
@@ -29,10 +29,10 @@
       forced here. Same pin as foundation and saas - drop all three once
       Testcontainers.PostgreSql resolves 2026.0.0 or later on its own.
     -->
-    <PackageReference Include="SSH.NET" Version="2026.0.0" />
-    <PackageReference Include="xunit" Version="2.9.3" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
-    <PackageReference Include="coverlet.collector" Version="10.0.1" />
+    <PackageReference Include="SSH.NET" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="coverlet.collector" />
   </ItemGroup>
 
   <!-- Foundation test support: project reference locally, NuGet in CI/Docker -->
@@ -44,7 +44,7 @@
     </When>
     <Otherwise>
       <ItemGroup>
-        <PackageReference Include="Orkyo.Foundation.TestSupport" Version="$(OrkyoFoundationVersion)" />
+        <PackageReference Include="Orkyo.Foundation.TestSupport" />
       </ItemGroup>
     </Otherwise>
   </Choose>
