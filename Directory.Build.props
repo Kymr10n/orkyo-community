@@ -12,4 +12,19 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!-- The central list governs transitive versions too, not only direct references.
+         Without this a project can resolve an older patch of a package the central list
+         already pins (seeding resolved Microsoft.Extensions.DependencyInjection.Abstractions
+         at 10.0.0 while the list said 10.0.11), and the only other way to lift it is to add
+         a direct PackageReference per project — which dependabot proposed and which spreads
+         the same change across csproj files instead of stating it once.
+
+         Measured cost: the pinned transitives become declared dependencies of the packages
+         this repo publishes (Orkyo.Foundation.Core 7 to 10 entries, Orkyo.Foundation.Seed
+         3 to 5). That is deliberate — it states a version floor consumers cannot resolve
+         below, and the packages were already pulling them in. -->
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
 </Project>
