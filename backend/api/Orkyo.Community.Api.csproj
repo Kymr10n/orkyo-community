@@ -13,11 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
-    <!-- Serilog + Loki sink come transitively from Orkyo.Foundation. -->
-    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.*" />
-    <!-- Used directly in Program.cs for app.UseSwagger()/UseSwaggerUI() over the reporting-v1 doc. -->
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+    <PackageReference Include="AspNetCore.HealthChecks.NpgSql" />
+    <!-- Serilog + Loki sink, JwtBearer, and Swashbuckle come transitively from Orkyo.Foundation. -->
+    <!-- Program.cs builds the IConnectionMultiplexer for Valkey directly. -->
+    <PackageReference Include="StackExchange.Redis" />
   </ItemGroup>
 </Project>

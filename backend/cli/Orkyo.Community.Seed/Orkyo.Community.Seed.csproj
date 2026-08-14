@@ -11,8 +11,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="2.9.*" />
-    <PackageReference Include="Npgsql" Version="10.0.3" />
+    <PackageReference Include="CommandLineParser" />
+    <PackageReference Include="Npgsql" />
   </ItemGroup>
 
   <!-- Foundation Seed library: project reference locally, NuGet when sibling not present. -->
@@ -24,7 +24,7 @@
     </When>
     <Otherwise>
       <ItemGroup>
-        <PackageReference Include="Orkyo.Foundation.Seed" Version="$(OrkyoFoundationVersion)" />
+        <PackageReference Include="Orkyo.Foundation.Seed" />
       </ItemGroup>
     </Otherwise>
   </Choose>

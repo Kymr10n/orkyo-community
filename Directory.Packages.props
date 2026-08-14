@@ -1,0 +1,52 @@
+<Project>
+  <!--
+    Central package management: every NuGet version for this repo lives here.
+    Projects reference packages without a Version attribute. Third-party
+    versions mirror orkyo-foundation's Directory.Packages.props; Orkyo.*
+    packages ride $(OrkyoFoundationVersion) from Directory.Build.props, which
+    scripts/bump-foundation.sh continues to rewrite.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <!-- Orkyo foundation packages (used by the CI/Docker package path) -->
+  <ItemGroup>
+    <PackageVersion Include="Orkyo.Foundation.Core" Version="$(OrkyoFoundationVersion)" />
+    <PackageVersion Include="Orkyo.Foundation.Migrations" Version="$(OrkyoFoundationVersion)" />
+    <PackageVersion Include="Orkyo.Foundation.Seed" Version="$(OrkyoFoundationVersion)" />
+    <PackageVersion Include="Orkyo.Foundation.TestSupport" Version="$(OrkyoFoundationVersion)" />
+    <PackageVersion Include="Orkyo.Foundation.Web" Version="$(OrkyoFoundationVersion)" />
+    <PackageVersion Include="Orkyo.Migration.Abstractions" Version="$(OrkyoFoundationVersion)" />
+    <PackageVersion Include="Orkyo.Migrator" Version="$(OrkyoFoundationVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
+    <PackageVersion Include="CommandLineParser" Version="2.9.1" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.10" />
+    <PackageVersion Include="Npgsql" Version="10.0.3" />
+    <PackageVersion Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
+    <PackageVersion Include="StackExchange.Redis" Version="3.1.13" />
+  </ItemGroup>
+
+  <!-- Test-only -->
+  <ItemGroup>
+    <PackageVersion Include="AwesomeAssertions" Version="9.4.0" />
+    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
+    <PackageVersion Include="GitHubActionsTestLogger" Version="3.0.4" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+    <PackageVersion Include="SSH.NET" Version="2026.0.0" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.13.0" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+</Project>

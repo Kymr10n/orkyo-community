@@ -22,19 +22,12 @@
     </When>
     <Otherwise>
       <ItemGroup>
-        <PackageReference Include="Orkyo.Foundation.Web" Version="$(OrkyoFoundationVersion)" />
-        <PackageReference Include="Orkyo.Migration.Abstractions" Version="$(OrkyoFoundationVersion)" />
-        <PackageReference Include="Orkyo.Migrator" Version="$(OrkyoFoundationVersion)" />
-        <PackageReference Include="Orkyo.Foundation.Migrations" Version="$(OrkyoFoundationVersion)" />
+        <PackageReference Include="Orkyo.Foundation.Web" />
+        <PackageReference Include="Orkyo.Migration.Abstractions" />
+        <PackageReference Include="Orkyo.Migrator" />
+        <PackageReference Include="Orkyo.Foundation.Migrations" />
         <ProjectReference Include="..\migrations\Orkyo.Community.Migrations.csproj" />
       </ItemGroup>
     </Otherwise>
   </Choose>
-
-  <ItemGroup>
-    <PackageReference Include="FluentValidation" Version="12.*" />
-    <PackageReference Include="Npgsql" Version="10.0.3" />
-    <PackageReference Include="MailKit" Version="4.17.0" />
-    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
-  </ItemGroup>
 </Project>
