@@ -9,7 +9,7 @@
     "npm": "10.x"
   },
   "scripts": {
-    "postinstall": "node scripts/sync-foundation-build.mjs",
+    "postinstall": "node scripts/sync-foundation-build.mjs && node scripts/check-foundation-peers.mjs",
     "dev": "vite --host 0.0.0.0 --port 5173",
     "prebuild": "cp -r node_modules/@kymr10n/foundation/assets/. public/",
     "build": "vite build",
@@ -20,7 +20,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "check:foundation-peers": "node ./scripts/check-foundation-peers.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -33,7 +34,7 @@
     "@fullcalendar/list": "^6.1.21",
     "@fullcalendar/react": "^6.1.20",
     "@fullcalendar/timegrid": "^6.1.20",
-    "@kymr10n/foundation": "0.17.1-nightly.20260814.093cb22",
+    "@kymr10n/foundation": "0.17.1-nightly.20260814.6dfc4d2",
     "@radix-ui/react-alert-dialog": "^1.1.17",
     "@radix-ui/react-checkbox": "^1.3.5",
     "@radix-ui/react-collapsible": "^1.1.14",
@@ -50,7 +51,7 @@
     "@radix-ui/react-tooltip": "^1.2.10",
     "@radix-ui/react-visually-hidden": "^1.2.4",
     "@tanstack/react-query": "5.101.4",
-    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-table": "^9.1.2",
     "@tanstack/react-virtual": "^3.14.3",
     "@xstate/react": "^6.1.0",
     "date-fns": "^4.4.0",

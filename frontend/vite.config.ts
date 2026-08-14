@@ -145,6 +145,10 @@ export default defineConfig({
   },
   test: {
     environment: "happy-dom",
+    // Above setup.ts's asyncUtilTimeout (5000): vitest's 5000 default would kill a test
+    // before Testing Library could report which query timed out, turning a clear failure
+    // into "test timed out".
+    testTimeout: 15000,
     globals: true,
     setupFiles: "./src/test/setup.ts",
     exclude: ["**/node_modules/**", "**/dist/**", "**/.tsbuild/**"],
