@@ -1,4 +1,4 @@
-FROM node:22-alpine@sha256:e58326d0d441090181ac150dc2078d3e2cf6a0d42e809aebba3ef5880935ffdd AS deps
+FROM node:26-alpine@sha256:aadf416b2cdce311a8811ba3f0608a61b77dbf997500e2eafe781b51f6a0b019 AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 # The postinstall hook (npm ci, below) runs scripts/sync-foundation-build.mjs, so the
@@ -12,7 +12,7 @@ RUN --mount=type=secret,id=ghcr_token \
     npm ci && \
     rm -f .npmrc
 
-FROM node:22-alpine@sha256:e58326d0d441090181ac150dc2078d3e2cf6a0d42e809aebba3ef5880935ffdd AS builder
+FROM node:26-alpine@sha256:aadf416b2cdce311a8811ba3f0608a61b77dbf997500e2eafe781b51f6a0b019 AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
