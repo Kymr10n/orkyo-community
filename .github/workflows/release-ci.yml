@@ -169,7 +169,7 @@ jobs:
     if: needs.nightly-change-check.outputs.skip == 'false'
     permissions:
       contents: read
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-npm.yml@a367c8115f0c402dc8535fd15e15629ad9b03860
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-npm.yml@52096ef653daba7eb45d360d4901013d06a2a3cf
     with:
       with-private-registry: true
       # DELIBERATE: license scan ON — Community is distributed (AGPL self-host
