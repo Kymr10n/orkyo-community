@@ -13,7 +13,7 @@ jobs:
       contents: read
       packages: write
       issues: write
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-security-refresh.yml@a367c8115f0c402dc8535fd15e15629ad9b03860
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-security-refresh.yml@52096ef653daba7eb45d360d4901013d06a2a3cf
     with:
       image-name: orkyo-community-frontend
       needs-ghcr-secret: false
