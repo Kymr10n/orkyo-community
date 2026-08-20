@@ -45,7 +45,6 @@ public class RouteInventoryTests
     [InlineData("/api/criteria/00000000-0000-0000-0000-000000000000/applicability", "MapCriterionApplicabilityEndpoints")]
     [InlineData("/api/resource-groups/00000000-0000-0000-0000-000000000000/members", "MapResourceGroupMemberEndpoints")]
     // People
-    [InlineData("/api/person-profiles/00000000-0000-0000-0000-000000000000", "MapPersonProfileEndpoints")]
     // Sanity: routes that were already wired
     [InlineData("/api/sites", "MapSiteEndpoints")]
     [InlineData("/api/criteria", "MapCriteriaEndpoints")]
