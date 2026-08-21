@@ -49,6 +49,8 @@ Orkyo replaces that with a shared, visual plan: requests, assignments, conflicts
 - **Utilisation tracking** — see where capacity goes, and where it's wasted
 - **Request workflow** — teams submit requests; Orkyo matches them to available resources
 - **Calendar feeds** — subscribe to schedules from external calendars via iCal
+- **AI assistant** — bring your own Anthropic API key to ask about your schedule and get
+  guided help with conflicts; every change it suggests is applied only when you confirm it
 
 ## Screenshots
 
