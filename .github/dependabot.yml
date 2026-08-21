@@ -6,12 +6,27 @@
 # Also covers NuGet (central versions in Directory.Packages.props), npm, and
 # the SHA-pinned GitHub Actions in workflows.
 #
-# Each ecosystem raises at most two pull requests per run: one batching all
-# minor and patch updates, and one batching majors. Majors are grouped, never
-# ignored — an ignore rule also suppresses the security pull request when an
-# advisory is only fixed in a new major. `applies-to: version-updates` keeps
+# Each ecosystem raises at most three pull requests per run: one batching all
+# minor and patch updates, one batching majors, and one batching the bumps that
+# carry no semver update-type at all (digests, SHA pins). Majors are grouped,
+# never ignored — an ignore rule also suppresses the security pull request when
+# an advisory is only fixed in a new major. `applies-to: version-updates` keeps
 # Dependabot security updates out of the groups, so an advisory-driven fix
 # arrives on its own and immediately.
+#
+# GROUP ORDER MATTERS. A dependency joins the FIRST group it matches, so the
+# patterns-only catch-all must stay last — above it, the update-types filters
+# claim majors and minor/patch first.
+#
+# SCHEDULE IS STAGGERED across the four repos, one weekday each, two hours
+# between ecosystems: infra Monday, foundation Tuesday, saas Wednesday,
+# community Thursday. Six Dependabot runs starting in the same minute is what
+# rate-limited codeload and failed six saas pull requests at "Set up job" with
+# HTTP 429 on 2026-08-17; this repo raised the same six and only escaped by
+# firing in a quieter window.
+#
+# Minor, patch and digest updates merge themselves once the required checks
+# pass — see .github/workflows/dependabot-auto-merge.yml. Majors never do.
 version: 2
 
 # The Orkyo.* packages live on GitHub Packages, not nuget.org. Without these
@@ -36,6 +51,8 @@ updates:
       - /frontend
     schedule:
       interval: weekly
+      day: thursday
+      time: "03:00"
 
     open-pull-requests-limit: 5
     groups:
@@ -61,6 +78,8 @@ updates:
       - orkyo-github-packages
     schedule:
       interval: weekly
+      day: thursday
+      time: "05:00"
 
     # The Orkyo.* pins resolve from $(OrkyoFoundationVersion) in Directory.Build.props
     # and are owned by the release train (reusable-auto-bump.yml). Dependabot would
@@ -82,6 +101,8 @@ updates:
     directory: /frontend
     schedule:
       interval: weekly
+      day: thursday
+      time: "07:00"
 
     open-pull-requests-limit: 5
     groups:
@@ -98,6 +119,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+      day: thursday
+      time: "09:00"
 
     open-pull-requests-limit: 5
     groups:
@@ -109,3 +132,12 @@ updates:
         applies-to: version-updates
         patterns: ["*"]
         update-types: ["major"]
+      actions-digest:
+        # Same failure mode the docker-digest group above fixes, for Actions.
+        # The reusable workflows this repo calls from orkyo-foundation are
+        # referenced by commit SHA, not by tag, so they resolve to no semver
+        # release, carry no update-type, and match neither group above. Before
+        # this group they arrived as one pull request PER WORKFLOW FILE — six of
+        # them on 2026-08-17 (#90–#95). Patterns-only batches them into one.
+        applies-to: version-updates
+        patterns: ["*"]
