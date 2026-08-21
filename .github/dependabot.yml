@@ -25,8 +25,14 @@
 # HTTP 429 on 2026-08-17; this repo raised the same six and only escaped by
 # firing in a quieter window.
 #
-# Minor, patch and digest updates merge themselves once the required checks
-# pass — see .github/workflows/dependabot-auto-merge.yml. Majors never do.
+# NO AUTO-MERGE IN THIS REPO YET. main-protection carries a pull_request rule
+# (one approving review + a code-owner review) and GitHub's deferred auto-merge
+# path does NOT re-check ruleset bypass_actors when it completes: the pull
+# request stays BLOCKED / REVIEW_REQUIRED for good, even with the bot listed as
+# a bypass actor. Confirmed by GitHub support as not fixed in the near term:
+# https://github.com/orgs/community/discussions/162623
+# orkyo-saas and orkyo-infra have no pull_request rule on main, so auto-merge
+# works there and is enabled. This repo still merges by hand.
 version: 2
 
 # The Orkyo.* packages live on GitHub Packages, not nuget.org. Without these
