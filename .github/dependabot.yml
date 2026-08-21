@@ -25,14 +25,26 @@
 # HTTP 429 on 2026-08-17; this repo raised the same six and only escaped by
 # firing in a quieter window.
 #
-# NO AUTO-MERGE IN THIS REPO YET. main-protection carries a pull_request rule
-# (one approving review + a code-owner review) and GitHub's deferred auto-merge
-# path does NOT re-check ruleset bypass_actors when it completes: the pull
-# request stays BLOCKED / REVIEW_REQUIRED for good, even with the bot listed as
-# a bypass actor. Confirmed by GitHub support as not fixed in the near term:
-# https://github.com/orgs/community/discussions/162623
+# NO AUTO-MERGE IN THIS REPO — a decision, not a gap. main-protection carries a
+# pull_request rule (one approving review + a code-owner review), and GitHub's
+# deferred auto-merge path does NOT re-check ruleset bypass_actors when it
+# completes: the pull request stays BLOCKED / REVIEW_REQUIRED for good, even
+# with the bot listed as a bypass actor. Calling the merge endpoint directly
+# succeeds for the same actor, which isolates it to the auto-merge path. GitHub
+# support has said engineering will not resolve it in the near term.
+#   https://github.com/orgs/community/discussions/162623
+#   https://github.com/orgs/community/discussions/142206
+#
+# Two workarounds were considered and rejected. Dropping the pull_request rule
+# weakens the gate for human pull requests too, to serve a bot. A
+# workflow_run-triggered direct merge needs a github-actions[bot] bypass, which
+# is a wider hole than the Dependabot one, and puts real complexity in a merge
+# path. The grouping above already cuts this repo to roughly one pull request
+# per ecosystem per week, so the remaining manual merge is cheap. Revisit only
+# if GitHub fixes the bypass.
+#
 # orkyo-saas and orkyo-infra have no pull_request rule on main, so auto-merge
-# works there and is enabled. This repo still merges by hand.
+# completes there and is enabled in those two repos.
 version: 2
 
 # The Orkyo.* packages live on GitHub Packages, not nuget.org. Without these
