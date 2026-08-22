@@ -544,7 +544,7 @@ jobs:
       (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     permissions:
       contents: read
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-container-scan.yml@a367c8115f0c402dc8535fd15e15629ad9b03860
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-container-scan.yml@52096ef653daba7eb45d360d4901013d06a2a3cf
     with:
       image-name-prefix: orkyo-community
       services: '["api","worker","migrator","frontend","keycloak"]'
