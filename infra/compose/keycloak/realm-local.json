@@ -4,7 +4,7 @@
   "displayName": "Orkyo Community (Local)",
   "displayNameHtml": "<strong>Orkyo Community</strong>",
   "loginTheme": "orkyo",
-  "accountTheme": "keycloak.v2",
+  "accountTheme": "orkyo",
   "adminTheme": "keycloak.v2",
   "emailTheme": "keycloak",
   "sslRequired": "external",
