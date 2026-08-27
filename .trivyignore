@@ -57,3 +57,15 @@ CVE-2026-55851  # HIGH | netty-codec-haproxy in KC bundled jars | no upstream 26
 CVE-2026-56745  # HIGH | netty-codec in KC bundled jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
 CVE-2026-59901  # HIGH | netty-codec (fix 4.1.135.Final) in KC bundled jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
 CVE-2026-56819  # HIGH | netty-codec-http2 DoS (fix 4.1.136.Final) in KC bundled jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-08-04 | Review: 2026-08-08
+
+# ── Alpine openssl 3.5.7-r0 — every base image, all container builds ───────────
+# 2026-08-27: Alpine 3.23 and 3.24 both ship openssl 3.5.7-r0; the fix is 3.5.8-r0,
+# which no published upstream image contains yet — verified 2026-08-27 by scanning
+# the live floating tags, not just the pinned digests: mcr dotnet {aspnet,runtime}
+# :10.0-alpine and nginx:1.31-alpine both still carry 3.5.7-r0, so a digest bump
+# does not clear this. Reported against libcrypto3 and libssl3 under one CVE id.
+# Impact here is a denial of service, not code execution, and every listener is
+# behind Cloudflare and the nginx reverse proxy rather than exposed directly.
+# `apk upgrade` is not an option — see CLAUDE.md. Clears itself when upstream
+# rebuilds: nightly security-refresh.yml picks the new package up.
+CVE-2026-14456  # HIGH | openssl DoS via unbounded memory (libcrypto3/libssl3 3.5.7-r0, fix 3.5.8-r0) | no upstream alpine image rebuilt with 3.5.8-r0 yet | Added: 2026-08-27 | Review: 2026-09-10
