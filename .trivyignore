@@ -69,3 +69,13 @@ CVE-2026-56819  # HIGH | netty-codec-http2 DoS (fix 4.1.136.Final) in KC bundled
 # `apk upgrade` is not an option — see CLAUDE.md. Clears itself when upstream
 # rebuilds: nightly security-refresh.yml picks the new package up.
 CVE-2026-14456  # HIGH | openssl DoS via unbounded memory (libcrypto3/libssl3 3.5.7-r0, fix 3.5.8-r0) | no upstream alpine image rebuilt with 3.5.8-r0 yet | Added: 2026-08-27 | Review: 2026-09-10
+
+# ── Keycloak base OS layer (RHEL 9) — sqlite-libs 3.34.1-11.el9_8 not shipped ──
+# 2026-08-28: Red Hat fixed sqlite-libs in 3.34.1-11.el9_8, but no rebuilt KC
+# 26.6.x image ships it (26.6.5+ does not exist; KC 26.7 upgrade tracked
+# separately). sqlite-libs is an OS-layer package here — Keycloak persists to
+# Postgres and processes no attacker-supplied SQLite FTS5 data. Broke the
+# v0.19.3 train's container scan; saas/foundation scans passed the same day
+# only because they ran before the Trivy DB picked these up.
+CVE-2026-11822  # HIGH | sqlite FTS5 arbitrary code execution (KC base OS layer, fix 3.34.1-11.el9_8) | no KC 26.6.x rebuild; KC 26.7 upgrade tracked separately | Added: 2026-08-28 | Review: 2026-09-11
+CVE-2026-11824  # HIGH | sqlite FTS5 arbitrary code execution/crash sibling of 11822 (KC base OS layer) | no KC 26.6.x rebuild; KC 26.7 upgrade tracked separately | Added: 2026-08-28 | Review: 2026-09-11
