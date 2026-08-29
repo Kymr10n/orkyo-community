@@ -79,3 +79,4 @@ CVE-2026-14456  # HIGH | openssl DoS via unbounded memory (libcrypto3/libssl3 3.
 # only because they ran before the Trivy DB picked these up.
 CVE-2026-11822  # HIGH | sqlite FTS5 arbitrary code execution (KC base OS layer, fix 3.34.1-11.el9_8) | no KC 26.6.x rebuild; KC 26.7 upgrade tracked separately | Added: 2026-08-28 | Review: 2026-09-11
 CVE-2026-11824  # HIGH | sqlite FTS5 arbitrary code execution/crash sibling of 11822 (KC base OS layer) | no KC 26.6.x rebuild; KC 26.7 upgrade tracked separately | Added: 2026-08-28 | Review: 2026-09-11
+CVE-2026-22020  # HIGH | java-21-openjdk-headless in the Keycloak 26.7.2 base image | no fixed package published upstream (Trivy reports no fix); arrived with the 26.7.2 bump that closes CVE-2026-18963 (CRITICAL account takeover) | Added: 2026-08-29 | Review: 2026-09-26
