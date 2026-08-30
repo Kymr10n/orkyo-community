@@ -6,12 +6,13 @@
 </p>
 
 <h3 align="center">Orkyo Community Edition</h3>
-<p align="center">Operational planning, made simple.<br>Self-hostable scheduling for spaces, people, and resources across sites.</p>
+<p align="center">Self-hosted production scheduling for manufacturing teams.<br>One plan for the machines, people, and tools that run your jobs — so work gets scheduled, conflicts get caught, and capacity doesn't go to waste.</p>
 
 <p align="center">
+  <a href="https://orkyo.com/api/auth/bff/demo-login"><strong>Live demo</strong></a> ·
   <a href="https://orkyo.com">Website</a> ·
   <a href="https://github.com/Kymr10n/orkyo-community/issues">Issues</a> ·
-  <a href="https://github.com/Kymr10n/orkyo-community/discussions">Discussions</a>
+  <a href="https://github.com/Kymr10n/orkyo-foundation/discussions">Discussions</a>
 </p>
 
 <p align="center">
@@ -30,13 +31,13 @@
 
 ## What is Orkyo?
 
-Teams that coordinate spaces, equipment, and people often run on spreadsheets, email, and meetings — which turns into scheduling conflicts, idle capacity, and avoidable delays as operations grow.
+Shop floors that coordinate machines, workstations, people, and tools often run on spreadsheets, email, and meetings — which turns into scheduling conflicts, idle capacity, and avoidable delays as production grows.
 
 Orkyo replaces that with a shared, visual plan: requests, assignments, conflicts, and utilisation in one place. **Community Edition** is the self-hosted, single-tenant build — one organisation, one database, full control of your data, no subscription.
 
 > **Prefer managed hosting?** [Orkyo Cloud](https://orkyo.com) handles updates, backups, and support.
 
-**Who it's for:** operations & production planners, ops managers, and IT admins who self-host. Manufacturing is the flagship use case; the model fits any spaces-people-resources scheduling problem.
+**Who it's for:** production planners, operations managers, and workshop leads who self-host — job shops and high-mix manufacturers first. The model generalises to any resource a job has to book, so teams outside manufacturing use it too.
 
 **What it's _not_:** Orkyo is focused on operational scheduling — it is **not** an ERP, MES, or CMMS, and doesn't try to be. It complements those systems rather than replacing them.
 
@@ -56,11 +57,14 @@ Orkyo replaces that with a shared, visual plan: requests, assignments, conflicts
 
 |  |  |
 |---|---|
-| **Calendar scheduling** — plan requests across the week, colour-coded by status and conflict.<br><img src=".github/screenshot-calendar.png" alt="Calendar scheduling view"> | **Spaces & floorplan** — schedule work into spaces straight from the request backlog.<br><img src=".github/screenshot-spaces.png" alt="Spaces and floorplan view"> |
-| **People utilisation** — booked vs. available capacity per person, across sites.<br><img src=".github/screenshot-people.png" alt="People utilisation grid"> | **Insights** — request, scheduling, and utilisation trends at a glance.<br><img src=".github/screenshot-insights.png" alt="Insights analytics dashboard"> |
-| **Conflict detection** — overbooking, capability mismatches, and availability clashes surfaced before commit.<br><img src=".github/screenshot-conflicts.png" alt="Conflict detection view"> | |
+| **Calendar scheduling** — plan jobs across the week, colour-coded by status and conflict.<br><img src=".github/screenshot-calendar.png" alt="Calendar scheduling view"> | **Stations & floorplan** — schedule work onto machines and workstations straight from the backlog.<br><img src=".github/screenshot-stations.png" alt="Stations timeline and floorplan"> |
+| **Assets** — booked against available capacity for people and tools, across sites.<br><img src=".github/screenshot-assets.png" alt="Asset utilisation grid"> | **Insights** — request, scheduling, and utilisation trends at a glance.<br><img src=".github/screenshot-insights.png" alt="Insights analytics dashboard"> |
+| **Bottlenecks & critical path** — what constrains the plan, and which chain of work decides the finish date.<br><img src=".github/screenshot-bottlenecks.png" alt="Bottlenecks and critical path"> | **Conflict detection** — overbooking, capability mismatches, and availability clashes surfaced before commit.<br><img src=".github/screenshot-conflicts.png" alt="Conflict detection view"> |
 
 ## Self-host
+
+> **Want to look first?** The [live demo](https://orkyo.com/api/auth/bff/demo-login) is the same
+> application, already seeded with a manufacturing workspace — no install, no signup.
 
 **Requirements:** Docker Engine 24+ with Compose v2.
 
@@ -143,7 +147,11 @@ Active development, pre-1.0. Near-term: notifications & reminders. See [ROADMAP.
 
 ## Support
 
-Community-supported, best-effort, via [Issues](https://github.com/Kymr10n/orkyo-community/issues) (bugs) and [Discussions](https://github.com/Kymr10n/orkyo-community/discussions) (questions, setup help). No SLA or installation support — for managed support see [Orkyo Cloud](https://orkyo.com/support).
+Community-supported, best-effort. File bugs on [Issues](https://github.com/Kymr10n/orkyo-community/issues); ask questions and get setup help in
+[Discussions](https://github.com/Kymr10n/orkyo-foundation/discussions), which live on
+[orkyo-foundation](https://github.com/Kymr10n/orkyo-foundation) — the shared core behind both this
+edition and Orkyo Cloud, and the one place to talk to everyone using either. No SLA or
+installation support — for managed support see [Orkyo Cloud](https://orkyo.com/support).
 
 ## Contributing
 
