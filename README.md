@@ -9,7 +9,7 @@
 <p align="center">Self-hosted production scheduling for manufacturing teams.<br>One plan for the machines, people, and tools that run your jobs — so work gets scheduled, conflicts get caught, and capacity doesn't go to waste.</p>
 
 <p align="center">
-  <a href="https://orkyo.com/api/auth/bff/demo-login"><strong>Live demo</strong></a> ·
+  <a href="https://orkyo.com/demo"><strong>Live demo</strong></a> ·
   <a href="https://orkyo.com">Website</a> ·
   <a href="https://github.com/Kymr10n/orkyo-community/issues">Issues</a> ·
   <a href="https://github.com/Kymr10n/orkyo-foundation/discussions">Discussions</a>
@@ -63,7 +63,7 @@ Orkyo replaces that with a shared, visual plan: requests, assignments, conflicts
 
 ## Self-host
 
-> **Want to look first?** The [live demo](https://orkyo.com/api/auth/bff/demo-login) is the same
+> **Want to look first?** The [live demo](https://orkyo.com/demo) is the same
 > application, already seeded with a manufacturing workspace — no install, no signup.
 
 **Requirements:** Docker Engine 24+ with Compose v2.
