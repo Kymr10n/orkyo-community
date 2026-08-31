@@ -9,7 +9,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AspNetCore.HealthChecks.NpgSql" />
     <!-- Serilog + Loki sink, JwtBearer, and Swashbuckle come transitively from Orkyo.Foundation. -->
     <!-- Program.cs builds the IConnectionMultiplexer for Valkey directly. -->
     <PackageReference Include="StackExchange.Redis" />

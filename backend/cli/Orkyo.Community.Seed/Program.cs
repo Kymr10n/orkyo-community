@@ -1,4 +1,3 @@
-using CommandLine;
 using Npgsql;
 using Orkyo.Foundation.Seed;
 
@@ -6,13 +5,37 @@ namespace Orkyo.Community.Seed;
 
 public sealed class CliOptions : SeedCliOptions
 {
-    [Option("tenant-id", Default = null,
-        HelpText = "Override the single-tenant id used for asset rows. Defaults to Community__TenantId env var, then the community default tenant id.")]
-    public string? TenantId { get; init; }
+    /// <summary>Override the single-tenant id used for asset rows.</summary>
+    public string? TenantId { get; set; }
 
-    [Option("connection", Default = null,
-        HelpText = "Override the DB connection string. Defaults to ConnectionStrings__DefaultConnection env var.")]
-    public string? Connection { get; init; }
+    /// <summary>Override the DB connection string.</summary>
+    public string? Connection { get; set; }
+
+    private static readonly string[] OwnOptionNames = ["tenant-id", "connection"];
+
+    public static string[] OptionNames => [.. SharedOptionNames, .. OwnOptionNames];
+
+    public const string HelpText = """
+        Usage: orkyo-community-seed --profile <name> [options]
+
+        """ + SharedHelpText + """
+
+          --tenant-id   Override the single-tenant id used for asset rows. Defaults to the
+                        Community__TenantId env var, then the community default tenant id.
+          --connection  Override the DB connection string. Defaults to the
+                        ConnectionStrings__DefaultConnection env var.
+        """;
+
+    public static CliOptions Bind(SeedArgs args)
+    {
+        var options = new CliOptions
+        {
+            TenantId = args.String("tenant-id"),
+            Connection = args.String("connection"),
+        };
+        options.BindShared(args);
+        return options;
+    }
 }
 
 public static class Program
@@ -24,9 +47,15 @@ public static class Program
 
     public static async Task<int> Main(string[] args)
     {
-        var result = Parser.Default.ParseArguments<CliOptions>(args);
-        if (result is not Parsed<CliOptions> parsed) return 1;
-        return await RunAsync(parsed.Value);
+        var parsed = SeedArgs.Parse(args, CliOptions.OptionNames, out var error);
+        if (parsed is null)
+        {
+            Console.Error.WriteLine(error);
+            Console.Error.WriteLine();
+            Console.Error.WriteLine(CliOptions.HelpText);
+            return 1;
+        }
+        return await RunAsync(CliOptions.Bind(parsed));
     }
 
     private static async Task<int> RunAsync(CliOptions opts)

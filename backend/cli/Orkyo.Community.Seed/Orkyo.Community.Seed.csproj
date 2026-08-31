@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommandLineParser" />
     <PackageReference Include="Npgsql" />
   </ItemGroup>
 
