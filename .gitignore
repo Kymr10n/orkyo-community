@@ -19,3 +19,5 @@ frontend/*.tsbuildinfo
 .local/
 **/.vs/
 **/.idea/
+.env.bak-hostname-20260902
+compose.local.override.yml.disabled
