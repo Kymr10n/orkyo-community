@@ -47,6 +47,12 @@ public static class Program
 
     public static async Task<int> Main(string[] args)
     {
+        if (SeedCliSupport.IsHelpRequested(args))
+        {
+            Console.WriteLine(CliOptions.HelpText);
+            return 0;
+        }
+
         var parsed = SeedArgs.Parse(args, CliOptions.OptionNames, out var error);
         if (parsed is null)
         {
