@@ -1,3 +1,4 @@
+using Api.Configuration;
 using Api.Integrations.Keycloak;
 using Api.Services;
 using Microsoft.AspNetCore.Authentication;
@@ -106,7 +107,7 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
                 if (existing is not null) opts.Registrations.Remove(existing);
             });
             services.AddHealthChecks()
-                .AddNpgSql(testDbCs, name: "postgres", tags: ["db", "ready"]);
+                .AddPostgresCheck(testDbCs, "postgres", "db", "ready");
 
         });
     }
