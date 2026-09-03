@@ -398,6 +398,17 @@ jobs:
             --project backend/api/Orkyo.Community.Api.csproj \
             -- --validate
 
+      # The seed CLI's options are inherited from foundation's SeedCliOptions. When foundation
+      # 0.21.0 moved them off CommandLineParser, this edition still compiled — the attributes had
+      # simply vanished at runtime — and the break surfaced only in the staging demo reset, after
+      # a release. Executing the CLI is the only gate that catches that class.
+      - name: Seed CLI answers --help
+        run: |
+          out=$(dotnet run --no-build -c Release \
+            --project backend/cli/Orkyo.Community.Seed/Orkyo.Community.Seed.csproj -- --help)
+          echo "$out"
+          grep -q -- '--profile' <<<"$out"
+
       - name: Create tenant database
         env:
           PGPASSWORD: postgres

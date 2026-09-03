@@ -19,36 +19,9 @@
 CVE-2026-66046  # HIGH | libexpat DoS through 2.8.3 (2.8.2-r0, fix 2.8.4-r0) | no published nginx-alpine rebuilt with 2.8.4-r0 yet | Added: 2026-09-02 | Review: 2026-09-16
 CVE-2026-76641  # HIGH | libexpat <2.8.3-2 (2.8.2-r0, fix 2.8.4-r0) | no published nginx-alpine rebuilt with 2.8.4-r0 yet | Added: 2026-09-02 | Review: 2026-09-16
 
-# ── Keycloak 26.6.4 — jackson-databind 2.21.4 not shipped by upstream ─────────
-# Upstream KC 26.6 line has no patch release (26.6.5+ does not exist; 26.7.0 is
-# a minor upgrade needing its own validation — tracked separately). The affected
-# deserialization sits in KC's own jars; no Orkyo-controlled input path.
-CVE-2026-54512  # HIGH | jackson-databind PolymorphicTypeValidator bypass (RCE) in upstream keycloak 26.6.4 jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-09 | Review: 2026-08-08
-CVE-2026-54513  # HIGH | jackson-databind security bypass (RCE) in upstream keycloak 26.6.4 jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-09 | Review: 2026-08-08
-CVE-2026-40983  # HIGH | micrometer-core DoS in upstream keycloak 26.6.4 jars (fix 1.16.6/1.15.12 ships with a KC bump) | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-08-07 | Review: 2026-09-07
-CVE-2026-40984  # HIGH | micrometer-core/jetty DoS sibling of 40983 in upstream keycloak 26.6.4 jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-08-07 | Review: 2026-09-07
-
 # ── Trivy false positive ───────────────────────────────────────────────────────
 # Trivy reports fix as 12.6.5 but KC ships mssql-jdbc 13.2.1.jre11 (newer); false positive.
 CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy lists fix as 12.6.5 but KC ships 13.2.1.jre11 (newer); false positive | Added: 2026-05-21 | Review: 2026-08-08
-
-# ── Keycloak 26.6 image — bundled runtime deps (OpenJDK/jackson/netty/pgjdbc) ──
-# 2026-07-25: newly surfaced once container-scan began running again (the audit
-# gates had been failing before it, so the image scan was skipped). All are in
-# Keycloak's own bundled runtime (JVM + jars) or the KC base OS layer; the fixes
-# ship only in newer OpenJDK / jar versions that a KC release bundles — there is
-# no 26.6.x patch. Cleared by the KC 26.7 upgrade (tracked separately), which
-# removes these. No Orkyo-controlled input path reaches these components.
-CVE-2026-47063  # HIGH | OpenJDK 21.0.11 Jar handling (fix 21.0.12) in KC base JDK | no KC 26.6.x rebuild with 21.0.12; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
-CVE-2026-54369  # HIGH | libacl (KC base OS layer), fix 2.3.1-4.el9 | no KC 26.6.x rebuild; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
-GHSA-r7wm-3cxj-wff9  # HIGH | jackson-core in KC bundled jars (fix 2.21.4/2.22.1) | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
-CVE-2026-54291  # HIGH | postgresql JDBC in KC bundled jars (fix 42.7.11) | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
-CVE-2026-55831  # HIGH | netty-codec-http in KC bundled jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
-CVE-2026-55833  # HIGH | netty-codec in KC bundled jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
-CVE-2026-55851  # HIGH | netty-codec-haproxy in KC bundled jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
-CVE-2026-56745  # HIGH | netty-codec in KC bundled jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
-CVE-2026-59901  # HIGH | netty-codec (fix 4.1.135.Final) in KC bundled jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-07-25 | Review: 2026-08-08
-CVE-2026-56819  # HIGH | netty-codec-http2 DoS (fix 4.1.136.Final) in KC bundled jars | no upstream 26.6.x patch; KC 26.7 upgrade tracked separately | Added: 2026-08-04 | Review: 2026-08-08
 
 # ── Alpine openssl 3.5.7-r0 — every base image, all container builds ───────────
 # 2026-08-27: Alpine 3.23 and 3.24 both ship openssl 3.5.7-r0; the fix is 3.5.8-r0,
@@ -62,13 +35,12 @@ CVE-2026-56819  # HIGH | netty-codec-http2 DoS (fix 4.1.136.Final) in KC bundled
 # rebuilds: nightly security-refresh.yml picks the new package up.
 CVE-2026-14456  # HIGH | openssl DoS via unbounded memory (libcrypto3/libssl3 3.5.7-r0, fix 3.5.8-r0) | no upstream alpine image rebuilt with 3.5.8-r0 yet | Added: 2026-08-27 | Review: 2026-09-10
 
-# ── Keycloak base OS layer (RHEL 9) — sqlite-libs 3.34.1-11.el9_8 not shipped ──
-# 2026-08-28: Red Hat fixed sqlite-libs in 3.34.1-11.el9_8, but no rebuilt KC
-# 26.6.x image ships it (26.6.5+ does not exist; KC 26.7 upgrade tracked
-# separately). sqlite-libs is an OS-layer package here — Keycloak persists to
-# Postgres and processes no attacker-supplied SQLite FTS5 data. Broke the
-# v0.19.3 train's container scan; saas/foundation scans passed the same day
-# only because they ran before the Trivy DB picked these up.
-CVE-2026-11822  # HIGH | sqlite FTS5 arbitrary code execution (KC base OS layer, fix 3.34.1-11.el9_8) | no KC 26.6.x rebuild; KC 26.7 upgrade tracked separately | Added: 2026-08-28 | Review: 2026-09-11
-CVE-2026-11824  # HIGH | sqlite FTS5 arbitrary code execution/crash sibling of 11822 (KC base OS layer) | no KC 26.6.x rebuild; KC 26.7 upgrade tracked separately | Added: 2026-08-28 | Review: 2026-09-11
+# ── Keycloak base OS layer ────────────────────────────────────────────────────
+# 2026-09-03: the KC-26.6.x-era entries that stood in this file (jackson-databind,
+# micrometer, OpenJDK, libacl, pgjdbc, six netty, a jackson-core GHSA, and the two sqlite
+# FTS5 ones) are gone from the image this repo actually ships — the nightly security refresh
+# rebuilt the foundation KC base out from under them. Verified against the artifact CI scans,
+# ghcr.io/kymr10n/orkyo-community-keycloak:sha-b1290a37, both with CI's flags and with
+# --ignore-unfixed OFF: the only findings are the mssql-jdbc false positive above and the
+# entry below.
 CVE-2026-22020  # HIGH | java-21-openjdk-headless in the Keycloak 26.7.2 base image | no fixed package published upstream (Trivy reports no fix); arrived with the 26.7.2 bump that closes CVE-2026-18963 (CRITICAL account takeover) | Added: 2026-08-29 | Review: 2026-09-26
