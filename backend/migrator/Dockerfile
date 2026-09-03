@@ -29,6 +29,12 @@ RUN dotnet publish backend/migrator/Orkyo.Community.Migrator.csproj \
 FROM mcr.microsoft.com/dotnet/runtime:10.0-alpine@sha256:216f4e2027da6ae806e0bc4b448669ac0faa00125908e308f31dd70598e58136 AS runtime
 LABEL org.opencontainers.image.source=https://github.com/Kymr10n/orkyo-community
 WORKDIR /app
+# The IANA time zone database. Alpine ships without it, and SchedulingEngine resolves
+# every site's time zone through TimeZoneInfo — without this package each scheduled
+# request write threw TimeZoneNotFoundException and surfaced as a 500. Installing a
+# package is compatible with the digest-pinned base (only ad-hoc `apk upgrade` is not);
+# the nightly security-refresh rebuild re-resolves this layer with the rest.
+RUN apk add --no-cache tzdata
 COPY --from=build /app/publish .
 
 RUN adduser -D -u 1001 -s /sbin/nologin appuser \
