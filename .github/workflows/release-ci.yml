@@ -402,9 +402,11 @@ jobs:
       # 0.21.0 moved them off CommandLineParser, this edition still compiled — the attributes had
       # simply vanished at runtime — and the break surfaced only in the staging demo reset, after
       # a release. Executing the CLI is the only gate that catches that class.
+      # No --no-build here: the seed project is not in Orkyo.Community.slnx (only the
+      # migrator is), so the solution build above never produces it.
       - name: Seed CLI answers --help
         run: |
-          out=$(dotnet run --no-build -c Release \
+          out=$(dotnet run -c Release \
             --project backend/cli/Orkyo.Community.Seed/Orkyo.Community.Seed.csproj -- --help)
           echo "$out"
           grep -q -- '--profile' <<<"$out"
