@@ -1,0 +1,57 @@
+name: Dependabot auto-merge
+
+# Turns the safe half of the Dependabot queue into maintenance nobody clicks:
+# minor, patch and digest updates enable auto-merge and land on their own once
+# the required status checks pass. Majors are never auto-merged — they are the
+# class that actually breaks (peer-dependency conflicts, removed APIs), and a
+# green CI run does not prove a major is behaviourally safe.
+#
+# WHY pull_request_target AND NOT pull_request: Dependabot pull requests run
+# with a read-only GITHUB_TOKEN, so a `pull_request` workflow cannot enable
+# auto-merge at all. pull_request_target evaluates this file from the base
+# branch and gets a writable token. The usual danger of that trigger is
+# checking out and running untrusted pull-request code — this job checks out
+# nothing and runs nothing from the pull request, so that risk is not present.
+#
+# THIS CANNOT DEPLOY. A merge to main here builds sha-tagged images and nothing
+# else; deployment happens only through orkyo-infra's deploy.yml, dispatched
+# deliberately, and the self-hosted bundle is cut only from version tags.
+#
+# `gh pr merge --auto` only QUEUES the merge. Branch protection still decides:
+# if a required check fails the pull request stays open, exactly as today.
+
+on:
+  pull_request_target:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  auto-merge:
+    name: auto-merge
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Read Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+
+      - name: Enable auto-merge
+        # The test is "not a major", not "is a minor or a patch". A digest-only
+        # bump carries no semver update-type, so update-type is empty for the
+        # *-digest groups and an equality test against minor/patch would skip
+        # exactly the updates that are safest to take.
+        #
+        # For a grouped pull request fetch-metadata reports the HIGHEST
+        # update-type in the group, so a group holding one major is held back
+        # whole. dependabot.yml keeps majors in their own group anyway.
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
