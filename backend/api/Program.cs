@@ -124,7 +124,7 @@ try
     var dbCs = builder.Configuration.GetConnectionString(CommunityConfigKeys.DefaultConnection)
         ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is required");
     builder.Services.AddHealthChecks()
-        .AddNpgSql(dbCs, name: "postgres", tags: ["db", "ready"]);
+        .AddPostgresCheck(dbCs, "postgres", "db", "ready");
 
     var app = builder.Build();
 

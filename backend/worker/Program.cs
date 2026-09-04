@@ -26,6 +26,13 @@ try
 {
     Log.Information("Starting Orkyo Community Worker");
 
+    // Fail fast if the runtime image lacks tzdata: auto-scheduling resolves each site's
+    // IANA time zone, and a missing database must kill the container at boot rather than
+    // fail per tenant in the middle of a run. Same probe the API runs via
+    // ConfigurationValidator, which the workers have no --validate path for.
+    if (ConfigurationValidator.TimeZoneDataError() is { } timeZoneError)
+        throw new InvalidOperationException(timeZoneError);
+
     using var host = Host.CreateDefaultBuilder(args)
         .UseSerilog()
         .ConfigureServices((context, services) =>
