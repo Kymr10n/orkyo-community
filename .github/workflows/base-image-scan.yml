@@ -30,7 +30,7 @@ jobs:
       contents: read
       packages: read
       issues: write
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-base-image-scan.yml@6070b887119491af4904e00a8508c21748fc64a8
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-base-image-scan.yml@3a429ca8e7e8363e392c28c892a0d389d5eb3eda
     with:
       extra-images: '["ghcr.io/kymr10n/keycloak:26.6-orkyo-security-refresh"]'
     secrets: inherit
