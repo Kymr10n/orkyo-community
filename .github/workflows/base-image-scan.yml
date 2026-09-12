@@ -1,0 +1,36 @@
+name: Base Image Scan
+
+# Scans the pinned runtime bases (dotnet aspnet/runtime, nginx) on the pull
+# request that bumps a digest or edits .trivyignore, nightly, and by dispatch —
+# about a minute, no image build. Also enforces the .trivyignore review-date
+# policy. The reasoning lives in the reusable workflow; short version: every CVE
+# that blocked the 0.23.0 train was found at release time because the built-image
+# scan runs only on push to main, fifth in the chain.
+#
+# The Keycloak base is a FROM ${FOUNDATION_KC_IMAGE} build arg, not a pinned
+# digest, so discovery cannot see it; it is passed explicitly. It is a floating
+# tag foundation republishes nightly — pinning it by digest is a follow-up.
+#
+# Pin the reusable by commit SHA, never @main (see its COUPLING RULE).
+
+on:
+  pull_request:
+    paths:
+      - '**/Dockerfile*'
+      - '.trivyignore'
+  schedule:
+    - cron: '45 2 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  base-image-scan:
+    permissions:
+      contents: read
+      packages: read
+      issues: write
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-base-image-scan.yml@6070b887119491af4904e00a8508c21748fc64a8
+    with:
+      extra-images: '["ghcr.io/kymr10n/keycloak:26.6-orkyo-security-refresh"]'
+    secrets: inherit
