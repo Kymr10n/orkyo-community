@@ -23,7 +23,7 @@ RUN dotnet publish backend/worker/Orkyo.Community.Worker.csproj \
     -c Release -o /app/publish --no-restore \
     -r linux-musl-x64 --no-self-contained /p:PublishReadyToRun=true
 
-FROM mcr.microsoft.com/dotnet/runtime:10.0-alpine@sha256:216f4e2027da6ae806e0bc4b448669ac0faa00125908e308f31dd70598e58136 AS runtime
+FROM mcr.microsoft.com/dotnet/runtime:10.0-alpine@sha256:c15a47adcecef15a0590a1186f0d066c2590a86ae188d29456a672ace4db7b09 AS runtime
 LABEL org.opencontainers.image.source=https://github.com/Kymr10n/orkyo-community
 WORKDIR /app
 # The IANA time zone database. Alpine ships without it, and SchedulingEngine resolves

@@ -1,0 +1,42 @@
+name: Base Image Scan
+
+# Scans the pinned runtime bases (dotnet aspnet/runtime, nginx) on the pull
+# request that bumps a digest or edits .trivyignore, nightly, and by dispatch —
+# about a minute, no image build. Also enforces the .trivyignore review-date
+# policy. The reasoning lives in the reusable workflow; short version: every CVE
+# that blocked the 0.23.0 train was found at release time because the built-image
+# scan runs only on push to main, fifth in the chain.
+#
+# The Keycloak base is deliberately NOT scanned here. It is a FROM
+# ${FOUNDATION_KC_IMAGE} build arg resolving to a floating tag that foundation
+# republishes nightly, so no community PR can change it, and it is currently red
+# on an upstream netty CRITICAL (foundation #176). Gating every community PR on
+# it would block all work here without adding safety: foundation's own nightly
+# scan gates that image, and this repo's push-to-main container scan still
+# catches it for release. To include it again, pass
+#   extra-images: '["ghcr.io/kymr10n/keycloak:26.6-orkyo-security-refresh"]'
+# Pinning it by digest so discovery sees it natively is a follow-up.
+#
+# Pin the reusable by commit SHA, never @main (see its COUPLING RULE). The
+# `Result` job is the required check; the per-image jobs carry the digest in
+# their names and cannot be.
+
+on:
+  # No paths filter: `base-image-scan / Result` is a required status check on
+  # main, and a required check that never runs blocks the PR. The scan takes
+  # about 35 seconds, so running it on every PR is cheap.
+  pull_request:
+  schedule:
+    - cron: '45 2 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  base-image-scan:
+    permissions:
+      contents: read
+      packages: read
+      issues: write
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-base-image-scan.yml@a114f8adcc4feb6ee233145e095c47bf697ec164
+    secrets: inherit
