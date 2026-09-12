@@ -146,7 +146,7 @@ jobs:
       contents: read
       security-events: write
       pull-requests: read  # ceiling: reusable-audit-secrets' job requests it (gitleaks PR scan)
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-secrets.yml@a367c8115f0c402dc8535fd15e15629ad9b03860
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-secrets.yml@dff2d1e5f40bfdd436278bcbbe435855f53fd238
     with:
       migration-lint-path: backend/migrations/sql
       run-iac-scan: true
