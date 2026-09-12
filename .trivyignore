@@ -6,19 +6,6 @@
 # Policy: time-bound only. Review date must be within 14 days of added date.
 # Remove entries once the upstream fix is available.
 
-# ── nginx:1.31-alpine — libexpat 2.8.2-r0, fix 2.8.4-r0 not yet published ──────
-# 2026-09-02: every published nginx-alpine line still ships libexpat 2.8.2-r0. Verified
-# by scanning the live floating tags rather than the pinned digest: nginx:1.31-alpine,
-# nginx:mainline-alpine and nginx:alpine all carry 2.8.2-r0, and the newest 1.31-alpine
-# digest is package-identical to the one pinned here — a digest bump does not clear this.
-# There is no 1.32-alpine line. Both are denial of service, and this nginx serves static
-# assets only: it parses no attacker-supplied XML. `apk upgrade` is not an option — see
-# CLAUDE.md. Clears itself when upstream rebuilds.
-# The three 2026-07-09 entries that stood here (CVE-2026-56131/56407/56408) are gone: their
-# fix was 2.8.2-r0, which the image now ships.
-CVE-2026-66046  # HIGH | libexpat DoS through 2.8.3 (2.8.2-r0, fix 2.8.4-r0) | no published nginx-alpine rebuilt with 2.8.4-r0 yet | Added: 2026-09-02 | Review: 2026-09-16
-CVE-2026-76641  # HIGH | libexpat <2.8.3-2 (2.8.2-r0, fix 2.8.4-r0) | no published nginx-alpine rebuilt with 2.8.4-r0 yet | Added: 2026-09-02 | Review: 2026-09-16
-
 # ── Trivy false positive ───────────────────────────────────────────────────────
 # Trivy reports fix as 12.6.5 but KC ships mssql-jdbc 13.2.1.jre11 (newer); false positive.
 CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy lists fix as 12.6.5 but KC ships 13.2.1.jre11 (newer); false positive | Added: 2026-05-21 | Review: 2026-08-08
@@ -44,3 +31,27 @@ CVE-2026-14456  # HIGH | openssl DoS via unbounded memory (libcrypto3/libssl3 3.
 # --ignore-unfixed OFF: the only findings are the mssql-jdbc false positive above and the
 # entry below.
 CVE-2026-22020  # HIGH | java-21-openjdk-headless in the Keycloak 26.7.2 base image | no fixed package published upstream (Trivy reports no fix); arrived with the 26.7.2 bump that closes CVE-2026-18963 (CRITICAL account takeover) | Added: 2026-08-29 | Review: 2026-09-26
+
+# ── Alpine util-linux 2.42.1-r0 — nginx-alpine runtime (frontend) ─────────────
+# 2026-09-12: seven HIGH findings reported against libuuid, which Alpine builds from
+# the util-linux source package. Every one of them is in util-linux's own mount(8)
+# or nsenter(1) — local privilege escalation through TOCTOU races, nosuid/noexec
+# bypass, privileged X-mount post-hooks and cgroup authority leaks.
+#
+# Neither program is in this image. Verified 2026-09-12 inside the pinned digest:
+# the util-linux package is not installed, libuuid ships exactly two files
+# (usr/lib/libuuid.so.1 and libuuid.so.1.3.0, UUID generation only), and /bin/mount,
+# /bin/umount and /usr/bin/nsenter all resolve to /bin/busybox. Trivy attaches the
+# CVEs at source-package level, so libuuid inherits them from code it does not carry.
+# The container also runs as a non-root user.
+#
+# Same finding and same reasoning as orkyo-saas, which shares this base image.
+# `apk upgrade` is not an option — see CLAUDE.md. Clears itself when upstream
+# rebuilds: nightly security-refresh.yml picks the new package up.
+CVE-2026-53612  # HIGH | util-linux mount(8) TOCTOU (libuuid 2.42.1-r0, fix 2.42.3-r0) | mount(8) is busybox here; util-linux package not installed | Added: 2026-09-12 | Review: 2026-09-26
+CVE-2026-53613  # HIGH | util-linux mount(8) TOCTOU via ancestor directory swap (libuuid 2.42.1-r0, fix 2.42.3-r0) | mount(8) is busybox here; util-linux package not installed | Added: 2026-09-12 | Review: 2026-09-26
+CVE-2026-53614  # HIGH | util-linux SUID mount(8) nosuid/noexec bypass via LIBMOUNT_FORCE_MOUNT2 (libuuid 2.42.1-r0, fix 2.42.3-r0) | mount(8) is busybox here; util-linux package not installed | Added: 2026-09-12 | Review: 2026-09-26
+CVE-2026-76642  # HIGH | util-linux privileged X-mount post-hooks run after a failed mount helper (libuuid 2.42.1-r0, fix 2.42.3-r0) | mount(8) is busybox here; util-linux package not installed | Added: 2026-09-12 | Review: 2026-09-26
+CVE-2026-78408  # HIGH | util-linux nsenter --join-cgroup leaks root cgroup migration authority (libuuid 2.42.1-r0, fix 2.42.3-r1) | nsenter(1) is busybox here; util-linux package not installed | Added: 2026-09-12 | Review: 2026-09-26
+CVE-2026-78409  # HIGH | util-linux X-mount.subdir escapes via intermediate symlinks (libuuid 2.42.1-r0, fix 2.42.3-r0) | mount(8) is busybox here; util-linux package not installed | Added: 2026-09-12 | Review: 2026-09-26
+CVE-2026-78410  # HIGH | util-linux restricted bind mounts do not pin the source (libuuid 2.42.1-r0, fix 2.42.3-r0) | mount(8) is busybox here; util-linux package not installed | Added: 2026-09-12 | Review: 2026-09-26
