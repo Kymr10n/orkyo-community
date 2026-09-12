@@ -8,7 +8,7 @@
 
 # ── Trivy false positive ───────────────────────────────────────────────────────
 # Trivy reports fix as 12.6.5 but KC ships mssql-jdbc 13.2.1.jre11 (newer); false positive.
-CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy lists fix as 12.6.5 but KC ships 13.2.1.jre11 (newer); false positive | Added: 2026-05-21 | Review: 2026-08-08
+CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy compares the installed 13.2.1 against a fix list ending 13.2.1.jre11 and calls it older; the shipped JAR is the fixed version, false positive (re-verified 2026-09-12 on quay.io/keycloak/keycloak:26.7.3) | Added: 2026-09-12 | Review: 2026-09-26
 
 # ── Keycloak base OS layer ────────────────────────────────────────────────────
 # 2026-09-03: the KC-26.6.x-era entries that stood in this file (jackson-databind,
@@ -18,7 +18,6 @@ CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy lists f
 # ghcr.io/kymr10n/orkyo-community-keycloak:sha-b1290a37, both with CI's flags and with
 # --ignore-unfixed OFF: the only findings are the mssql-jdbc false positive above and the
 # entry below.
-CVE-2026-22020  # HIGH | java-21-openjdk-headless in the Keycloak 26.7.2 base image | no fixed package published upstream (Trivy reports no fix); arrived with the 26.7.2 bump that closes CVE-2026-18963 (CRITICAL account takeover) | Added: 2026-08-29 | Review: 2026-09-26
 
 # ── Alpine util-linux 2.42.1-r0 — nginx-alpine runtime (frontend) ─────────────
 # 2026-09-12: seven HIGH findings reported against libuuid, which Alpine builds from
