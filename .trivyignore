@@ -42,3 +42,14 @@ CVE-2026-76642  # HIGH | util-linux privileged X-mount post-hooks run after a fa
 CVE-2026-78408  # HIGH | util-linux nsenter --join-cgroup leaks root cgroup migration authority (libuuid 2.42.1-r0, fix 2.42.3-r1) | nsenter(1) is busybox here; util-linux package not installed | Added: 2026-09-12 | Review: 2026-09-26
 CVE-2026-78409  # HIGH | util-linux X-mount.subdir escapes via intermediate symlinks (libuuid 2.42.1-r0, fix 2.42.3-r0) | mount(8) is busybox here; util-linux package not installed | Added: 2026-09-12 | Review: 2026-09-26
 CVE-2026-78410  # HIGH | util-linux restricted bind mounts do not pin the source (libuuid 2.42.1-r0, fix 2.42.3-r0) | mount(8) is busybox here; util-linux package not installed | Added: 2026-09-12 | Review: 2026-09-26
+
+# ── Keycloak embedded netty — CVE-2026-75595 (CRITICAL) ─────────────────────
+# 2026-09-12: netty-handler 4.1.136.Final is bundled by Keycloak 26.7.3 via the
+# foundation image this repo layers on; the fix is 4.1.137/4.2.17 and no published
+# Keycloak carries it. Same entry and reasoning as orkyo-foundation: production and
+# staging ALREADY run this exact netty (deployed 0.22.0 image, digest dd1ae711…,
+# scanned 2026-09-12), so shipping is not a regression, while holding the train keeps
+# the base-image fixes and 0.23.0 out of production. Keycloak sits behind nginx and
+# Cloudflare. Drop when a Keycloak build with netty ≥ 4.1.137 is published
+# (foundation #176).
+CVE-2026-75595  # CRITICAL | netty-handler 4.1.136.Final bundled by Keycloak 26.7.3 (fix 4.1.137 / 4.2.17) | no upstream Keycloak with the fix yet; production already runs this exact netty (0.22.0 image, scanned 2026-09-12) so shipping is not a regression; KC behind nginx + Cloudflare | Added: 2026-09-12 | Review: 2026-09-26
