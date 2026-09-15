@@ -75,9 +75,7 @@ try
 
     builder.Services.AddScoped<IAdminAuditService, AdminAuditService>();
 
-    var valkeyCs = builder.Configuration[ConfigKeys.ValkeyConnection]
-        ?? throw new InvalidOperationException($"Valkey connection string is required. Set {ConfigKeys.ValkeyConnection}.");
-    builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(valkeyCs));
+    builder.Services.AddOrkyoValkey(builder.Configuration);
     builder.Services.AddSingleton<IBreakGlassSessionStore, NullBreakGlassSessionStore>();
 
     builder.Services.AddScoped<CommunityJitProvisioningMiddleware>();
