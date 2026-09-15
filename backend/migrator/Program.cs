@@ -10,31 +10,24 @@ namespace Orkyo.Community.Migrator;
 
 public static class Program
 {
-    // Mirror Orkyo.Shared.ConfigKeys.ConnectionStringControlPlaneEnvVar / .ControlPlaneConnectionLegacyEnvVar
-    // and Orkyo.Community.CommunityConfigKeys' DefaultConnection env-var forms — this standalone
-    // migrator references neither project, so the env-var names are duplicated here.
-    private const string ControlPlaneEnvVar = "ConnectionStrings__ControlPlane";
-    private const string ControlPlaneLegacyEnvVar = "CONTROL_PLANE_CONNECTION_STRING";
+    // Community runs one database for everything. The migrator's control-plane connection
+    // is read from the Community keys and handed to MigrationCli as options — no process
+    // environment mutation, no duplicated control-plane key names.
     private const string DefaultConnectionEnvVar = "ConnectionStrings__DefaultConnection";
     private const string DefaultConnectionLegacyEnvVar = "DEFAULT_CONNECTION_STRING";
 
     public static async Task<int> Main(string[] args)
     {
-        // Community uses a single database for everything.
-        // MigrationCli reads ConnectionStrings__ControlPlane directly from
-        // Environment.GetEnvironmentVariable, so we must set the process env var —
-        // IConfiguration injection is not sufficient.
         var defaultConn =
             Environment.GetEnvironmentVariable(DefaultConnectionEnvVar)
-            ?? Environment.GetEnvironmentVariable(DefaultConnectionLegacyEnvVar);
+            ?? Environment.GetEnvironmentVariable(DefaultConnectionLegacyEnvVar)
+            ?? throw new InvalidOperationException(
+                $"{DefaultConnectionEnvVar} (or {DefaultConnectionLegacyEnvVar}) is required: the Community migrator has one database.");
 
-        if (!string.IsNullOrEmpty(defaultConn))
-        {
-            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(ControlPlaneEnvVar)))
-                Environment.SetEnvironmentVariable(ControlPlaneEnvVar, defaultConn);
-            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(ControlPlaneLegacyEnvVar)))
-                Environment.SetEnvironmentVariable(ControlPlaneLegacyEnvVar, defaultConn);
-        }
+        // The same environment rules the SaaS migrator applies (APP_VERSION, lock timeout),
+        // with the control-plane connection answered from the Community key.
+        var options = MigrationCliOptions.FromEnvironment(key =>
+            key == MigrationCliOptions.ConnectionStringEnvVar ? defaultConn : Environment.GetEnvironmentVariable(key));
 
         var configuration = new ConfigurationBuilder()
             .AddEnvironmentVariables()
@@ -49,6 +42,6 @@ public static class Program
             .AddSingleton<ITenantRegistry, CommunityTenantRegistry>()
             .BuildServiceProvider();
 
-        return await services.RunMigrationCliAsync(args);
+        return await services.RunMigrationCliAsync(args, options);
     }
 }
