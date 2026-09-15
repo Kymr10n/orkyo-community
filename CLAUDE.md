@@ -54,7 +54,7 @@ Local ports: API `5002` · Keycloak `8082` · Postgres `5433` · Frontend `5174`
 1. `README.md` — quick start and self-host guide
 2. `release/docs/QUICKSTART.md` and `release/docs/OPERATIONS.md` — the self-hoster experience
 3. `.github/workflows/release-ci.yml` — release model
-4. `orkyo-infra/docs/structural-hardening-2026-05.md` — current cross-repo hardening plan
+4. `orkyo-infra/docs/00-overview.md` — the live cross-repo architecture (`docs/plans/structural-hardening-2026-05.md` there is historical context only)
 
 ## Test coverage (every code change)
 

@@ -67,6 +67,10 @@ updates:
       - /backend/worker
       - /backend/migrator
       - /frontend
+    # A conventional subject so the bump is exempt from the docs-impact trailer rule by
+    # type (`build:`), instead of escaping it by having no type at all.
+    commit-message:
+      prefix: "build(deps)"
     schedule:
       interval: weekly
       day: thursday
@@ -94,6 +98,10 @@ updates:
     directory: /
     registries:
       - orkyo-github-packages
+    # A conventional subject so the bump is exempt from the docs-impact trailer rule by
+    # type (`build:`), instead of escaping it by having no type at all.
+    commit-message:
+      prefix: "build(deps)"
     schedule:
       interval: weekly
       day: thursday
@@ -117,6 +125,10 @@ updates:
 
   - package-ecosystem: npm
     directory: /frontend
+    # A conventional subject so the bump is exempt from the docs-impact trailer rule by
+    # type (`build:`), instead of escaping it by having no type at all.
+    commit-message:
+      prefix: "build(deps)"
     schedule:
       interval: weekly
       day: thursday
@@ -135,6 +147,10 @@ updates:
 
   - package-ecosystem: github-actions
     directory: /
+    # A conventional subject so the bump is exempt from the docs-impact trailer rule by
+    # type (`build:`), instead of escaping it by having no type at all.
+    commit-message:
+      prefix: "build(deps)"
     schedule:
       interval: weekly
       day: thursday

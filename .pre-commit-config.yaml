@@ -5,7 +5,7 @@
 # commit-msg stage, and a plain `pre-commit install` only wires up pre-commit unless
 # the types are declared here. Without it the hook exists in config and never fires —
 # worse than no hook, because it looks enforced.
-default_install_hook_types: [pre-commit, commit-msg]
+default_install_hook_types: [pre-commit, commit-msg, pre-push]
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
