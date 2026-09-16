@@ -29,7 +29,17 @@ vi.mock('@kymr10n/foundation/src/contexts/AuthContext', () => ({
 }));
 
 vi.mock('@kymr10n/foundation/src/components/auth/ApexGateway', () => ({
-  ApexGateway: () => <div data-testid="apex-gateway" />,
+  // Mirrors the one piece of the real gateway this shell relies on: at /site-admin, for a
+  // site admin, it renders the injected admin slot in any pipeline stage. Everything else
+  // is the pipeline, stood in for by the marker.
+  ApexGateway: ({ renderAdminPage }: { renderAdminPage?: () => React.ReactNode }) => {
+    const onAdminRoute =
+      mockLocation.pathname === '/site-admin' || mockLocation.pathname.startsWith('/site-admin/');
+    if (onAdminRoute && mockAuthState.canAccessAdminPage && renderAdminPage) {
+      return <>{renderAdminPage()}</>;
+    }
+    return <div data-testid="apex-gateway" />;
+  },
 }));
 
 vi.mock('@kymr10n/foundation/src/components/auth/TenantApp', () => ({
@@ -85,6 +95,8 @@ describe('App / CommunityShell routing', () => {
   });
 
   // ── Admin route ───────────────────────────────────────────────────────────────
+  // Before READY the page arrives through the slot the shell hands ApexGateway; at READY
+  // the shell renders the same slot itself (TenantApp has no admin route yet).
 
   it('shows CommunityAdminPage on /site-admin when canAccessAdminPage is true', async () => {
     mockLocation.pathname = '/site-admin';
