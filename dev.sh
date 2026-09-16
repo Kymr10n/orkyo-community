@@ -4,50 +4,23 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 ROOT_DIR="$PWD"
-LOCAL_COMPOSE_FILE="$ROOT_DIR/compose.local.yml"
-# Optional, gitignored per-developer overrides (e.g. a LAN hostname for phone
-# testing). Merged after the base file when present; absent for normal localhost dev.
-LOCAL_COMPOSE_OVERRIDE="$ROOT_DIR/compose.local.override.yml"
-FRONTEND_ROOT="$ROOT_DIR/frontend"
+PRODUCT_NAME="Community"
+PRODUCT_REPO="orkyo-community"
+SEED_PROJECT_DIR="$ROOT_DIR/backend/cli/Orkyo.Community.Seed"
 # Host mapping of Keycloak's management port — must track the keycloak `ports:`
 # entry in compose.local.yml (community maps 9001:9000; SaaS uses 9000 so both
 # stacks can run side-by-side).
 KEYCLOAK_MGMT_PORT=9001
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
-
-COMPOSE_CMD=(docker compose -f "$LOCAL_COMPOSE_FILE")
-[[ -f "$LOCAL_COMPOSE_OVERRIDE" ]] && COMPOSE_CMD+=(-f "$LOCAL_COMPOSE_OVERRIDE")
-COMPOSE_CMD+=(--env-file "$ROOT_DIR/.env")
-
-# Shared .env loader (parses base64/`=`-bearing values correctly; see the helper's header).
-DOTENV_LIB="$ROOT_DIR/../orkyo-foundation/scripts/load-dotenv.sh"
-if [[ ! -f "$DOTENV_LIB" ]]; then
-  echo "error: shared env loader missing: $DOTENV_LIB (is orkyo-foundation a sibling checkout?)" >&2
+# The part of this script that is the same in every product (helpers, compose plumbing,
+# host-process runners, the dispatcher) lives in orkyo-foundation; what follows is Community-only.
+DEV_COMMON="$ROOT_DIR/../orkyo-foundation/scripts/dev-common.sh"
+if [[ ! -f "$DEV_COMMON" ]]; then
+  echo "error: shared dev script missing: $DEV_COMMON (is orkyo-foundation a sibling checkout?)" >&2
   exit 1
 fi
 # shellcheck source=/dev/null
-source "$DOTENV_LIB"
-
-log() {
-  echo -e "${BLUE}[dev]${NC} $*"
-}
-
-success() {
-  echo -e "${GREEN}[dev]${NC} $*"
-}
-
-warn() {
-  echo -e "${YELLOW}[dev]${NC} $*"
-}
-
-error() {
-  echo -e "${RED}[dev]${NC} $*" >&2
-}
+source "$DEV_COMMON"
 
 show_help() {
   cat <<'EOF'
@@ -79,32 +52,6 @@ Other:
 EOF
 }
 
-ensure_env() {
-  if [[ ! -f .env ]]; then
-    error ".env file not found"
-    echo "Create it with: cp .env.template .env"
-    exit 1
-  fi
-}
-
-ensure_local_compose() {
-  if [[ ! -f "$LOCAL_COMPOSE_FILE" ]]; then
-    error "Local infra compose file not found: $LOCAL_COMPOSE_FILE"
-    exit 1
-  fi
-}
-
-sync_assets() {
-  local sync_script="$ROOT_DIR/../orkyo-foundation/scripts/sync-assets.sh"
-  if [[ -x "$sync_script" ]]; then
-    log "Syncing brand assets from orkyo-foundation"
-    "$sync_script"
-  else
-    warn "orkyo-foundation/scripts/sync-assets.sh not found — skipping asset sync"
-    warn "Clone orkyo-foundation as a sibling of orkyo-community and re-run"
-  fi
-}
-
 load_env() {
   ensure_env
 
@@ -130,37 +77,6 @@ load_env() {
   export BFF_ALLOWED_HOSTS="localhost,*.localhost"
 
   mkdir -p "$ROOT_DIR/.local/logs"
-}
-
-check_env_or_confirm() {
-  if ! ./scripts/check-env.sh; then
-    echo ""
-    read -r -p "Continue anyway? (y/N) " reply
-    if [[ ! "$reply" =~ ^[Yy]$ ]]; then
-      error "Aborted"
-      exit 1
-    fi
-  fi
-}
-
-wait_for_url() {
-  local url="$1"
-  local description="$2"
-  local retries=45
-
-  log "Waiting for ${description}: ${url}"
-  until curl -sf "$url" >/dev/null 2>&1; do
-    retries=$((retries - 1))
-    if [[ $retries -le 0 ]]; then
-      error "${description} did not become healthy in time"
-      exit 1
-    fi
-    printf '.'
-    sleep 2
-  done
-  echo ""
-
-  success "${description} is healthy"
 }
 
 print_stack_urls() {
@@ -207,49 +123,6 @@ cmd_infra() {
   cmd_doctor
 }
 
-cmd_down() {
-  ensure_local_compose
-  "${COMPOSE_CMD[@]}" down
-  success "Stack stopped"
-}
-
-cmd_restart() {
-  cmd_down
-  cmd_up
-}
-
-cmd_logs() {
-  ensure_local_compose
-  shift || true
-  "${COMPOSE_CMD[@]}" logs -f "$@"
-}
-
-cmd_status() {
-  ensure_local_compose
-  "${COMPOSE_CMD[@]}" ps
-}
-
-run_dotnet_project() {
-  local project_dir="$1"
-  shift
-  load_env
-  cd "$project_dir"
-  dotnet run -- "$@"
-}
-
-cmd_reset() {
-  ensure_local_compose
-  warn "This removes local Docker volumes for the stack."
-  read -r -p "Proceed? (y/N) " reply
-  if [[ ! "$reply" =~ ^[Yy]$ ]]; then
-    echo "Cancelled"
-    exit 0
-  fi
-
-  "${COMPOSE_CMD[@]}" down -v
-  success "Volumes removed"
-}
-
 # Unlike SaaS (single `up -d --build --force-recreate`), community rebuilds via
 # `build` + cmd_up — kept as-is to preserve behavior (no forced recreate).
 cmd_rebuild() {
@@ -262,32 +135,6 @@ cmd_rebuild() {
 
 cmd_migrator() {
   run_dotnet_project "$ROOT_DIR/backend/migrator" migrate --target all
-}
-
-cmd_api() {
-  run_dotnet_project "$ROOT_DIR/backend/api"
-}
-
-cmd_worker() {
-  run_dotnet_project "$ROOT_DIR/backend/worker"
-}
-
-cmd_seed() {
-  run_dotnet_project "$ROOT_DIR/backend/cli/Orkyo.Community.Seed" "$@"
-}
-
-cmd_frontend() {
-  load_env
-
-  local target_dir="$FRONTEND_ROOT"
-  if [[ ! -f "$target_dir/package.json" ]]; then
-    error "No frontend application found in orkyo-community/frontend"
-    error "Frontend application must be present in orkyo-community/frontend (current: $target_dir)"
-    exit 1
-  fi
-
-  cd "$target_dir"
-  npm run dev -- --host 0.0.0.0 --port "${FRONTEND_PORT}"
 }
 
 cmd_doctor() {
@@ -311,27 +158,4 @@ cmd_doctor() {
 EOF
 }
 
-command="${1:-help}"
-
-case "$command" in
-  up) cmd_up ;;
-  down) cmd_down ;;
-  restart) cmd_restart ;;
-  rebuild) cmd_rebuild ;;
-  logs) cmd_logs "$@" ;;
-  status) cmd_status ;;
-  reset) cmd_reset ;;
-  infra) cmd_infra ;;
-  migrator) cmd_migrator ;;
-  api) cmd_api ;;
-  worker) cmd_worker ;;
-  seed) shift; cmd_seed "$@" ;;
-  frontend) cmd_frontend ;;
-  doctor) cmd_doctor ;;
-  help|-h|--help) show_help ;;
-  *)
-    error "Unknown command: $command"
-    show_help
-    exit 1
-    ;;
-esac
+dev_dispatch "$@"

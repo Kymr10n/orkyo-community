@@ -21,9 +21,13 @@ public sealed class CommunityFoundationMigrationModule : IMigrationModule
     public string ModuleName => _inner.ModuleName; // "foundation"
     public int Order => _inner.Order;              // 1000
 
+    // Foundation declares which tenant-phase migrations assume their own database
+    // (MigrationScope.TenantDatabaseOnly: the @scope directive, or
+    // FoundationMigrationModule.TenantDatabaseOnlyIds for the two legacy feedback files).
+    // Filtering on the scope, not on a filename substring, means a future migration with
+    // "feedback" in its name runs here unless foundation says otherwise.
     public IReadOnlyCollection<MigrationScript> GetMigrations() =>
         _inner.GetMigrations()
-            .Where(s => !(s.TargetDatabase == MigrationTargetDatabase.Tenant
-                          && s.Id.Contains("feedback", StringComparison.Ordinal)))
+            .Where(s => s.Scope != MigrationScope.TenantDatabaseOnly)
             .ToList();
 }

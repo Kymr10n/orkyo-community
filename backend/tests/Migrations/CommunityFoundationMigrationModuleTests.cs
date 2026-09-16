@@ -29,16 +29,18 @@ public class CommunityFoundationMigrationModuleTests
     }
 
     [Fact]
-    public void RemovesOnlyTenantPhaseFeedbackMigrations()
+    public void RemovesExactlyWhatFoundationScopesAsTenantDatabaseOnly()
     {
-        // Version-agnostic: whichever foundation version is pinned, the only migrations the wrapper
-        // drops are tenant-phase feedback ones (the legacy create 1240, and — once foundation ships
-        // it — the drop 1630). Nothing else is ever filtered.
+        // Version-agnostic: whichever foundation version is pinned, the wrapper drops exactly the
+        // scripts foundation scopes TenantDatabaseOnly (the @scope directive, or the two legacy
+        // feedback ids foundation marks by name) and nothing else.
         var full = new FoundationMigrationModule().GetMigrations();
-        var removed = full.Where(m => Filtered.All(f => f.Id != m.Id)).ToList();
+        var removed = full.Where(m => Filtered.All(f => f.Id != m.Id)).Select(m => m.Id).ToList();
 
-        removed.Should().OnlyContain(m =>
-            m.TargetDatabase == MigrationTargetDatabase.Tenant && m.Id.Contains("feedback"));
-        removed.Should().Contain(m => m.Id == "1240.foundation.feedback");
+        removed.Should().BeEquivalentTo(
+            full.Where(m => m.Scope == MigrationScope.TenantDatabaseOnly).Select(m => m.Id));
+        removed.Should().Contain("1240.foundation.feedback");
+        removed.Should().BeSubsetOf(FoundationMigrationModule.TenantDatabaseOnlyIds.Concat(
+            full.Where(m => m.Scope == MigrationScope.TenantDatabaseOnly).Select(m => m.Id)));
     }
 }

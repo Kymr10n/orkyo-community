@@ -11,8 +11,9 @@
 // shared runtime state) are intentionally NOT deduped and are listed below.
 // Extra dedupe entries beyond foundation's peers (e.g. sonner, a direct foundation
 // dep with a module-level toast registry) are fine — over-deduping is safe.
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 
 // Foundation peers that are safe to load as duplicate copies (no React context,
 // no module-level state). Keep in sync with the omissions documented in
@@ -73,3 +74,54 @@ if (missing.length > 0) {
 }
 
 console.log(`[check:dedupe-sync] OK — all ${required.length} required foundation peers are deduped.`);
+
+// ── Unused dependencies ──────────────────────────────────────────────────────
+// A dependency that no source file imports and that foundation does not list as a peer is
+// dead weight the products pay for on every install (2026-09 review, F9: two radix packages
+// foundation had replaced with native elements were still declared in both products).
+// CSS-only packages are found through their @import; anything reached another way is named
+// in INDIRECT_DEPENDENCIES with the reason.
+const INDIRECT_DEPENDENCIES = new Map([
+  ["@kymr10n/foundation", "the shared package itself, imported by path under @kymr10n/foundation/*"],
+]);
+
+function readProductDependencies() {
+  const pkg = JSON.parse(readFileSync(fileURLToPath(new URL("../package.json", import.meta.url)), "utf8"));
+  return Object.keys(pkg.dependencies ?? {});
+}
+
+function* walk(dir) {
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) yield* walk(full);
+    else if (/\.(ts|tsx|css|html|mjs)$/.test(entry)) yield full;
+  }
+}
+
+function importedPackages() {
+  const root = fileURLToPath(new URL("..", import.meta.url));
+  const files = [...walk(join(root, "src")), join(root, "index.html"), join(root, "vite.config.ts")];
+  const found = new Set();
+  const specifier = /(?:from\s*|import\s*\(?\s*|@import\s*(?:url\()?\s*)["']([^"'./][^"']*)["']/g;
+  for (const file of files) {
+    let text;
+    try { text = readFileSync(file, "utf8"); } catch { continue; }
+    for (const m of text.matchAll(specifier)) {
+      const spec = m[1];
+      found.add(spec.startsWith("@") ? spec.split("/").slice(0, 2).join("/") : spec.split("/")[0]);
+    }
+  }
+  return found;
+}
+
+const imported = importedPackages();
+const unused = readProductDependencies().filter(
+  (name) => !imported.has(name) && !(name in peerDeps) && !INDIRECT_DEPENDENCIES.has(name),
+);
+if (unused.length > 0) {
+  console.error("[check:dedupe-sync] FAIL — dependencies nothing imports and foundation does not list as a peer:");
+  for (const name of unused) console.error(`  - ${name}`);
+  console.error("\nRemove each with `npm uninstall <name>`, or name it in INDIRECT_DEPENDENCIES with the reason it is needed.");
+  process.exit(1);
+}
+console.log("[check:dedupe-sync] OK — every declared dependency is imported or a foundation peer.");

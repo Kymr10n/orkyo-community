@@ -35,8 +35,20 @@ check_cmd() {
 }
 
 log "Installing git hooks"
-git config core.hooksPath .githooks
-success "git hooks installed (.githooks/pre-push)"
+# pre-commit installs into .git/hooks, which git ignores whenever core.hooksPath is set.
+# An earlier version of this script pointed core.hooksPath at .githooks/ and so silently
+# disabled every pre-commit hook, including the commit-msg docs-impact check. Clear it first.
+if git config --get core.hooksPath >/dev/null 2>&1; then
+  git config --unset core.hooksPath
+  log "Cleared core.hooksPath; pre-commit owns the hooks now"
+fi
+if command -v pre-commit >/dev/null 2>&1; then
+  pre-commit install --install-hooks
+  success "git hooks installed (pre-commit, commit-msg, pre-push)"
+else
+  error "pre-commit not found — run: pip install pre-commit && ./setup.sh"
+  exit 1
+fi
 
 log "Checking prerequisites"
 check_cmd dotnet

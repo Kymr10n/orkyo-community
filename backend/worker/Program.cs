@@ -42,8 +42,27 @@ try
                 _ => SingleTenantDbConnectionFactory.FromConfiguration(context.Configuration));
             // Shared worker graph (HTTP client, Keycloak, email, announcements, user lifecycle).
             services.AddFoundationWorkerServices(context.Configuration);
-            // Community-only hosted service.
-            services.AddHostedService<CommunityWorkerService>();
+            // The shared loop with this edition's job list.
+            services.AddFoundationWorkerLoop(sp =>
+            {
+                var userLifecycle = sp.GetRequiredService<UserLifecycleService>();
+                var announcements = sp.GetRequiredService<IAnnouncementBroadcastService>();
+                var logger = sp.GetRequiredService<ILogger<WorkerHost>>();
+                return
+                [
+                    // Run GDPR user lifecycle once per day
+                    new WorkerJob(WorkerJobNames.UserLifecycle, WorkerSchedulePolicy.ShouldRunUserLifecycle, async ct =>
+                    {
+                        logger.LogInformation("Running user lifecycle check");
+                        await userLifecycle.ProcessAsync(ct);
+                    }),
+                    // Announcement email broadcasts are time-sensitive — attempt every loop,
+                    // but single-flight across instances so replicas cannot double-send.
+                    new WorkerJob(WorkerJobNames.AnnouncementBroadcast, (_, _) => true,
+                        ct => announcements.ProcessPendingBroadcastsAsync(ct)),
+                ];
+            });
+            services.AddHostedService<WorkerHost>();
         })
         .Build();
 
@@ -60,66 +79,11 @@ finally
     Log.CloseAndFlush();
 }
 
-internal sealed class CommunityWorkerService : BackgroundService
+/// <summary>
+/// The hosted shell around foundation's <see cref="FoundationWorkerLoop"/>; the jobs are
+/// declared above and the loop itself lives in core.
+/// </summary>
+internal sealed class WorkerHost(FoundationWorkerLoop loop) : BackgroundService
 {
-    private readonly ILogger<CommunityWorkerService> _logger;
-    private readonly UserLifecycleService _userLifecycle;
-    private readonly IAnnouncementBroadcastService _announcementBroadcast;
-    private readonly IWorkerJobCoordinator _jobs;
-
-    public CommunityWorkerService(
-        ILogger<CommunityWorkerService> logger,
-        UserLifecycleService userLifecycle,
-        IAnnouncementBroadcastService announcementBroadcast,
-        IWorkerJobCoordinator jobs)
-    {
-        _logger = logger;
-        _userLifecycle = userLifecycle;
-        _announcementBroadcast = announcementBroadcast;
-        _jobs = jobs;
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        _logger.LogInformation("Community worker started");
-
-        // Cadence state lives in the worker_job_runs journal (via IWorkerJobCoordinator):
-        // a restart resumes the schedule instead of immediately re-running the daily GDPR
-        // pass, and a second worker instance skips instead of double-running.
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                // Run GDPR user lifecycle once per day
-                await _jobs.RunIfDueAsync(
-                    WorkerJobNames.UserLifecycle,
-                    WorkerSchedulePolicy.ShouldRunUserLifecycle,
-                    async ct =>
-                    {
-                        _logger.LogInformation("Running user lifecycle check");
-                        await _userLifecycle.ProcessAsync(ct);
-                    },
-                    stoppingToken);
-
-                // Announcement email broadcasts are time-sensitive — attempt every loop,
-                // but single-flight across instances so replicas cannot double-send.
-                await _jobs.RunIfDueAsync(
-                    WorkerJobNames.AnnouncementBroadcast,
-                    (_, _) => true,
-                    ct => _announcementBroadcast.ProcessPendingBroadcastsAsync(ct),
-                    stoppingToken);
-
-                var jitter = TimeSpan.FromSeconds(Random.Shared.Next(0, 15));
-                await Task.Delay(WorkerSchedulePolicy.GetLoopDelay(jitter), stoppingToken);
-            }
-            catch (OperationCanceledException) { break; }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error in worker");
-                await Task.Delay(WorkerSchedulePolicy.GetErrorRetryDelay(), stoppingToken);
-            }
-        }
-
-        _logger.LogInformation("Community worker stopped");
-    }
+    protected override Task ExecuteAsync(CancellationToken stoppingToken) => loop.RunAsync(stoppingToken);
 }
