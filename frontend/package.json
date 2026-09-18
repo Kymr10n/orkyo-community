@@ -20,8 +20,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint src",
-    "check:foundation-peers": "node ./scripts/check-foundation-peers.mjs"
+    "lint": "eslint src"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

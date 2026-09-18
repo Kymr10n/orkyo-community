@@ -77,6 +77,22 @@ curl -sf http://localhost:8080/health
 docker logs orkyo_community_migrator
 ```
 
+### Upgrade and backup scripts
+
+The source repository has two operator scripts: `scripts/upgrade.sh` and `scripts/backup.sh`.
+The release bundle does not include them. If you want them, copy them from the repository.
+
+Both scripts expect a `docker-compose.yml` and a `.env` file in the parent directory of `scripts/`.
+
+- `backup.sh` writes `pg_dumpall.sql` and a SHA-256 checksum to `backups/<timestamp>/`.
+- `upgrade.sh <version>` runs `backup.sh` first. If the backup fails, the upgrade stops.
+  Then it pulls the images, stops `api` and `worker`, runs the migrator, and restarts the stack.
+
+```bash
+bash scripts/backup.sh
+bash scripts/upgrade.sh <new-version>
+```
+
 ## Rollback
 
 If an upgrade fails, roll back the version the same way it was changed, and restore from your pre-upgrade backup (migrations are forward-only — the old application version may not run against the new schema):

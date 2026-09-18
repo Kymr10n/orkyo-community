@@ -172,7 +172,7 @@ jobs:
       seed-project: backend/cli/Orkyo.Community.Seed/Orkyo.Community.Seed.csproj
       seed-in-solution: false
       ci-database: orkyo_community_ci
-      migrator-env-var: DEFAULT_CONNECTION_STRING
+      migrator-env-var: ConnectionStrings__DefaultConnection
       api-port: "5002"
       health-path: /health/live
       # Community's config contract: the API's --validate pass runs before the migrator.

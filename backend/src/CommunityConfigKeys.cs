@@ -11,4 +11,6 @@ namespace Orkyo.Community;
 public static class CommunityConfigKeys
 {
     public const string DefaultConnection = "DefaultConnection";
+    /// <summary>Environment-variable form of <see cref="DefaultConnection"/> (ASP.NET <c>__</c> convention).</summary>
+    public const string DefaultConnectionEnvVar = "ConnectionStrings__DefaultConnection";
 }

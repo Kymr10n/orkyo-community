@@ -21,6 +21,7 @@ RUN --mount=type=secret,id=nuget_token,required=true \
 
 COPY backend/migrations/ backend/migrations/
 COPY backend/migrator/ backend/migrator/
+COPY backend/src/CommunityConfigKeys.cs backend/src/
 
 RUN dotnet publish backend/migrator/Orkyo.Community.Migrator.csproj \
     -c Release -o /app/publish --no-restore \

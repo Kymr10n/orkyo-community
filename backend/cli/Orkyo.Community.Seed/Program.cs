@@ -1,4 +1,5 @@
 using Npgsql;
+using Orkyo.Community.Tenant;
 using Orkyo.Foundation.Seed;
 
 namespace Orkyo.Community.Seed;
@@ -40,10 +41,9 @@ public sealed class CliOptions : SeedCliOptions
 
 public static class Program
 {
-    // Mirror Orkyo.Community.CommunityConfigKeys' env-var forms — this CLI does not reference
-    // the Orkyo.Community project, so the env-var names are duplicated here.
-    private const string DefaultConnectionEnvVar = "ConnectionStrings__DefaultConnection";
-    private const string CommunityTenantIdEnvVar = "Community__TenantId";
+    // Env-var form of the "Community:TenantId" config path the API binds SingleTenantOptions from.
+    private static readonly string CommunityTenantIdEnvVar =
+        $"{SingleTenantOptions.SectionKey}__{nameof(SingleTenantOptions.TenantId)}";
 
     public static async Task<int> Main(string[] args)
     {
@@ -69,14 +69,14 @@ public static class Program
         if (SeedCliSupport.ValidateProfileAndScale(opts) is { } exitCode) return exitCode;
 
         var connString = opts.Connection
-            ?? Environment.GetEnvironmentVariable(DefaultConnectionEnvVar)
+            ?? Environment.GetEnvironmentVariable(CommunityConfigKeys.DefaultConnectionEnvVar)
             ?? "Host=localhost;Port=5433;Database=orkyo_community_dev;Username=postgres;Password=postgres";
 
         await using var conn = new NpgsqlConnection(connString);
         await conn.OpenAsync();
 
         // Single-tenant: assets.tenant_id must match the id the app serves (OrgContext.OrgId =
-        // SingleTenantOptions.TenantId, config "Community:TenantId"). Mirror that resolution.
+        // SingleTenantOptions.TenantId, config "Community:TenantId").
         var tenantId = ResolveTenantId(opts.TenantId);
 
         var seedOpts = SeedCliSupport.BuildSeedOptions(opts, tenantId);
@@ -99,7 +99,7 @@ public static class Program
         }
     }
 
-    // Mirrors SingleTenantOptions: --tenant-id override, else Community__TenantId env, else default.
+    // --tenant-id override, else Community__TenantId env, else the SingleTenantOptions default.
     private static Guid ResolveTenantId(string? overrideValue)
     {
         if (!string.IsNullOrWhiteSpace(overrideValue))
@@ -107,6 +107,6 @@ public static class Program
         var fromEnv = Environment.GetEnvironmentVariable(CommunityTenantIdEnvVar);
         return Guid.TryParse(fromEnv, out var id)
             ? id
-            : new Guid("00000000-0000-0000-0000-000000000001");
+            : new SingleTenantOptions().TenantId;
     }
 }

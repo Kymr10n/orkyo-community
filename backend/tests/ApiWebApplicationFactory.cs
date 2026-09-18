@@ -52,8 +52,11 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
                 ["SMTP_FROM_NAME"] = "Test",
                 ["APP_BASE_URL"] = "http://localhost:5173",
                 ["CORS_ALLOWED_ORIGINS"] = "http://localhost:5173",
-                ["OIDC_AUTHORITY"] = "http://test-keycloak.local/realms/test",
-                ["KEYCLOAK_URL"] = "http://test-keycloak.local",
+                // `.invalid` (RFC 2606) fails DNS resolution instantly. A `.local` host
+                // triggers mDNS/Avahi resolution that hangs ~15s before failing, adding
+                // ~20s to every test that exercises an (intentionally unreachable) Keycloak.
+                ["OIDC_AUTHORITY"] = "http://test-keycloak.invalid/realms/test",
+                ["KEYCLOAK_URL"] = "http://test-keycloak.invalid",
                 ["KEYCLOAK_REALM"] = "test",
                 ["KEYCLOAK_BACKEND_CLIENT_ID"] = "test-backend",
                 ["KEYCLOAK_BACKEND_CLIENT_SECRET"] = "test-backend-secret",
