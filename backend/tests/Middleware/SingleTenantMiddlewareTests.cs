@@ -15,23 +15,6 @@ public class SingleTenantMiddlewareTests
         Status = "active",
     };
 
-    // ── Helper ────────────────────────────────────────────────────────────────
-
-    private static (SingleTenantMiddleware middleware, DefaultHttpContext context, bool nextCalled) Build(
-        TenantContext? tenantToReturn)
-    {
-        var nextCalled = false;
-        var context = new DefaultHttpContext();
-        context.Response.Body = new MemoryStream();
-
-        var middleware = new SingleTenantMiddleware(
-            next: _ => { nextCalled = true; return Task.CompletedTask; },
-            resolver: new StubTenantResolver(tenantToReturn),
-            logger: NullLogger<SingleTenantMiddleware>.Instance);
-
-        return (middleware, context, nextCalled);
-    }
-
     // ── Tenant resolved successfully ──────────────────────────────────────────
 
     [Fact]

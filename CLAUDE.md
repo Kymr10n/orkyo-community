@@ -97,6 +97,27 @@ a percentage rather than to catch a defect.
 
 If `Program.cs` calls `UseX()`, it must call `AddX()` in the same file — never rely on `AddFoundationServices` to register a service that the API project uses directly. Foundation owns implementations; the API project owns how it exposes them. This rule exists because Foundation is consumed as a NuGet package in CI/Docker, and there is always a window between a Foundation change landing and the package being published. Any implicit dependency on Foundation registering a service will silently break CI during that window.
 
+## Nothing unreachable gets committed (enforced)
+
+Code that compiles and has its own tests can still be dead: a service that is registered
+but never injected, a helper only its test calls, an export nobody imports, a copy of
+production wiring in a test host. The 2026-09 declutter removed thousands of such lines;
+these gates stop them coming back:
+
+- `scripts/ci/check-dead-registrations.py` (pre-commit on `.cs` changes; strict in
+  `template-sync-check`) fails when a DI registration has no consumer in any of the three repos.
+- `scripts/ci/check-stale-markers.sh` (pre-commit) rejects added comments with an overdue
+  dated TODO or a refactor wave/phase tag.
+- IDE0051/IDE0052/IDE0060 are build errors: unused private members and parameters do not compile.
+- `npm run check:knip` (pre-commit on `frontend/`, and CI) fails on unused files, exports and
+  dependencies.
+
+Before adding a symbol, ask what will call it in production. If the answer is "a test" or
+"a later PR", do not add it yet. Before writing a test fixture, search `test-utils/` (frontend)
+and `Orkyo.Foundation.TestSupport` (backend); a second copy of a fixture is a review defect.
+Test hosts compose over the production `Add*` extension and override doubles; they never
+restate registrations.
+
 ## Documentation impact (enforced)
 
 Every commit touching a user-visible surface must record its documentation impact as a

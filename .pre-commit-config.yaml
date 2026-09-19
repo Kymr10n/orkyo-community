@@ -72,6 +72,25 @@ repos:
         pass_filenames: false
         stages: [pre-push]
         files: '\.(cs|csproj|slnx|props)$'
+      - id: dead-registrations
+        name: DI registrations have a consumer
+        entry: python3 scripts/ci/check-dead-registrations.py
+        language: system
+        pass_filenames: false
+        files: '\.cs$'
+
+      - id: stale-markers
+        name: no overdue TODOs or wave/phase tags in added lines
+        entry: scripts/ci/check-stale-markers.sh
+        language: system
+
+      - id: frontend-knip
+        name: frontend dead files/exports/deps (knip)
+        entry: bash -c 'cd frontend && npm run check:knip'
+        language: system
+        pass_filenames: false
+        files: '^frontend/'
+
       - id: docs-impact
         name: docs impact recorded (user-visible changes)
         entry: scripts/check-docs-impact.sh
