@@ -23,15 +23,12 @@ public class CommunityTenantEndpointsTests
                 Role = "admin"
             })));
 
-    private readonly DatabaseFixture _fixture;
     private readonly HttpClient _client;
     private readonly HttpClient _adminClient;
     private readonly HttpClient _unauthedClient;
 
     public CommunityTenantEndpointsTests(DatabaseFixture fixture)
     {
-        _fixture = fixture;
-
         _client = fixture.Factory.CreateClient();
         _client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", TestConstants.TestBearerToken);

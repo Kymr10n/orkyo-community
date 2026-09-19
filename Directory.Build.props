@@ -10,6 +10,10 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- IDE00xx rules only run at build time with this on; the .editorconfig sets the
+         handful that catch dead code (unused private members and parameters) to warning,
+         which TreatWarningsAsErrors turns into build failures. -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
   <PropertyGroup>

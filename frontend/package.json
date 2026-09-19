@@ -15,13 +15,13 @@
     "build": "vite build",
     "check:foundation-imports": "node ./scripts/validate-foundation-imports.mjs",
     "check:dedupe-sync": "node ./scripts/check-dedupe-sync.mjs",
+    "check:knip": "knip --no-progress",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview --host 0.0.0.0 --port 4173",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint src",
-    "check:foundation-peers": "node ./scripts/check-foundation-peers.mjs"
+    "lint": "eslint src"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -84,6 +84,7 @@
     "globals": "17.11.0",
     "happy-dom": "20.12.0",
     "jest-axe": "^11.0.0",
+    "knip": "^6.37.0",
     "tailwindcss": "^4.3.3",
     "typescript": "6.0.3",
     "typescript-eslint": "8.69.0",

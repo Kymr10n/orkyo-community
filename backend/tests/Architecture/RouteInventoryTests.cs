@@ -17,8 +17,8 @@ namespace Orkyo.Community.Tests.Architecture;
 ///
 /// One [InlineData] per top-level Map* call in Foundation's endpoint set.
 /// Probe paths are chosen to be unique to that Map* call so a single missing
-/// Map produces exactly one failing case. Source of truth: the list mirrors
-/// FoundationWebApplicationFactory.cs lines ~417-452.
+/// Map produces exactly one failing case. Source of truth: the <c>app.Map*Endpoints()</c>
+/// calls in Community's Program.cs.
 ///
 /// Keep in sync with the SaaS counterpart
 /// (orkyo-saas/backend/tests/Architecture/RouteInventoryTests.cs).

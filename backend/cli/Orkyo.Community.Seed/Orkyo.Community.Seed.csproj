@@ -10,6 +10,13 @@
     <PackageReference Include="Npgsql" />
   </ItemGroup>
 
+  <!-- Shared config keys and single-tenant defaults. Orkyo.Community is a Web SDK
+       library, so a ProjectReference would pull ASP.NET into this CLI; link the files. -->
+  <ItemGroup>
+    <Compile Include="..\..\src\CommunityConfigKeys.cs" Link="CommunityConfigKeys.cs" />
+    <Compile Include="..\..\src\Tenant\SingleTenantOptions.cs" Link="SingleTenantOptions.cs" />
+  </ItemGroup>
+
   <!-- Foundation Seed library: project reference locally, NuGet when sibling not present. -->
   <Choose>
     <When Condition="Exists('..\..\..\..\orkyo-foundation\backend\seeding\Orkyo.Foundation.Seed.csproj')">

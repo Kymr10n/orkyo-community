@@ -7,7 +7,7 @@ namespace Orkyo.Community.Tests.Endpoints;
 
 /// <summary>
 /// Wiring tests for GET /metrics (foundation's <c>MapOrkyoMetricsEndpoint</c> helper,
-/// adopted in Program.cs — the Prometheus parity gap with SaaS is closed).
+/// called from Program.cs).
 ///
 /// Access model:
 /// - No METRICS_TOKEN configured → the endpoint is not mapped at all (fail-secure, 404).

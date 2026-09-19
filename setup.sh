@@ -67,6 +67,22 @@ if [ ! -f "../orkyo-foundation/backend/src/Orkyo.Foundation.Web.csproj" ]; then
   exit 1
 fi
 
+if [[ ! -f .env ]]; then
+  warn ".env not found"
+  cp .env.template .env
+  success "Created .env from .env.template"
+  warn "Review .env before starting local services"
+fi
+
+if ! ./scripts/check-env.sh; then
+  echo ""
+  read -r -p "Continue anyway? (y/N) " reply
+  if [[ ! "$reply" =~ ^[Yy]$ ]]; then
+    error "Aborted"
+    exit 1
+  fi
+fi
+
 log "Restoring backend dependencies"
 dotnet restore Orkyo.Community.slnx
 

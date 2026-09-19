@@ -26,24 +26,14 @@ public partial class ExplicitRegistrationTests
 {
     /// <summary>
     /// Middleware activation -> the DI registration(s) that satisfy it (any one is
-    /// enough). Superset shared with saas; entries for middleware this project
-    /// doesn't use are simply never exercised.
+    /// enough). Only the <c>app.UseX()</c> calls Community's Program.cs makes today
+    /// are listed; the self-ratchet below forces a new row for any new one.
     /// </summary>
     private static readonly Dictionary<string, string[]> UseToAdd = new()
     {
-        ["UseAuthentication"] = ["AddOrkyoAuthentication", "AddAuthentication"],
-        ["UseAuthorization"] = ["AddAuthorization"],
-        ["UseCors"] = ["AddOrkyoApiCors", "AddCors"],
-        // Community registers the limiter via AddFoundationRateLimiting; saas via
-        // AddOrkyoRateLimiting (AddOrkYoRateLimiting until the W1.8 rename).
-        ["UseRateLimiter"] = ["AddFoundationRateLimiting", "AddOrkyoRateLimiting", "AddOrkYoRateLimiting", "AddRateLimiter"],
-        ["UseAuthenticatedRateLimiting"] = ["AddOrkyoRateLimiting", "AddOrkYoRateLimiting"],
-        ["UseBotProtectionRateLimiting"] = ["AddBotProtection"],
-        ["UseFoundationMiddleware"] = ["AddFoundationServices"],
         // Composed shared pipeline (foundation#97) — everything it mounts is
         // registered by AddFoundationServices (auth, CSRF, context enrichment).
         ["UseOrkyoPipeline"] = ["AddFoundationServices"],
-        ["UseResponseCompression"] = ["AddResponseCompression"],
         ["UseOrkyoReportingSwaggerUI"] = ["AddOrkyoReportingSwagger"],
     };
 

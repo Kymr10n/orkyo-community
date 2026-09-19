@@ -4,6 +4,8 @@ All notable changes to Orkyo Community Edition are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+Releases from 0.7.0 onward are documented in [GitHub Releases](https://github.com/Kymr10n/orkyo-community/releases); the entries below are historical.
+
 ## [0.6.14] — 2026-07-05
 
 ### Fixed

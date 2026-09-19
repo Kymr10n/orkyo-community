@@ -33,6 +33,7 @@ COPY orkyo-foundation/backend/migrator-runtime        orkyo-foundation/backend/m
 COPY orkyo-foundation/backend/migrations-foundation   orkyo-foundation/backend/migrations-foundation/
 COPY orkyo-community/backend/migrations  orkyo-community/backend/migrations/
 COPY orkyo-community/backend/migrator    orkyo-community/backend/migrator/
+COPY orkyo-community/backend/src/CommunityConfigKeys.cs  orkyo-community/backend/src/
 
 RUN dotnet publish orkyo-community/backend/migrator/Orkyo.Community.Migrator.csproj -c Release -o /app/publish --no-restore
 
