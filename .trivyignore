@@ -43,6 +43,18 @@ CVE-2026-78408  # HIGH | util-linux nsenter --join-cgroup leaks root cgroup migr
 CVE-2026-78409  # HIGH | util-linux X-mount.subdir escapes via intermediate symlinks (libuuid 2.42.1-r0, fix 2.42.3-r0) | mount(8) is busybox here; util-linux package not installed | Added: 2026-09-12 | Review: 2026-09-26
 CVE-2026-78410  # HIGH | util-linux restricted bind mounts do not pin the source (libuuid 2.42.1-r0, fix 2.42.3-r0) | mount(8) is busybox here; util-linux package not installed | Added: 2026-09-12 | Review: 2026-09-26
 
+# ── Keycloak embedded Bouncy Castle — CVE-2026-8763 / CVE-2026-13506 ────────
+# 2026-09-19: bcprov-jdk18on 1.84 is bundled by Keycloak 26.7.3 (the pinned base) and by
+# 26.7.4, the newest published tag — both scanned that day with CI's flags, both report the
+# same findings, so a digest bump cannot clear this. The fix is bcprov 1.85 and no published
+# Keycloak carries it. CVE-2026-8763 is an X.509 Name Constraints bypass in certificate path
+# validation; the realm configures no x509 authenticator, no truststore and no mTLS, so
+# Keycloak never validates a client certificate against a name-constrained CA, and it sits
+# behind nginx and Cloudflare. Mirrors the entries in orkyo-foundation (#197). Drop both
+# when a Keycloak build with bcprov >= 1.85 is published; foundation #178 tracks it.
+CVE-2026-8763  # CRITICAL | bcprov-jdk18on 1.84 bundled by Keycloak 26.7.3 and 26.7.4 (fix 1.85) | no upstream Keycloak with the fix; X.509 name-constraint path validation is unused here (no x509 authenticator, no truststore, no mTLS); KC behind nginx + Cloudflare | Added: 2026-09-19 | Review: 2026-09-26
+CVE-2026-13506  # HIGH | bcprov-jdk18on 1.84, same library and same fix version as CVE-2026-8763 | Added: 2026-09-19 | Review: 2026-09-26
+
 # ── Keycloak embedded netty — CVE-2026-75595 (CRITICAL) ─────────────────────
 # 2026-09-12: netty-handler 4.1.136.Final is bundled by Keycloak 26.7.3 via the
 # foundation image this repo layers on; the fix is 4.1.137/4.2.17 and no published
