@@ -3,6 +3,7 @@ using Api.Middleware;
 using Api.Security.Quotas;
 using Api.Services;
 using Microsoft.Extensions.Options;
+using Npgsql;
 using Orkyo.Community;
 using Orkyo.Community.Api.Endpoints;
 using Orkyo.Community.Middleware;
@@ -121,8 +122,10 @@ try
     // ── Health checks ─────────────────────────────────────────────────────────
     var dbCs = builder.Configuration.GetConnectionString(CommunityConfigKeys.DefaultConnection)
         ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is required");
+    // The probe borrows logical connections from this data source and never disposes it.
+    var dbDataSource = NpgsqlDataSource.Create(dbCs);
     builder.Services.AddHealthChecks()
-        .AddPostgresCheck(dbCs, "postgres", "db", "ready");
+        .AddPostgresCheck(dbDataSource, "postgres", "db", "ready");
 
     var app = builder.Build();
 

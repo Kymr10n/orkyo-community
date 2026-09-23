@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace Orkyo.Community.Tests;
 
@@ -110,7 +111,7 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
                 if (existing is not null) opts.Registrations.Remove(existing);
             });
             services.AddHealthChecks()
-                .AddPostgresCheck(testDbCs, "postgres", "db", "ready");
+                .AddPostgresCheck(NpgsqlDataSource.Create(testDbCs), "postgres", "db", "ready");
 
         });
     }
