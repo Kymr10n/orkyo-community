@@ -141,6 +141,7 @@ ToS__RequiredVersion: "2026-01"   # any version label you choose
 | API returns 503 from `/health` | Database migrations not applied yet. Check `docker logs orkyo_community_migrator`. |
 | BFF login redirect fails | `BFF_COOKIE_DOMAIN` doesn't match the host the user reaches the app on, or `BFF_COOKIE_SECURE=true` over HTTP. |
 | API returns 401 at login after client secret change | Realm import is one-shot — see below. |
+| QR scanner shows "Scanning needs HTTPS" | Users reach the app over plain HTTP. Browsers give camera access only over HTTPS or on `localhost`. Put a TLS reverse proxy in front of port 80. See [HTTPS / Reverse Proxy](QUICKSTART.md#https--reverse-proxy). |
 
 ## Rotating `KEYCLOAK_BACKEND_CLIENT_SECRET` after first boot
 
