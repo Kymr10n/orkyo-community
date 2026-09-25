@@ -42,3 +42,22 @@ CVE-2026-13506  # HIGH | bcprov-jdk18on 1.84, same library and same fix version 
 # Cloudflare. Drop when a Keycloak build with netty ≥ 4.1.137 is published
 # (foundation #176).
 CVE-2026-75595  # CRITICAL | netty-handler 4.1.136.Final bundled by Keycloak 26.7.3 (fix 4.1.137 / 4.2.17) | no upstream Keycloak with the fix yet; production already runs this exact netty (0.22.0 image, scanned 2026-09-12) so shipping is not a regression; KC behind nginx + Cloudflare | Added: 2026-09-12 | Review: 2026-09-26
+
+# ── Keycloak embedded FreeMarker — CVE-2026-84939 (CRITICAL) ────────────────
+# 2026-09-25: freemarker 2.3.32 is bundled by Keycloak 26.7.3 via the foundation image
+# this repo layers on; the fix is 2.3.35. Whether a newer Keycloak ships it was not
+# verified (quay.io was unreachable from the session that added this). The finding is a
+# path traversal through a malformed locale identifier; Keycloak accepts a locale from
+# the login request, so it is NOT assessed as unreachable. It is accepted only because
+# production already runs this exact Keycloak build, so shipping 0.27.0 is not a
+# regression. Drop when orkyo-foundation/keycloak/Dockerfile pins a Keycloak build with
+# freemarker >= 2.3.35.
+CVE-2026-84939  # CRITICAL | freemarker 2.3.32 bundled by Keycloak 26.7.3 (fix 2.3.35) | newer Keycloak not verified; locale path traversal NOT assessed as unreachable; accepted because production already runs this Keycloak build (no regression) | Added: 2026-09-25 | Review: 2026-10-09
+
+# ── nginx-alpine libexpat 2.8.4-r0 — CVE-2026-93990 (frontend) ─────────────────
+# 2026-09-25: nginx:1.31-alpine still resolves to the pinned digest 1ed1b0e1… (checked
+# against Docker Hub that day), which carries libexpat 2.8.4-r0; the fix is 2.8.5-r0 and
+# upstream has not rebuilt. Production already runs this digest, so shipping 0.27.0 is
+# not a regression. Same entry as orkyo-saas. Drop and bump the digest when upstream
+# rebuilds.
+CVE-2026-93990  # HIGH | libexpat 2.8.4-r0 in nginx:1.31-alpine@1ed1b0e1 (fix 2.8.5-r0) | upstream digest not rebuilt (checked 2026-09-25); production already runs this digest, so shipping is not a regression | Added: 2026-09-25 | Review: 2026-10-09
