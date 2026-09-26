@@ -5,10 +5,17 @@
 #
 # Policy: time-bound only. Review date must be within 14 days of added date.
 # Remove entries once the upstream fix is available.
+#
+# Re-verified 2026-09-26 against upstream source (quay.io is unreachable from the session):
+# Keycloak 26.7.4 is still the newest tag; its pom.xml pins freemarker 2.3.32 and quarkus
+# 3.33.3.2, whose BOM pins netty 4.1.136.Final and bouncycastle 1.84; mssql-jdbc
+# 13.2.1.jre11. Nothing below changed between 26.7.3 and 26.7.4. The four Keycloak entries
+# dated 2026-09-26 are renewed for one more window; the FreeMarker and libexpat entries
+# keep their 2026-10-09 review date.
 
 # ── Trivy false positive ───────────────────────────────────────────────────────
 # Trivy reports fix as 12.6.5 but KC ships mssql-jdbc 13.2.1.jre11 (newer); false positive.
-CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy compares the installed 13.2.1 against a fix list ending 13.2.1.jre11 and calls it older; the shipped JAR is the fixed version, false positive (re-verified 2026-09-12 on quay.io/keycloak/keycloak:26.7.3) | Added: 2026-09-12 | Review: 2026-09-26
+CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy compares the installed 13.2.1 against a fix list ending 13.2.1.jre11 and calls it older; the shipped JAR is the fixed version, false positive (re-verified 2026-09-26: 26.7.4 pom still pins 13.2.1.jre11) | Added: 2026-09-26 | Review: 2026-10-10
 
 # ── Keycloak base OS layer ────────────────────────────────────────────────────
 # 2026-09-03: the KC-26.6.x-era entries that stood in this file (jackson-databind,
@@ -29,8 +36,8 @@ CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy compare
 # Keycloak never validates a client certificate against a name-constrained CA, and it sits
 # behind nginx and Cloudflare. Mirrors the entries in orkyo-foundation (#197). Drop both
 # when a Keycloak build with bcprov >= 1.85 is published; foundation #178 tracks it.
-CVE-2026-8763  # CRITICAL | bcprov-jdk18on 1.84 bundled by Keycloak 26.7.3 and 26.7.4 (fix 1.85) | no upstream Keycloak with the fix; X.509 name-constraint path validation is unused here (no x509 authenticator, no truststore, no mTLS); KC behind nginx + Cloudflare | Added: 2026-09-19 | Review: 2026-09-26
-CVE-2026-13506  # HIGH | bcprov-jdk18on 1.84, same library and same fix version as CVE-2026-8763 | Added: 2026-09-19 | Review: 2026-09-26
+CVE-2026-8763  # CRITICAL | bcprov-jdk18on 1.84 bundled by Keycloak 26.7.3 and 26.7.4 (fix 1.85) | no upstream Keycloak with the fix; X.509 name-constraint path validation is unused here (no x509 authenticator, no truststore, no mTLS); KC behind nginx + Cloudflare | Added: 2026-09-26 | Review: 2026-10-10
+CVE-2026-13506  # HIGH | bcprov-jdk18on 1.84, same library and same fix version as CVE-2026-8763 | Added: 2026-09-26 | Review: 2026-10-10
 
 # ── Keycloak embedded netty — CVE-2026-75595 (CRITICAL) ─────────────────────
 # 2026-09-12: netty-handler 4.1.136.Final is bundled by Keycloak 26.7.3 via the
@@ -41,7 +48,7 @@ CVE-2026-13506  # HIGH | bcprov-jdk18on 1.84, same library and same fix version 
 # the base-image fixes and 0.23.0 out of production. Keycloak sits behind nginx and
 # Cloudflare. Drop when a Keycloak build with netty ≥ 4.1.137 is published
 # (foundation #176).
-CVE-2026-75595  # CRITICAL | netty-handler 4.1.136.Final bundled by Keycloak 26.7.3 (fix 4.1.137 / 4.2.17) | no upstream Keycloak with the fix yet; production already runs this exact netty (0.22.0 image, scanned 2026-09-12) so shipping is not a regression; KC behind nginx + Cloudflare | Added: 2026-09-12 | Review: 2026-09-26
+CVE-2026-75595  # CRITICAL | netty-handler 4.1.136.Final bundled by Keycloak 26.7.3 (fix 4.1.137 / 4.2.17) | no upstream Keycloak with the fix yet; production already runs this exact netty (0.22.0 image, scanned 2026-09-12) so shipping is not a regression; KC behind nginx + Cloudflare | Added: 2026-09-26 | Review: 2026-10-10
 
 # ── Keycloak embedded FreeMarker — CVE-2026-84939 (CRITICAL) ────────────────
 # 2026-09-25: freemarker 2.3.32 is bundled by Keycloak 26.7.3 via the foundation image
