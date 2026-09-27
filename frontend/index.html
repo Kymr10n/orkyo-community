@@ -12,7 +12,9 @@
     <link rel="icon" type="image/png" sizes="32x32"
           href="/orkyo-dark-32.png"
           media="(prefers-color-scheme: dark)" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/orkyo-180.png" />
+    <!-- Versioned: iOS caches a Home Screen icon per URL, and an install made while the
+         old transparent icon was live keeps it. Bump the query when the icon changes. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/orkyo-180.png?v=2" />
     <meta name="apple-mobile-web-app-title" content="Orkyo" />
     <link rel="manifest" href="manifest.webmanifest" />
 
