@@ -120,6 +120,7 @@ export default defineConfig({
       "@dnd-kit/utilities",
       "lucide-react",
       "recharts",
+      "tailwindcss",
     ],
   },
   optimizeDeps: {},
