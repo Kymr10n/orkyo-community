@@ -250,10 +250,7 @@ file sealed class SpyIdentityLinkService(
         });
     }
 
-    // Remaining interface members — not exercised by these tests.
-    public Task<IReadOnlyList<TenantMembership>> GetUserMembershipsAsync(Guid userId, CancellationToken ct = default)
-        => Task.FromResult<IReadOnlyList<TenantMembership>>([]);
-
+    // Remaining interface member — not exercised by these tests.
     public Task<TenantRole> GetUserTenantRoleAsync(Guid userId, Guid tenantId, CancellationToken ct = default)
         => Task.FromResult(TenantRole.None);
 }

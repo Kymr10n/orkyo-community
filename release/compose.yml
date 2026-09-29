@@ -100,6 +100,7 @@ services:
       APP_BASE_URL: ${APP_BASE_URL:?public app URL, e.g. https://community.example.com}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-${APP_BASE_URL}}
       BFF_ENABLED: "true"
+      ORKYO_DEPLOYMENT_MODE: self-hosted
       BFF_COOKIE_SECURE: ${BFF_COOKIE_SECURE:-true}
       BFF_COOKIE_DOMAIN: ${BFF_COOKIE_DOMAIN:?cookie domain, e.g. community.example.com}
       BFF_ALLOWED_HOSTS: ${BFF_ALLOWED_HOSTS:-${BFF_COOKIE_DOMAIN}}

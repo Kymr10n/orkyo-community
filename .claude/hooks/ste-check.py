@@ -11,10 +11,11 @@ Scope and terminology rules: orkyo-documentation/docs/LANGUAGE-STANDARD.md
 This file is identical in all five Orkyo repos. Keep it that way — edit once, copy across.
 """
 import json
+import subprocess
 import sys
 from pathlib import Path
 
-# Per-repo scope, keyed by repository directory name.
+# Per-repo scope, keyed by repository name (from the origin remote; see repo_name()).
 # "include" and "exclude" are repo-relative path prefixes. "exclude" wins.
 # "procedural" prefixes get the 20-word limit; everything else in scope gets 25.
 SCOPE = {
@@ -59,6 +60,30 @@ LABELS = {
 }
 
 
+def repo_name(repo_root):
+    """The repository name from `git remote get-url origin`, else the folder name.
+
+    A clone into a folder with another name (a worktree, `git clone … foo`) still resolves.
+    """
+    try:
+        url = subprocess.run(
+            ["git", "-C", str(repo_root), "remote", "get-url", "origin"],
+            capture_output=True, text=True, timeout=5, check=True,
+        ).stdout.strip()
+        name = url.rstrip("/").rsplit("/", 1)[-1].rsplit(":", 1)[-1]
+        name = name[:-4] if name.endswith(".git") else name
+        if name:
+            return name
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return repo_root.name
+
+
+def skip(reason):
+    """One line on stderr, so a skipped check is visible instead of silently clean."""
+    print(f"ste-check: skipped ({reason})", file=sys.stderr)
+
+
 def main():
     payload = json.load(sys.stdin)
     tool_input = payload.get("tool_input") or {}
@@ -73,8 +98,10 @@ def main():
 
     hooks_dir = Path(__file__).resolve().parent
     repo_root = hooks_dir.parent.parent
-    scope = SCOPE.get(repo_root.name)
+    name = repo_name(repo_root)
+    scope = SCOPE.get(name)
     if scope is None:
+        skip(f"no scope for repository '{name}'")
         return
 
     try:
@@ -127,5 +154,5 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except Exception:
-        pass  # advisory only: never disturb the tool call
+    except Exception as exc:  # advisory only: never disturb the tool call
+        skip(f"{type(exc).__name__}: {exc}")
