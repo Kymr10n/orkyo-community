@@ -132,6 +132,38 @@ ToS__RequiredVersion: "2026-01"   # any version label you choose
 - Changing the value to a new label forces all users to re-accept.
 - Unsetting it disables the gate again (recorded acceptances are kept).
 
+## Turn on passkeys on an existing installation
+
+New installations get the WebAuthn Passwordless policy from the realm import. Existing installations must set the policy in the admin console. Keycloak imports the realm only on first boot.
+
+Log in to the Keycloak admin console at `${KEYCLOAK_URL}/admin`. Select the realm `orkyo-community`.
+
+### Set the WebAuthn Passwordless policy
+
+Go to Authentication → Policies → WebAuthn Passwordless Policy. Set these values:
+
+| Field | Value |
+|---|---|
+| Relying party entity name | `Orkyo` |
+| Relying party ID | The host of `APP_BASE_URL`, without scheme, port, or path |
+| Signature algorithms | `ES256`, `RS256` |
+| Attestation conveyance preference | `none` |
+| Authenticator attachment | `not specified` |
+| Require discoverable credential | `Yes` |
+| User verification requirement | `required` |
+| Timeout | `60` |
+| Avoid same authenticator registration | Off |
+| Passkeys enabled | On |
+| Mediation | `conditional` |
+
+If `APP_BASE_URL` is `https://orkyo.example.com:8443/app`, the relying party ID is `orkyo.example.com`. Click **Save**.
+
+### Add the passkey step to the browser flow
+
+Go to Authentication → Flows → browser. Find the sub-flow "Browser - Conditional 2FA". Add the step "Condition - credential" to this sub-flow. Set its requirement to **Required**. Open its settings and set `credentials` to `webauthn-passwordless`. Move the step after "Condition - user configured". Click **Save**.
+
+Users can now add a passkey on the Security page of Orkyo. The login page offers the passkey after the change.
+
 ## Common issues
 
 | Symptom | Likely cause |
