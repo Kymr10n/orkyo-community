@@ -68,3 +68,9 @@ CVE-2026-84939  # CRITICAL | freemarker 2.3.32 bundled by Keycloak 26.7.3 (fix 2
 # not a regression. Same entry as orkyo-saas. Drop and bump the digest when upstream
 # rebuilds.
 CVE-2026-93990  # HIGH | libexpat 2.8.4-r0 in nginx:1.31-alpine@1ed1b0e1 (fix 2.8.5-r0) | upstream digest not rebuilt (checked 2026-09-25); production already runs this digest, so shipping is not a regression | Added: 2026-09-25 | Review: 2026-10-09
+
+# ── Keycloak embedded Jackson — CVE-2026-68497 (HIGH) ───────────────────────
+# jackson-databind 2.21.5 bundled by Keycloak 26.7.4 (fix 2.21.6), inherited from the
+# foundation image. Deserialization of untrusted input needs polymorphic typing, which
+# Keycloak does not enable on its public endpoints. Same entry as foundation.
+CVE-2026-68497  # HIGH | jackson-databind 2.21.5 bundled by Keycloak 26.7.4 (fix 2.21.6) | no upstream Keycloak with the fix | Added: 2026-09-29 | Review: 2026-10-13
