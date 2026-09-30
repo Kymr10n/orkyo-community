@@ -4,13 +4,14 @@
 # responsibility. Adapt paths, server names, and TLS settings to your environment.
 #
 # Architecture (recommended: single domain, Keycloak under /auth):
-#   Internet → nginx (TLS termination) → frontend container (port 80)
+#   Internet → nginx (TLS termination) → frontend container (FRONTEND_PORT)
 #                                          ├── /api/*  proxied internally to the api container
 #                                          └── /auth/* proxied internally to the keycloak container
 #
 # The frontend container's built-in nginx handles both /api/ → backend and
 # /auth/ → Keycloak routing, so this proxy forwards ALL traffic — including
-# Keycloak — to port 80. Set KEYCLOAK_URL=https://community.example.com/auth.
+# Keycloak — to the frontend. KEYCLOAK_URL derives from APP_BASE_URL as
+# https://community.example.com/auth; set it only for a separate auth domain.
 #
 # Alternative — dedicated auth domain: serve Keycloak on its own hostname
 # instead, by proxying a second server block (mirroring the HTTPS one below,
@@ -23,6 +24,11 @@
 #   - Obtain TLS certificates (Let's Encrypt / certbot recommended)
 #   - Replace community.example.com with your actual domain
 #   - Replace /etc/ssl/... paths with your certificate locations
+#   - Move the frontend container off host port 80, which this nginx needs.
+#     Put these two lines in .env, then recreate the stack:
+#         FRONTEND_BIND=127.0.0.1
+#         FRONTEND_PORT=8081
+#     Binding to 127.0.0.1 also keeps the container off the public interface.
 
 # ── HTTP → HTTPS redirect ─────────────────────────────────────────────────────
 server {
@@ -58,7 +64,7 @@ server {
     # The frontend's internal nginx handles /api/ → backend and
     # /auth/ → Keycloak routing.
     location / {
-        proxy_pass http://127.0.0.1:80;
+        proxy_pass http://127.0.0.1:8081;   # FRONTEND_PORT
         proxy_http_version 1.1;
         proxy_set_header Host              $host;
         proxy_set_header X-Real-IP         $remote_addr;

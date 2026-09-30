@@ -4,10 +4,14 @@
 # images. Works equally well with `docker compose up -d` and Portainer Stacks.
 #
 # Required env vars (deploy will fail with a clear message if missing):
-#   POSTGRES_PASSWORD, VALKEY_PASSWORD, KEYCLOAK_ADMIN_PASSWORD,
-#   KEYCLOAK_BACKEND_CLIENT_SECRET, ORKYO_MASTER_ENCRYPTION_KEY,
-#   APP_BASE_URL, KEYCLOAK_URL, BFF_COOKIE_DOMAIN, SMTP_HOST,
-#   SMTP_FROM_EMAIL, ORKYO_VERSION
+#   ORKYO_VERSION, POSTGRES_PASSWORD, VALKEY_PASSWORD,
+#   KEYCLOAK_ADMIN_PASSWORD, KEYCLOAK_BACKEND_CLIENT_SECRET,
+#   ORKYO_MASTER_ENCRYPTION_KEY, APP_BASE_URL
+#
+# Everything else is derived or optional. `release/generate-env.sh` writes a
+# complete .env from one URL; the five secrets it generates for you.
+#
+# TLS: run with COMPOSE_PROFILES=tls to terminate HTTPS in the stack (Caddy).
 #
 # Image registry: ghcr.io/kymr10n
 
@@ -93,8 +97,10 @@ services:
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-orkyo-community}
       KEYCLOAK_BACKEND_CLIENT_ID: ${KEYCLOAK_BACKEND_CLIENT_ID:-orkyo-backend}
       KEYCLOAK_BACKEND_CLIENT_SECRET: ${KEYCLOAK_BACKEND_CLIENT_SECRET:?set the orkyo-backend OIDC client secret}
-      KEYCLOAK_URL: ${KEYCLOAK_URL:?public Keycloak URL, e.g. https://community.example.com/auth}
-      OIDC_AUTHORITY: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM:-orkyo-community}
+      # Derived from APP_BASE_URL: the bundle serves Keycloak under /auth on the
+      # same origin. Set KEYCLOAK_URL only when it lives somewhere else.
+      KEYCLOAK_URL: ${KEYCLOAK_URL:-${APP_BASE_URL}/auth}
+      OIDC_AUTHORITY: ${KEYCLOAK_URL:-${APP_BASE_URL}/auth}/realms/${KEYCLOAK_REALM:-orkyo-community}
       OIDC_INTERNAL_AUTHORITY: http://keycloak:8080/realms/${KEYCLOAK_REALM:-orkyo-community}
       VALKEY_CONNECTION: "valkey:6379,password=${VALKEY_PASSWORD},abortConnect=false"
       APP_BASE_URL: ${APP_BASE_URL:?public app URL, e.g. https://community.example.com}
@@ -102,15 +108,18 @@ services:
       BFF_ENABLED: "true"
       ORKYO_DEPLOYMENT_MODE: self-hosted
       BFF_COOKIE_SECURE: ${BFF_COOKIE_SECURE:-true}
-      BFF_COOKIE_DOMAIN: ${BFF_COOKIE_DOMAIN:?cookie domain, e.g. community.example.com}
-      BFF_ALLOWED_HOSTS: ${BFF_ALLOWED_HOSTS:-${BFF_COOKIE_DOMAIN}}
+      # Empty is the stricter default: the cookie binds to the exact request host.
+      BFF_COOKIE_DOMAIN: ${BFF_COOKIE_DOMAIN:-}
+      # Empty lets the backend derive the list from the host of APP_BASE_URL.
+      BFF_ALLOWED_HOSTS: ${BFF_ALLOWED_HOSTS:-${BFF_COOKIE_DOMAIN:-}}
       BFF_REDIRECT_URI: ${APP_BASE_URL}/api/auth/bff/callback
-      SMTP_HOST: ${SMTP_HOST:?SMTP host}
+      # No SMTP_HOST means log-only mail: the API writes each message to its log.
+      SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USE_SSL: ${SMTP_USE_SSL:-false}
       SMTP_USERNAME: ${SMTP_USERNAME:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:?sender address, e.g. noreply@example.com}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-}
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Orkyo Community}
       COMMUNITY__TENANTID: ${COMMUNITY__TENANTID:-00000000-0000-0000-0000-000000000001}
       COMMUNITY__TENANTSLUG: ${COMMUNITY__TENANTSLUG:-community}
@@ -145,19 +154,22 @@ services:
       ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB:-orkyo_community};Username=${POSTGRES_USER:-orkyo};Password=${POSTGRES_PASSWORD}"
       # Must match the api's key — both decrypt the same at-rest data.
       ORKYO_MASTER_ENCRYPTION_KEY: ${ORKYO_MASTER_ENCRYPTION_KEY:?AES-256-GCM master key (base64, 32 bytes) — generate with openssl rand -base64 32}
-      KEYCLOAK_URL: ${KEYCLOAK_URL:?public Keycloak URL, e.g. https://community.example.com/auth}
+      KEYCLOAK_URL: ${KEYCLOAK_URL:-${APP_BASE_URL}/auth}
       KEYCLOAK_INTERNAL_URL: http://keycloak:8080
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-orkyo-community}
       KEYCLOAK_BACKEND_CLIENT_ID: ${KEYCLOAK_BACKEND_CLIENT_ID:-orkyo-backend}
       KEYCLOAK_BACKEND_CLIENT_SECRET: ${KEYCLOAK_BACKEND_CLIENT_SECRET:?set the orkyo-backend OIDC client secret}
       OIDC_INTERNAL_AUTHORITY: http://keycloak:8080/realms/${KEYCLOAK_REALM:-orkyo-community}
       VALKEY_CONNECTION: "valkey:6379,password=${VALKEY_PASSWORD},abortConnect=false"
-      SMTP_HOST: ${SMTP_HOST:?SMTP host}
+      # The lifecycle emails build links from this. Without it they throw at runtime:
+      # EmailService reads APP_BASE_URL outside the try block.
+      APP_BASE_URL: ${APP_BASE_URL:?public app URL, e.g. https://community.example.com}
+      SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USE_SSL: ${SMTP_USE_SSL:-false}
       SMTP_USERNAME: ${SMTP_USERNAME:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:?sender address, e.g. noreply@example.com}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-}
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Orkyo Community}
     networks: [orkyo-internal]
     depends_on:
@@ -171,8 +183,10 @@ services:
     restart: unless-stopped
     environment:
       API_BASE_URL: ""
+    # FRONTEND_BIND exists for the tls profile: Caddy takes host ports 80 and 443,
+    # so the generator binds the frontend to 127.0.0.1:8081 behind it.
     ports:
-      - "${FRONTEND_PORT:-80}:8080"
+      - "${FRONTEND_BIND:-0.0.0.0}:${FRONTEND_PORT:-80}:8080"
     networks: [orkyo-internal, orkyo-public]
     depends_on:
       api: { condition: service_healthy }
@@ -182,6 +196,28 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  # ── TLS terminator (opt-in: COMPOSE_PROFILES=tls) ────────────────────────────
+  # An https:// APP_BASE_URL gives automatic certificates and the HTTP redirect.
+  # Off by default, because a host that already runs a proxy owns ports 80/443.
+  # Note: compose interpolates this block even when the profile is off, so nothing
+  # here may introduce a `:?` variable that a non-TLS deployment does not set.
+  caddy:
+    image: caddy:2-alpine
+    container_name: orkyo_community_caddy
+    profiles: ["tls"]
+    restart: unless-stopped
+    command: caddy reverse-proxy --from ${APP_BASE_URL} --to http://frontend:8080
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [orkyo-public]
+    depends_on:
+      - frontend
 
   # ── Keycloak (identity provider, realm baked into image) ─────────────────────
   keycloak:
@@ -193,7 +229,7 @@ services:
       KC_DB_USERNAME: ${POSTGRES_USER:-orkyo}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
       KC_HTTP_ENABLED: "true"
-      KC_HOSTNAME: ${KEYCLOAK_URL}
+      KC_HOSTNAME: ${KEYCLOAK_URL:-${APP_BASE_URL}/auth}
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       # Permissive by default — typical self-hosted setups put a reverse proxy
       # in front and access Keycloak by both internal and external hostnames.
@@ -231,3 +267,9 @@ volumes:
     name: orkyo_community_postgres
   keycloak_data:
     name: orkyo_community_keycloak
+  # Used only by the tls profile; declared unconditionally because compose reads
+  # the whole file. Holds the issued certificates and Caddy's own state.
+  caddy_data:
+    name: orkyo_community_caddy_data
+  caddy_config:
+    name: orkyo_community_caddy_config
