@@ -21,6 +21,7 @@ SMTP_PASSWORD=""
 SMTP_FROM_EMAIL=""
 SMTP_FROM_NAME="Orkyo Community"
 NO_SMTP=""
+FRONTEND_PORT=""
 OUTPUT="$SCRIPT_DIR/.env"
 FORCE=""
 INTERACTIVE="yes"
@@ -41,6 +42,8 @@ Usage: generate-env.sh [options]
   --smtp-from ADDR   Sender address, e.g. noreply@example.com
   --smtp-from-name N Sender display name (default "Orkyo Community")
   --no-smtp          Skip mail configuration without prompting
+  --frontend-port N  Host port for the app when a proxy of your own forwards to
+                     it (default 80; not with --tls)
   --output PATH      Where to write (default: .env beside this script)
   --force            Overwrite an existing output file
   -h, --help         This text
@@ -61,6 +64,7 @@ while [ $# -gt 0 ]; do
         --smtp-from)      SMTP_FROM_EMAIL="${2:?--smtp-from needs a value}"; shift 2 ;;
         --smtp-from-name) SMTP_FROM_NAME="${2:?--smtp-from-name needs a value}"; shift 2 ;;
         --no-smtp)        NO_SMTP="yes"; shift ;;
+        --frontend-port)  FRONTEND_PORT="${2:?--frontend-port needs a value}"; shift 2 ;;
         --output)         OUTPUT="${2:?--output needs a value}"; shift 2 ;;
         --force)          FORCE="yes"; shift ;;
         -h|--help)        usage; exit 0 ;;
@@ -96,6 +100,23 @@ if [ -z "$TLS" ] && [ -n "$INTERACTIVE" ] && [[ "$URL" == https://* ]]; then
 fi
 if [ -n "$TLS" ] && [[ "$URL" != https://* ]]; then
     die "--tls needs an https:// URL (got '$URL')"
+fi
+
+# ── Host port ─────────────────────────────────────────────────────────────────
+# The common self-host shape is a proxy that already owns port 80 (Nginx Proxy
+# Manager, Traefik, ...) and forwards to the app on another port. In TLS mode the
+# port is not a choice: Caddy owns 80/443 and the frontend sits behind it on 8081.
+
+if [ -n "$TLS" ] && [ -n "$FRONTEND_PORT" ]; then
+    die "--frontend-port has no effect with --tls: Caddy takes ports 80 and 443, and the frontend moves to 127.0.0.1:8081"
+fi
+if [ -z "$TLS" ] && [ -z "$FRONTEND_PORT" ] && [ -n "$INTERACTIVE" ]; then
+    printf '\nHost port for the app. Keep 80 unless a proxy of your own already owns\n'
+    printf 'that port and forwards to another one.\n'
+    read -r -p 'Host port [80]: ' FRONTEND_PORT
+fi
+if [ -n "$FRONTEND_PORT" ] && ! [[ "$FRONTEND_PORT" =~ ^[0-9]{1,5}$ ]]; then
+    die "not a port number: '$FRONTEND_PORT'"
 fi
 
 # ── SMTP ──────────────────────────────────────────────────────────────────────
@@ -179,6 +200,8 @@ if [ -n "$TLS" ]; then
     set_var COMPOSE_PROFILES tls
     set_var FRONTEND_BIND 127.0.0.1
     set_var FRONTEND_PORT 8081
+elif [ -n "$FRONTEND_PORT" ]; then
+    set_var FRONTEND_PORT "$FRONTEND_PORT"
 fi
 
 # 600 before the content lands: the file carries five secrets.

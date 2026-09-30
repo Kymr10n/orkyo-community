@@ -35,7 +35,10 @@ WORKDIR /app
 # request write threw TimeZoneNotFoundException and surfaced as a 500. Installing a
 # package is compatible with the digest-pinned base (only ad-hoc `apk upgrade` is not);
 # the nightly security-refresh rebuild re-resolves this layer with the rest.
-RUN apk add --no-cache tzdata
+# krb5-libs: Npgsql probes GSSAPI on every first connection, and without the library the
+# musl loader printed "Error loading shared library libgssapi_krb5.so.2" to stderr at
+# startup. Harmless (it fell back to SCRAM), but it read as an error in every log.
+RUN apk add --no-cache tzdata krb5-libs
 COPY --from=build /app/publish .
 
 RUN adduser -D -u 1001 -s /sbin/nologin appuser \

@@ -63,9 +63,8 @@ On first deploy, Keycloak imports the realm and the migrator runs DB migrations.
 ## Path B — Docker Compose CLI
 
 ```bash
-# 1. Get the bundle
-wget https://github.com/Kymr10n/orkyo-community/releases/latest/download/orkyo-community.zip
-unzip orkyo-community.zip
+# 1. Get the bundle (tar.gz: every Docker host has tar, not every host has unzip)
+curl -fsSL https://github.com/Kymr10n/orkyo-community/releases/latest/download/orkyo-community.tar.gz | tar xz
 cd orkyo-community-v*
 
 # 2. Write the configuration
@@ -74,6 +73,12 @@ cd orkyo-community-v*
 # 3. Deploy
 docker compose up -d
 ```
+
+The same bundle is available as `orkyo-community.zip` for Windows and Portainer users.
+
+If a proxy of your own already owns port 80, the generator asks for another host
+port. For an unattended run, pass `--frontend-port 8091`, for example. Then point
+the proxy at that port.
 
 If a required value is missing, compose stops at once. The message names the variable.
 

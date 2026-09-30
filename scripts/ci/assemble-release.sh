@@ -34,13 +34,21 @@ sed -i "s|^ORKYO_VERSION=.*|ORKYO_VERSION=${VERSION}|" "${STAGING_DIR}/${BUNDLE_
 [ -f "${REPO_ROOT}/LICENSE" ]   && cp "${REPO_ROOT}/LICENSE"   "${STAGING_DIR}/${BUNDLE_NAME}/LICENSE"
 
 # ── 4. Package ────────────────────────────────────────────────────────────────
+# Two formats, same content. The tar.gz is for Linux hosts without `unzip` (NAS
+# appliances, minimal images); the zip stays for Windows and Portainer users.
 mkdir -p "$OUTDIR"
-(cd "$STAGING_DIR" && zip -rq "${BUNDLE_NAME}.zip" "${BUNDLE_NAME}")
-cp "${STAGING_DIR}/${BUNDLE_NAME}.zip" "${OUTDIR}/${BUNDLE_NAME}.zip"
-(cd "$OUTDIR" && sha256sum "${BUNDLE_NAME}.zip" > "${BUNDLE_NAME}.zip.sha256")
+(cd "$STAGING_DIR" \
+  && zip -rq "${BUNDLE_NAME}.zip" "${BUNDLE_NAME}" \
+  && tar -czf "${BUNDLE_NAME}.tar.gz" "${BUNDLE_NAME}")
+for ext in zip tar.gz; do
+  cp "${STAGING_DIR}/${BUNDLE_NAME}.${ext}" "${OUTDIR}/${BUNDLE_NAME}.${ext}"
+  (cd "$OUTDIR" && sha256sum "${BUNDLE_NAME}.${ext}" > "${BUNDLE_NAME}.${ext}.sha256")
+done
 
 echo ""
 echo "Bundle ready:"
-echo "  ${OUTDIR}/${BUNDLE_NAME}.zip"
-echo "  ${OUTDIR}/${BUNDLE_NAME}.zip.sha256"
-(cd "$OUTDIR" && sha256sum -c "${BUNDLE_NAME}.zip.sha256")
+for ext in zip tar.gz; do
+  echo "  ${OUTDIR}/${BUNDLE_NAME}.${ext}"
+  echo "  ${OUTDIR}/${BUNDLE_NAME}.${ext}.sha256"
+done
+(cd "$OUTDIR" && sha256sum -c "${BUNDLE_NAME}.zip.sha256" "${BUNDLE_NAME}.tar.gz.sha256")
