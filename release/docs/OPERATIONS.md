@@ -117,6 +117,49 @@ docker exec -it orkyo_community_db \    # SQL shell
   psql -U orkyo -d orkyo_community
 ```
 
+## Email
+
+The `.env` file controls mail. With no `SMTP_HOST`, the app writes each message
+to the API log and sends nothing.
+
+To find out which mode is active, run:
+
+```bash
+docker compose logs api | grep "log-only"
+```
+
+One warning line means log-only mode:
+
+```
+Email delivery is log-only: SMTP_HOST is not set
+```
+
+To read an invitation link in this mode, run:
+
+```bash
+docker compose logs api | grep -A5 "Email (log-only)"
+```
+
+To turn on delivery, set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USE_SSL`,
+`SMTP_FROM_EMAIL`, and `SMTP_FROM_NAME` in `.env`. Then run
+`docker compose up -d`.
+
+NOTE: `SMTP_HOST` makes the other four values required. If one is missing, the
+API stops at startup and names it. A partial block is an error, because the app
+must not send mail from a port or a sender that nobody chose.
+
+## Configuration changes
+
+The generator `generate-env.sh` writes `.env` one time, at install.
+
+WARNING: Do not run the generator again on a live deployment. It writes a new
+`ORKYO_MASTER_ENCRYPTION_KEY`, and data encrypted with the old key becomes
+unreadable. Edit `.env` by hand instead. The script refuses to overwrite an
+existing file without `--force`.
+
+To change any value after install, edit `.env`. Then run
+`docker compose up -d` to recreate the affected containers.
+
 ## Terms of Service gate (optional)
 
 Community does not show a Terms of Service acceptance page by default. To require

@@ -68,23 +68,25 @@ Orkyo replaces that with a shared, visual plan: requests, assignments, conflicts
 > **Want to look first?** The [live demo](https://orkyo.com/demo) is the same
 > application, already seeded with a manufacturing workspace — no install, no signup.
 
-**Requirements:** Docker Engine 24+ with Compose v2.
+**Requirements:** Docker Engine 24+ with Compose v2, plus `bash` and `openssl` for the setup script.
 
 ```bash
-# Download and extract the latest release bundle
-curl -fsSL https://github.com/Kymr10n/orkyo-community/releases/latest/download/orkyo-community.zip -o orkyo-community.zip
-unzip -q orkyo-community.zip && cd orkyo-community-v*/
+# Download and extract the latest release bundle (also available as .zip)
+curl -fsSL https://github.com/Kymr10n/orkyo-community/releases/latest/download/orkyo-community.tar.gz | tar xz
+cd orkyo-community-v*/
 
-cp .env.template .env
-# Edit .env — set POSTGRES_PASSWORD, KEYCLOAK_ADMIN_PASSWORD, KEYCLOAK_BACKEND_CLIENT_SECRET
+# Write .env — asks for your public URL, generates the five secrets
+./generate-env.sh
 
 docker compose up -d
-open http://localhost          # port 80 by default; override with FRONTEND_PORT
+open http://localhost          # port 80 by default; the generator asks if a proxy owns it
 ```
+
+You supply one value, `APP_BASE_URL`. The script generates the five secrets, and everything else derives from the URL or has a default. Add `--tls` to terminate HTTPS in the stack with Caddy, or `--frontend-port 8091` (any free port) when a reverse proxy of your own already owns port 80. Mail is optional: without SMTP the app writes messages, invitation links included, to the API log.
 
 Default login `admin@example.com` / `ChangeMe-Admin-1` — Keycloak forces a password change at first login, and self-registration is disabled by default (invite users from Settings → Users). Images are published to GitHub Container Registry (`ghcr.io/kymr10n/orkyo-community-*`).
 
-- **Portainer:** paste [`release/compose.yml`](release/compose.yml) into the stack editor, fill in the prompted env vars, deploy.
+- **Portainer:** paste [`release/compose.yml`](release/compose.yml) into the stack editor, load the generated `.env` with "Load variables from .env file", deploy.
 - **Upgrade:** `docker compose pull && docker compose up -d` (migrations run on startup).
 
 Full variable reference: [release/docs/QUICKSTART.md](release/docs/QUICKSTART.md) · backup, upgrade, rollback: [release/docs/OPERATIONS.md](release/docs/OPERATIONS.md).

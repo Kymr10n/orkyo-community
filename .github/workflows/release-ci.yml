@@ -329,34 +329,20 @@ jobs:
           unzip "orkyo-community-v${{ steps.version.outputs.VERSION }}.zip"
 
       - name: Generate test .env
+        # Uses the shipped generator rather than a hand-written heredoc, so the
+        # smoke proves the path an operator actually takes. Only the two values
+        # that cannot hold on a CI runner are overridden afterwards.
         run: |
           BUNDLE="dist/orkyo-community-v${{ steps.version.outputs.VERSION }}"
-          cat > "$BUNDLE/.env" <<'EOF'
-          POSTGRES_USER=orkyo
-          POSTGRES_PASSWORD=ci-postgres-password
-          POSTGRES_DB=orkyo_community
-          KEYCLOAK_DB=keycloak
-          VALKEY_PASSWORD=ci-valkey-password
-          ORKYO_MASTER_ENCRYPTION_KEY=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-          APP_BASE_URL=http://localhost
-          KEYCLOAK_URL=http://localhost:9080
-          KEYCLOAK_ADMIN=admin
-          KEYCLOAK_ADMIN_PASSWORD=ci-keycloak-admin-password
-          KEYCLOAK_REALM=orkyo-community
-          KEYCLOAK_BACKEND_CLIENT_ID=orkyo-backend
-          KEYCLOAK_BACKEND_CLIENT_SECRET=ci-backend-client-secret
-          BFF_COOKIE_DOMAIN=localhost
-          BFF_COOKIE_SECURE=false
-          SMTP_HOST=localhost
-          SMTP_PORT=1025
-          SMTP_USE_SSL=false
-          SMTP_FROM_EMAIL=noreply@ci.local
-          SMTP_FROM_NAME=Orkyo CI
-          EOF
-          # compose.yml pins images via fail-fast ${ORKYO_VERSION:?}; take the
-          # value from the stamped .env.template so the smoke also proves the
-          # bundle assembly stamped the released version correctly.
-          grep '^ORKYO_VERSION=' "$BUNDLE/.env.template" >> "$BUNDLE/.env"
+          bash "$BUNDLE/generate-env.sh" --url http://localhost --no-smtp \
+            --output "$BUNDLE/.env" --force
+          {
+            echo 'BFF_COOKIE_SECURE=false'
+            echo 'KEYCLOAK_URL=http://localhost:9080'
+          } >> "$BUNDLE/.env"
+          # The generator copies .env.template, so ORKYO_VERSION carries the stamp
+          # through: this still proves the bundle assembly stamped the released
+          # version (compose.yml pins images via fail-fast ${ORKYO_VERSION:?}).
           grep -q "^ORKYO_VERSION=${{ steps.version.outputs.VERSION }}$" "$BUNDLE/.env" \
             || (echo "::error::.env.template was not stamped with ${{ steps.version.outputs.VERSION }}" && exit 1)
 
@@ -472,10 +458,106 @@ jobs:
           docker compose logs worker --tail 50
           exit 1
 
+      - name: Verify mail is log-only
+        # The bundle now starts with no SMTP configuration at all. The warning is
+        # the operator's only signal that invitation links go to the log.
+        working-directory: dist/orkyo-community-v${{ steps.version.outputs.VERSION }}
+        run: |
+          if docker compose logs api | grep -q 'Email delivery is log-only'; then
+            echo "log-only mail warning: OK"
+          else
+            echo "::error::API did not warn that mail is log-only"
+            docker compose logs api --tail 50
+            exit 1
+          fi
+
+      - name: Teardown plain-HTTP stack
+        working-directory: dist/orkyo-community-v${{ steps.version.outputs.VERSION }}
+        run: docker compose down -v
+
+      # ── Second bring-up: the built-in TLS profile ────────────────────────────
+      - name: Generate .env for the TLS profile
+        run: |
+          BUNDLE="dist/orkyo-community-v${{ steps.version.outputs.VERSION }}"
+          bash "$BUNDLE/generate-env.sh" --url https://localhost --tls --no-smtp \
+            --output "$BUNDLE/.env" --force
+
+      - name: Start stack with the TLS profile
+        working-directory: dist/orkyo-community-v${{ steps.version.outputs.VERSION }}
+        run: docker compose up -d
+
+      - name: Wait for Caddy to serve HTTPS
+        working-directory: dist/orkyo-community-v${{ steps.version.outputs.VERSION }}
+        run: |
+          # Caddy issues a local-CA certificate for localhost, so -k throughout.
+          echo "Waiting for HTTPS (timeout 180s)..."
+          if timeout 180 bash -c \
+            'until curl -skf https://localhost/health >/dev/null 2>&1; do sleep 3; done'; then
+            echo "HTTPS healthy"
+          else
+            echo "::error::Caddy did not serve HTTPS within 180s"
+            docker compose logs caddy --tail 50
+            exit 1
+          fi
+
+      - name: Verify HTTPS endpoints and the HTTP redirect
+        run: |
+          HTTP=$(curl -sk -o /dev/null -w "%{http_code}" \
+            "https://localhost/auth/realms/orkyo-community/.well-known/openid-configuration")
+          if [ "$HTTP" != "200" ]; then
+            echo "::error::OpenID configuration over HTTPS returned $HTTP"; exit 1
+          fi
+          echo "/auth/ over HTTPS: OK ($HTTP)"
+          # Caddy redirects HTTP to HTTPS when the site address is https://.
+          REDIRECT=$(curl -s -o /dev/null -w "%{http_code} %{redirect_url}" http://localhost/)
+          case "$REDIRECT" in
+            30*\ https://localhost/*) echo "HTTP -> HTTPS redirect: OK ($REDIRECT)" ;;
+            *) echo "::error::Expected a redirect to https://localhost/, got: $REDIRECT"; exit 1 ;;
+          esac
+
       - name: Teardown
         if: always()
         working-directory: dist/orkyo-community-v${{ steps.version.outputs.VERSION }}
         run: docker compose down -v
+
+  # ─────────────────────────────────────────────
+  # NIGHTLY CHANNEL — scheduled runs only
+  # ─────────────────────────────────────────────
+  publish-nightly:
+    name: Publish Nightly Tag
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    # smoke-selfhosted is v*-only, so it is skipped here; !failure() lets that pass.
+    needs: [nightly-change-check, product-ci, container-scan, smoke-selfhosted]
+    if: >-
+      !failure() && !cancelled() &&
+      github.event_name == 'schedule' &&
+      needs.nightly-change-check.outputs.skip == 'false'
+
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Re-tag the SHA images as nightly (no rebuild)
+        # imagetools works on the registry manifest, so this adds a tag without
+        # pulling or rebuilding, and the nightly tag keeps the scanned digest.
+        run: |
+          for svc in api worker migrator frontend keycloak; do
+            SHA_IMG="${{ env.REGISTRY }}/orkyo-community-${svc}:sha-${{ github.sha }}"
+            if ! docker manifest inspect "$SHA_IMG" > /dev/null 2>&1; then
+              echo "::error::SHA image not found: $SHA_IMG"
+              exit 1
+            fi
+            docker buildx imagetools create \
+              -t "${{ env.REGISTRY }}/orkyo-community-${svc}:nightly" "$SHA_IMG"
+          done
 
   create-release:
     name: Create GitHub Release
@@ -512,13 +594,19 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Stable-named alias so `releases/latest/download/orkyo-community.zip` always resolves
-          # (the versioned asset can't be fetched via the /latest/ URL).
-          cp "dist/orkyo-community-v${{ steps.version.outputs.VERSION }}.zip" dist/orkyo-community.zip
+          # Stable-named aliases so `releases/latest/download/orkyo-community.{zip,tar.gz}`
+          # always resolve (a versioned asset can't be fetched via the /latest/ URL).
+          # The tar.gz exists because NAS hosts routinely lack `unzip`; every Docker host has tar.
+          V="${{ steps.version.outputs.VERSION }}"
+          cp "dist/orkyo-community-v${V}.zip"    dist/orkyo-community.zip
+          cp "dist/orkyo-community-v${V}.tar.gz" dist/orkyo-community.tar.gz
           gh release create "${{ github.ref_name }}" \
-            dist/orkyo-community-v${{ steps.version.outputs.VERSION }}.zip \
+            "dist/orkyo-community-v${V}.zip" \
+            "dist/orkyo-community-v${V}.zip.sha256" \
+            "dist/orkyo-community-v${V}.tar.gz" \
+            "dist/orkyo-community-v${V}.tar.gz.sha256" \
             dist/orkyo-community.zip \
-            dist/orkyo-community-v${{ steps.version.outputs.VERSION }}.zip.sha256 \
+            dist/orkyo-community.tar.gz \
             sboms/*.spdx.json \
             --generate-notes \
             --title "Orkyo Community ${{ github.ref_name }}"
