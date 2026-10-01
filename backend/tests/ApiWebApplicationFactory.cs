@@ -17,12 +17,20 @@ namespace Orkyo.Community.Tests;
 public class ApiWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly DatabaseFixture _databaseFixture;
+    private readonly IReadOnlyDictionary<string, string?> _extraConfiguration;
 
     public MockKeycloakAdminService MockKeycloakAdminService { get; } = new();
 
-    public ApiWebApplicationFactory(DatabaseFixture databaseFixture)
+    /// <param name="extraConfiguration">
+    /// Keys layered over the fixture's configuration, for a test that needs the host to start
+    /// differently (for example <c>ORKYO_STARTER_TEMPLATE</c>). The shared fixture passes none.
+    /// </param>
+    public ApiWebApplicationFactory(
+        DatabaseFixture databaseFixture,
+        IReadOnlyDictionary<string, string?>? extraConfiguration = null)
     {
         _databaseFixture = databaseFixture;
+        _extraConfiguration = extraConfiguration ?? new Dictionary<string, string?>();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -77,6 +85,8 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
                 ["ORKYO_MASTER_ENCRYPTION_KEY"] = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 
             });
+            // Last, so a test's keys win over the fixture's.
+            config.AddInMemoryCollection(_extraConfiguration);
         });
 
         builder.ConfigureServices(services =>

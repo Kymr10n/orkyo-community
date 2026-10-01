@@ -160,6 +160,23 @@ existing file without `--force`.
 To change any value after install, edit `.env`. Then run
 `docker compose up -d` to recreate the affected containers.
 
+## Add sample data to a running installation
+
+The starter setup is a one-time step at the first start. To add it later:
+
+1. Set `ORKYO_STARTER_TEMPLATE=manufacturing` or `ORKYO_STARTER_TEMPLATE=office` in `.env`.
+   In Portainer, set it in the stack variables.
+2. Run `docker compose up -d`.
+
+The API applies the setup at the next start. It records the setup under
+**Settings → Presets** and does not apply it again. The setup never deletes
+data. To remove the sample resources, delete them in the app.
+
+NOTE: Installations created before the `office` starter existed contain a
+"Demo Office" site with four spaces from an earlier seed. An upgrade keeps them.
+The `office` setup adopts these four spaces by name and code, and does not
+create them again.
+
 ## Terms of Service gate (optional)
 
 Community does not show a Terms of Service acceptance page by default. To require
