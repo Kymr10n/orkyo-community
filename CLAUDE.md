@@ -30,6 +30,7 @@ Local ports: API `5002` · Keycloak `8082` · Postgres `5433` · Frontend `5174`
 - **Foundation reference is conditional**: project ref in local dev, NuGet pin in CI / Docker. Don't change the csproj conditional without coordination.
 - **Migrations** must carry the `-- @migration-class:` header. See `orkyo-infra/docs/migrations/classification.md`.
 - **Release bundle** (`release/`) is the self-hosted artifact. Changes there are user-facing for self-hosters; smoke-test before tagging.
+- **The Keycloak base image follows the foundation pin.** `backend/keycloak/Dockerfile` names `ghcr.io/kymr10n/keycloak:<line>-orkyo-<version>@sha256:…`, the image foundation published for the pinned version. `scripts/bump-foundation.sh` resolves it from the registry and writes it with the NuGet and npm pins; the auto-bump runs that script. Never edit the line by hand and never pass `FOUNDATION_KC_IMAGE` as a CI build arg — `KeycloakBasePinTests` fails on drift.
 - **Never reference a foundation API that is not in the PINNED package version** — local project references compile against foundation `main`; CI builds the package and fails. Downstream changes depending on new foundation APIs land only after the version bump does.
 - **Releasing**: this repo is tagged by `orkyo-infra`'s `release-promote.yml` alongside orkyo-saas (runbook: `orkyo-infra/docs/runbooks/deploy.md`); never tag by hand. The `v*` tag run builds and publishes the bundle.
 - **Documentation language is ASD-STE100 Simplified Technical English.** Applies to `docs/` and

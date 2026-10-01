@@ -7,15 +7,15 @@ name: Base Image Scan
 # that blocked the 0.23.0 train was found at release time because the built-image
 # scan runs only on push to main, fifth in the chain.
 #
-# The Keycloak base is deliberately NOT scanned here. It is a FROM
-# ${FOUNDATION_KC_IMAGE} build arg resolving to a floating tag that foundation
-# republishes nightly, so no community PR can change it, and it is currently red
-# on an upstream netty CRITICAL (foundation #176). Gating every community PR on
-# it would block all work here without adding safety: foundation's own nightly
-# scan gates that image, and this repo's push-to-main container scan still
-# catches it for release. To include it again, pass
-#   extra-images: '["ghcr.io/kymr10n/keycloak:26.6-orkyo-security-refresh"]'
-# Pinning it by digest so discovery sees it natively is a follow-up.
+# The Keycloak base is deliberately NOT scanned here. backend/keycloak/Dockerfile names
+# it through an ARG (FROM ${FOUNDATION_KC_IMAGE}), which discovery skips. It is the
+# foundation image for the pinned foundation version, pinned by digest and moved only by
+# scripts/bump-foundation.sh — so no ordinary community PR can change it, and an upstream
+# Keycloak CVE would turn this required check red on every PR although none of them can
+# fix it. The fix has to start in foundation (its own nightly scan gates that image) and
+# arrives here with the foundation bump; this repo's push-to-main container scan still
+# catches it for release. It is also a private ghcr.io package, which Dependabot PRs
+# cannot pull without a GHCR_TOKEN Dependabot secret.
 #
 # Pin the reusable by commit SHA, never @main (see its COUPLING RULE). The
 # `Result` job is the required check; the per-image jobs carry the digest in

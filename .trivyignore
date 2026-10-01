@@ -74,3 +74,15 @@ CVE-2026-93990  # HIGH | libexpat 2.8.4-r0 in nginx:1.31-alpine@1ed1b0e1 (fix 2.
 # foundation image. Deserialization of untrusted input needs polymorphic typing, which
 # Keycloak does not enable on its public endpoints. Same entry as foundation.
 CVE-2026-68497  # HIGH | jackson-databind 2.21.5 bundled by Keycloak 26.7.4 (fix 2.21.6) | no upstream Keycloak with the fix | Added: 2026-09-29 | Review: 2026-10-13
+
+# ── Keycloak embedded Jackson — CVE-2026-91776 / CVE-2026-91777 (HIGH) — BRIDGE ─────────
+# Published 2026-10-01 against jackson-databind 2.21.5. Unlike the entries above, the fix is
+# released: Keycloak 26.7.5 bundles 2.21.7 (and bcprov 1.86, netty 4.1.138, freemarker
+# 2.3.35), and foundation moves to it in orkyo-foundation#221. It cannot arrive here before
+# that foundation release, and the release train needs this main green first, so these two
+# bridge the gap. scripts/bump-foundation.sh moves the Keycloak base with the foundation pin:
+# the bump commit for the release carrying #221 makes every Keycloak entry in this file
+# obsolete (Bouncy Castle, netty, FreeMarker, Jackson). Remove them all then; only the
+# mssql-jdbc false positive and the nginx libexpat entry stay.
+CVE-2026-91776  # HIGH | jackson-databind 2.21.5 bundled by Keycloak 26.7.4 (fix 2.21.7) | fixed upstream in Keycloak 26.7.5; arrives with the next foundation release (orkyo-foundation#221) | Added: 2026-10-01 | Review: 2026-10-15
+CVE-2026-91777  # HIGH | jackson-databind 2.21.5, same library and same fix version as CVE-2026-91776 | Added: 2026-10-01 | Review: 2026-10-15
