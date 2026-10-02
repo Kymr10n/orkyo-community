@@ -8,9 +8,10 @@ namespace Orkyo.Community.Tests.Architecture;
 /// floating tag that nothing refreshed, so a fixed Keycloak could not reach this repo and
 /// nobody could see that from the repo itself.
 ///
-/// scripts/bump-foundation.sh writes all three pins in one commit. These tests are the other
-/// half: a package bump that leaves the image behind, a hand edit, or a CI override fails
-/// here, on every pull request.
+/// scripts/bump-foundation.sh writes all three pins in one commit and resolves the digest from
+/// the registry for that exact tag. These tests are the other half: a package bump that leaves
+/// the image behind, a hand edit of the version, or a CI override fails here, on every pull
+/// request. Whether the digest belongs to the tag is the bump script's job, not this test's.
 /// </summary>
 public partial class KeycloakBasePinTests
 {
@@ -67,7 +68,9 @@ public partial class KeycloakBasePinTests
     {
         // A build arg in CI would win over the Dockerfile and bring back a second, unguarded
         // place the base is named — which is how the stale reference survived before.
-        var workflows = Directory.GetFiles(Path.Combine(RepoRoot, ".github", "workflows"), "*.yml");
+        // GitHub reads both extensions, so the guard must too.
+        var workflowDir = Path.Combine(RepoRoot, ".github", "workflows");
+        var workflows = Directory.GetFiles(workflowDir, "*.yml").Concat(Directory.GetFiles(workflowDir, "*.yaml")).ToArray();
 
         workflows.Should().NotBeEmpty();
         // An assignment, not a mention: a comment may explain the ARG, a build arg sets it.
