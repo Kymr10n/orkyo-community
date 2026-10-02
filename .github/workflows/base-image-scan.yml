@@ -38,5 +38,5 @@ jobs:
       contents: read
       packages: read
       issues: write
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-base-image-scan.yml@dff2d1e5f40bfdd436278bcbbe435855f53fd238
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-base-image-scan.yml@61974cefe46b2effe828dbc0471d3c43d414f1a2
     secrets: inherit
