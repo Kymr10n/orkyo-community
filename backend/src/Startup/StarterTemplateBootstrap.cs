@@ -2,6 +2,7 @@ using Api.Configuration;
 using Api.Models.Preset;
 using Api.Services;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -19,11 +20,15 @@ namespace Orkyo.Community.Startup;
 /// the apply. The schema is there because compose gates the API on the migrator having
 /// completed. Foundation records the preset in <c>preset_applications</c> and skips it on every
 /// later start, so this can run unconditionally.
+///
+/// Foundation registers <see cref="IStarterTemplateService"/> as scoped, so it is resolved from a
+/// scope created here: a hosted service is a singleton, and taking the service in the constructor
+/// would hold one instance for the life of the process.
 /// </summary>
 public sealed class StarterTemplateBootstrap(
     IConfiguration configuration,
     IOptions<SingleTenantOptions> options,
-    IStarterTemplateService starterTemplates,
+    IServiceScopeFactory scopeFactory,
     ILogger<StarterTemplateBootstrap> logger) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -44,7 +49,8 @@ public sealed class StarterTemplateBootstrap(
         {
             // The user id is unread by foundation; the database identifier is ignored by the
             // single-tenant connection factory and appears only in foundation's log line.
-            await starterTemplates.ApplyStarterTemplateAsync(
+            await using var scope = scopeFactory.CreateAsyncScope();
+            await scope.ServiceProvider.GetRequiredService<IStarterTemplateService>().ApplyStarterTemplateAsync(
                 options.Value.TenantId, options.Value.TenantSlug, Guid.Empty, key, cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
