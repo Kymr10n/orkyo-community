@@ -93,3 +93,9 @@ CVE-2026-68497  # HIGH | jackson-databind 2.21.5 bundled by Keycloak 26.7.4 (fix
 # mssql-jdbc false positive and the nginx libexpat entry stay.
 CVE-2026-91776  # HIGH | jackson-databind 2.21.5 bundled by Keycloak 26.7.4 (fix 2.21.7) | fixed upstream in Keycloak 26.7.5; arrives with the next foundation release (orkyo-foundation#221) | Added: 2026-10-01 | Review: 2026-10-15
 CVE-2026-91777  # HIGH | jackson-databind 2.21.5, same library and same fix version as CVE-2026-91776 | Added: 2026-10-01 | Review: 2026-10-15
+# 2026-10-02: two more in the same bundled Jackson, this time jackson-core 2.21.5, published after
+# the entries above. Same fix (2.21.7, in Keycloak 26.7.5 — verified: 26.7.5 ships
+# jackson-core-2.21.7.jar), same path here, same removal: the bump commit for the release
+# carrying orkyo-foundation#221 makes all four obsolete.
+CVE-2026-89407  # HIGH | jackson-core 2.21.5 bundled by Keycloak 26.7.4 (fix 2.21.7) | fixed upstream in Keycloak 26.7.5; arrives with the next foundation release (orkyo-foundation#221) | Added: 2026-10-02 | Review: 2026-10-15
+CVE-2026-89425  # HIGH | jackson-core 2.21.5, same library and same fix version as CVE-2026-89407 | Added: 2026-10-02 | Review: 2026-10-15
