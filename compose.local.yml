@@ -30,7 +30,13 @@ services:
       retries: 10
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.6.4
+    # Built from the sibling foundation checkout, never named by version here. That is the
+    # Keycloak the release image is based on (foundation pins it by digest and Dependabot
+    # keeps it current), so the realm files always load. A hand-pinned version here drifted
+    # behind and broke the realm import. Public base image: no registry login needed.
+    build:
+      context: ../orkyo-foundation/keycloak
+    image: orkyo-community-keycloak-local
     container_name: orkyo-community-keycloak
     command: start-dev --import-realm
     environment:

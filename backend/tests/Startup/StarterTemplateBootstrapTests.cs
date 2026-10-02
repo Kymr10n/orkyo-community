@@ -1,6 +1,7 @@
 using Api.Models.Preset;
 using Api.Services;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Orkyo.Community.Startup;
@@ -35,8 +36,14 @@ public class StarterTemplateBootstrapTests
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?> { [CommunityConfigKeys.StarterTemplate] = value })
             .Build();
+        // Registered scoped, as foundation registers it, behind a validating provider: a
+        // bootstrap that took the service directly would fail here, as it did at dev start-up.
+        var provider = new ServiceCollection()
+            .AddScoped<IStarterTemplateService>(_ => service)
+            .BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
         return new StarterTemplateBootstrap(
-            configuration, Options.Create(Tenant), service, NullLogger<StarterTemplateBootstrap>.Instance);
+            configuration, Options.Create(Tenant), provider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<StarterTemplateBootstrap>.Instance);
     }
 
     [Theory]

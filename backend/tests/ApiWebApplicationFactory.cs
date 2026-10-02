@@ -37,6 +37,15 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
     {
         builder.UseEnvironment(TestConstants.EnvironmentName);
 
+        // Validate the real container. ASP.NET Core only does this in Development, and tests run
+        // in their own environment — so a singleton capturing a scoped service passed here and
+        // failed at the first `./dev.sh rebuild` instead.
+        builder.UseDefaultServiceProvider(o =>
+        {
+            o.ValidateScopes = true;
+            o.ValidateOnBuild = true;
+        });
+
         builder.ConfigureAppConfiguration((context, config) =>
         {
             config.Sources.Clear();
@@ -91,12 +100,6 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
-            services.Configure<ServiceProviderOptions>(o =>
-            {
-                o.ValidateOnBuild = true;
-                o.ValidateScopes = true;
-            });
-
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = TestConstants.AuthScheme;
