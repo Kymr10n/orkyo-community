@@ -6,7 +6,11 @@
 #
 # Build context: repo root (so release/config/keycloak/realm.json is reachable).
 
-ARG FOUNDATION_KC_IMAGE=ghcr.io/kymr10n/keycloak:26.6-orkyo-security-refresh
+# The foundation Keycloak image for the pinned foundation version, by digest. Written by
+# scripts/bump-foundation.sh together with the NuGet and npm pins — never edit by hand, and
+# never override it with a build arg in CI: KeycloakBasePinTests fails if it drifts from
+# Directory.Build.props.
+ARG FOUNDATION_KC_IMAGE=ghcr.io/kymr10n/keycloak:26.7-orkyo-0.30.0@sha256:36a5c8844dc9ba7f410f769e2871f6b31f3e887e8f840059afd44b64a53cfbc4
 
 # ── Stage 1: build (add token-exchange to foundation's pre-built server) ──────
 # Foundation already includes: recovery-codes, postgres, health, and the Orkyo theme.
