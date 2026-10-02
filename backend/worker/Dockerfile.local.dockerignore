@@ -1,0 +1,11 @@
+# The build context is the parent directory of the sibling checkouts, so the repo-root
+# .dockerignore does not apply. Docker reads this file because it sits next to the Dockerfile.
+# bin/obj are load-bearing: a host project.assets.json overwrites the restore layer and
+# breaks publish --no-restore.
+**/bin/
+**/obj/
+**/node_modules/
+**/.git/
+**/.env
+**/.env.*
+**/.npmrc
