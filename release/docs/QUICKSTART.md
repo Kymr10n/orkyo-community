@@ -40,7 +40,7 @@ The script needs bash and `openssl`. Run it on any machine, for example a
 laptop. For an unattended run, give the values as flags:
 
 ```bash
-./generate-env.sh --url https://community.example.com --tls --no-smtp
+./generate-env.sh --url https://community.example.com --tls --no-smtp --starter manufacturing
 ```
 
 CAUTION: Do not run the generator twice on a live deployment. A second run
@@ -49,6 +49,20 @@ unreadable. The script refuses to overwrite an existing `.env` without
 `--force`.
 
 The script prints the Keycloak admin password one time. Keep this password.
+
+## Sample data (optional)
+
+The installation starts empty. To start with sample data, run the generator
+with `--starter manufacturing` or `--starter office`. In interactive mode, the
+generator asks this question.
+
+- `manufacturing` — a small workshop: three rooms, four people, two machines,
+  two tools, and the criteria to match them.
+- `office` — two meeting rooms, an open workspace, and a focus booth.
+
+The API applies the starter setup one time, at the first start. It records the
+setup under **Settings → Presets**. You can rename or delete the sample
+resources. The setup never deletes data.
 
 ## Path A — Portainer Stacks (recommended)
 

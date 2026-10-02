@@ -8,6 +8,7 @@ using Orkyo.Community;
 using Orkyo.Community.Api.Endpoints;
 using Orkyo.Community.Middleware;
 using Orkyo.Community.Migrations;
+using Orkyo.Community.Startup;
 using Orkyo.Community.Tenant;
 using Orkyo.Foundation.Migrations;
 using Orkyo.Foundation.Observability;
@@ -69,6 +70,11 @@ try
     builder.Services.Configure<SingleTenantOptions>(
         builder.Configuration.GetSection(SingleTenantOptions.SectionKey));
     builder.Services.AddSingleton<ITenantResolver, SingleTenantResolver>();
+
+    // Optional one-time starter setup (ORKYO_STARTER_TEMPLATE) at first start. The preset and
+    // its once-only rule are foundation's (IStarterTemplateService from AddFoundationServices);
+    // this hosted service is only the trigger.
+    builder.Services.AddHostedService<StarterTemplateBootstrap>();
 
     // Community quota: all resources unlimited
     // Foundation provides the no-op enforcer — community has no tier-based limits.

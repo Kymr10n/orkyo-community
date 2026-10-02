@@ -107,6 +107,9 @@ services:
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-${APP_BASE_URL}}
       BFF_ENABLED: "true"
       ORKYO_DEPLOYMENT_MODE: self-hosted
+      # Optional one-time starter setup on an empty database: manufacturing | office.
+      # Applied once at first start and recorded; unset keeps the install empty.
+      ORKYO_STARTER_TEMPLATE: ${ORKYO_STARTER_TEMPLATE:-}
       BFF_COOKIE_SECURE: ${BFF_COOKIE_SECURE:-true}
       # Empty is the stricter default: the cookie binds to the exact request host.
       BFF_COOKIE_DOMAIN: ${BFF_COOKIE_DOMAIN:-}

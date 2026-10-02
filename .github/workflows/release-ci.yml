@@ -334,7 +334,7 @@ jobs:
         # that cannot hold on a CI runner are overridden afterwards.
         run: |
           BUNDLE="dist/orkyo-community-v${{ steps.version.outputs.VERSION }}"
-          bash "$BUNDLE/generate-env.sh" --url http://localhost --no-smtp \
+          bash "$BUNDLE/generate-env.sh" --url http://localhost --no-smtp --starter manufacturing \
             --output "$BUNDLE/.env" --force
           {
             echo 'BFF_COOKIE_SECURE=false'
@@ -471,6 +471,26 @@ jobs:
             exit 1
           fi
 
+      - name: Verify the starter setup was applied exactly once
+        # --starter manufacturing above: the API applies the preset at first start and
+        # records it. A restart must find the record and skip, not apply again.
+        working-directory: dist/orkyo-community-v${{ steps.version.outputs.VERSION }}
+        run: |
+          q() { docker compose exec -T db psql -U orkyo -d orkyo_community -tAc "$1"; }
+          docker compose logs api | grep -q 'Applied preset manufacturing-workshop-v1' \
+            || { echo "::error::starter setup was not applied"; docker compose logs api --tail 80; exit 1; }
+          [ "$(q "SELECT count(*) FROM preset_applications WHERE preset_id='manufacturing-workshop-v1'")" = "1" ] \
+            || { echo "::error::expected one preset application row"; exit 1; }
+          [ "$(q "SELECT count(*) FROM resources")" -gt 0 ] \
+            || { echo "::error::starter setup created no resources"; exit 1; }
+          docker compose restart api
+          timeout 120 bash -c 'until curl -sf http://localhost:8080/health >/dev/null; do sleep 3; done'
+          docker compose logs api | grep -q 'already applied' \
+            || { echo "::error::second start did not skip the starter setup"; docker compose logs api --tail 40; exit 1; }
+          [ "$(q "SELECT count(*) FROM preset_applications")" = "1" ] \
+            || { echo "::error::second start added a preset application row"; exit 1; }
+          echo "starter setup: applied once, skipped on restart"
+
       - name: Teardown plain-HTTP stack
         working-directory: dist/orkyo-community-v${{ steps.version.outputs.VERSION }}
         run: docker compose down -v
@@ -514,6 +534,17 @@ jobs:
             30*\ https://localhost/*) echo "HTTP -> HTTPS redirect: OK ($REDIRECT)" ;;
             *) echo "::error::Expected a redirect to https://localhost/, got: $REDIRECT"; exit 1 ;;
           esac
+
+      - name: Verify an install without a starter is truly empty
+        # No --starter on this bring-up, and the forced Demo Office seed is retired: one
+        # site (foundation's default), no resources, no preset application.
+        working-directory: dist/orkyo-community-v${{ steps.version.outputs.VERSION }}
+        run: |
+          q() { docker compose exec -T db psql -U orkyo -d orkyo_community -tAc "$1"; }
+          [ "$(q "SELECT count(*) FROM sites")" = "1" ] || { echo "::error::expected exactly one site"; exit 1; }
+          [ "$(q "SELECT count(*) FROM resources")" = "0" ] || { echo "::error::expected no resources"; exit 1; }
+          [ "$(q "SELECT count(*) FROM preset_applications")" = "0" ] || { echo "::error::expected no preset application"; exit 1; }
+          echo "empty install: OK"
 
       - name: Teardown
         if: always()

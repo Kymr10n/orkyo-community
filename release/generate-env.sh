@@ -22,6 +22,7 @@ SMTP_FROM_EMAIL=""
 SMTP_FROM_NAME="Orkyo Community"
 NO_SMTP=""
 FRONTEND_PORT=""
+STARTER=""
 OUTPUT="$SCRIPT_DIR/.env"
 FORCE=""
 INTERACTIVE="yes"
@@ -44,6 +45,8 @@ Usage: generate-env.sh [options]
   --no-smtp          Skip mail configuration without prompting
   --frontend-port N  Host port for the app when a proxy of your own forwards to
                      it (default 80; not with --tls)
+  --starter KEY      Sample data at first start: manufacturing, office or none
+                     (default none)
   --output PATH      Where to write (default: .env beside this script)
   --force            Overwrite an existing output file
   -h, --help         This text
@@ -65,6 +68,7 @@ while [ $# -gt 0 ]; do
         --smtp-from-name) SMTP_FROM_NAME="${2:?--smtp-from-name needs a value}"; shift 2 ;;
         --no-smtp)        NO_SMTP="yes"; shift ;;
         --frontend-port)  FRONTEND_PORT="${2:?--frontend-port needs a value}"; shift 2 ;;
+        --starter)        STARTER="${2:?--starter needs a value}"; shift 2 ;;
         --output)         OUTPUT="${2:?--output needs a value}"; shift 2 ;;
         --force)          FORCE="yes"; shift ;;
         -h|--help)        usage; exit 0 ;;
@@ -144,6 +148,23 @@ if [ -n "$SMTP_HOST" ] && [ -z "$SMTP_FROM_EMAIL" ]; then
     die "--smtp-host needs --smtp-from as well (a sender address is required once mail is on)"
 fi
 
+# ── Starter setup ─────────────────────────────────────────────────────────────
+# Applied once by the API at its first start and recorded there, so this is an
+# install-time choice; a later change of the value adds nothing to a running install.
+
+if [ -z "$STARTER" ] && [ -n "$INTERACTIVE" ]; then
+    printf '\nSample data is optional. A starter setup adds criteria, resource types and a\n'
+    printf 'few named sample resources. You can rename or delete them later.\n'
+    printf '  none            Start empty\n'
+    printf '  manufacturing   Small workshop: rooms, people, machines, tools\n'
+    printf '  office          Meeting rooms and open areas\n'
+    read -r -p 'Starter setup [none]: ' STARTER
+fi
+case "$STARTER" in
+    ""|none|manufacturing|office) ;;
+    *) die "unknown --starter value: '$STARTER' (want manufacturing, office or none)" ;;
+esac
+
 # ── Output guard ──────────────────────────────────────────────────────────────
 
 if [ -e "$OUTPUT" ] && [ -z "$FORCE" ]; then
@@ -204,6 +225,10 @@ elif [ -n "$FRONTEND_PORT" ]; then
     set_var FRONTEND_PORT "$FRONTEND_PORT"
 fi
 
+if [ -n "$STARTER" ] && [ "$STARTER" != none ]; then
+    set_var ORKYO_STARTER_TEMPLATE "$STARTER"
+fi
+
 # 600 before the content lands: the file carries five secrets.
 install -m 600 /dev/null "$OUTPUT"
 cat "$TMP" > "$OUTPUT"
@@ -212,5 +237,8 @@ printf '\nWrote %s (mode 600).\n\n' "$OUTPUT"
 printf 'Keycloak admin password (shown once): %s\n' "$KEYCLOAK_ADMIN_PASSWORD"
 if [ -z "$SMTP_HOST" ]; then
     printf 'Mail is log-only. Find invitation links with: docker compose logs api\n'
+fi
+if [ -n "$STARTER" ] && [ "$STARTER" != none ]; then
+    printf 'Starter setup: %s (applied once, at the first start; see Settings → Presets)\n' "$STARTER"
 fi
 printf '\nNext: docker compose up -d\n'

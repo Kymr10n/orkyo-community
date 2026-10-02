@@ -82,7 +82,7 @@ docker compose up -d
 open http://localhost          # port 80 by default; the generator asks if a proxy owns it
 ```
 
-You supply one value, `APP_BASE_URL`. The script generates the five secrets, and everything else derives from the URL or has a default. Add `--tls` to terminate HTTPS in the stack with Caddy, or `--frontend-port 8091` (any free port) when a reverse proxy of your own already owns port 80. Mail is optional: without SMTP the app writes messages, invitation links included, to the API log.
+You supply one value, `APP_BASE_URL`. The script generates the five secrets, and everything else derives from the URL or has a default. Add `--tls` to terminate HTTPS in the stack with Caddy, or `--frontend-port 8091` (any free port) when a reverse proxy of your own already owns port 80. Add `--starter manufacturing` (or `office`) to begin with sample rooms, people and machines. The default is an empty workspace. Mail is optional: without SMTP the app writes messages, invitation links included, to the API log.
 
 Default login `admin@example.com` / `ChangeMe-Admin-1` — Keycloak forces a password change at first login, and self-registration is disabled by default (invite users from Settings → Users). Images are published to GitHub Container Registry (`ghcr.io/kymr10n/orkyo-community-*`).
 
