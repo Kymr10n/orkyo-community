@@ -52,6 +52,8 @@ Orkyo replaces that with a shared, visual plan: requests, assignments, conflicts
 - **Calendar feeds** — subscribe to schedules from external calendars via iCal
 - **QR codes on resources** — stick a code on a machine, scan it from your phone to see its
   status; works with any label roll (needs HTTPS for the camera)
+- **Mobile ready** — the same app on the phone, tablet and desktop from the browser; add it to
+  the home screen and it opens like an app, with the same login and permissions
 - **AI assistant** — bring your own Anthropic API key to ask about your schedule and get
   guided help with conflicts; every change it suggests is applied only when you confirm it
 
