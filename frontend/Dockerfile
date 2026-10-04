@@ -9,8 +9,11 @@ COPY scripts ./scripts
 RUN --mount=type=secret,id=ghcr_token \
     printf '@kymr10n:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=%s\n' \
       "$(cat /run/secrets/ghcr_token)" > .npmrc && \
-    npm ci && \
+    npm ci --ignore-scripts && \
     rm -f .npmrc
+# Package scripts run in their own step, where the secret is not mounted: a compromised
+# dependency's postinstall can read neither .npmrc nor /run/secrets/ghcr_token.
+RUN npm rebuild && npm run postinstall --if-present
 
 FROM node:26-alpine@sha256:0b36e8c136b94cd4fcf02188228e76c31ad5872eef3fec8cbd2eee500cfd9e80 AS builder
 WORKDIR /app
