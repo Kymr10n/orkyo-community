@@ -4,7 +4,16 @@ Day-2 operations for self-hosted deployments. All commands assume you're running
 
 ## Backup
 
-The database is the single source of truth, including uploaded floorplan assets.
+A backup has two parts: the database dump and the `.env` file.
+
+The database holds all data, including uploaded floorplan assets. Floorplan assets and
+the assistant credential are encrypted at rest with `ORKYO_MASTER_ENCRYPTION_KEY` from
+`.env`. If you lose the key, a restored dump holds data that nobody can read.
+
+Copy `.env` with every dump. Store the two files together. Protect them like a password.
+
+The shipped script does both: `scripts/backup.sh` (see
+[Upgrade and backup scripts](#upgrade-and-backup-scripts)).
 
 ### Database dump
 
@@ -41,6 +50,10 @@ docker exec -i orkyo_community_db psql -U orkyo postgres < orkyo-backup-<timesta
 # 4. Restart
 docker compose up -d
 ```
+
+If you restore onto a new host, put the `.env` from the same backup next to
+`compose.yml` first. The `ORKYO_MASTER_ENCRYPTION_KEY` in it must be the key the dump
+was written under.
 
 ## Upgrade
 
@@ -79,19 +92,22 @@ docker logs orkyo_community_migrator
 
 ### Upgrade and backup scripts
 
-The source repository has two operator scripts: `scripts/upgrade.sh` and `scripts/backup.sh`.
-The release bundle does not include them. If you want them, copy them from the repository.
+The bundle ships two operator scripts in `scripts/`. Both find `compose.yml` and `.env`
+in the bundle directory.
 
-Both scripts expect a `docker-compose.yml` and a `.env` file in the parent directory of `scripts/`.
-
-- `backup.sh` writes `pg_dumpall.sql` and a SHA-256 checksum to `backups/<timestamp>/`.
+- `backup.sh` writes `pg_dumpall.sql`, a copy of `.env` named `env`, and a SHA-256
+  checksum file to `backups/<timestamp>/`. It refuses to record an empty dump.
 - `upgrade.sh <version>` runs `backup.sh` first. If the backup fails, the upgrade stops.
-  Then it pulls the images, stops `api` and `worker`, runs the migrator, and restarts the stack.
+  Then it sets `ORKYO_VERSION` in `.env`, pulls the images, and runs `docker compose up -d`.
+  The migrator runs inside that step, before the API starts.
 
 ```bash
 bash scripts/backup.sh
 bash scripts/upgrade.sh <new-version>
 ```
+
+For the Docker Compose CLI, this is the recommended upgrade path. Portainer users
+change the stack variable as described above.
 
 ## Rollback
 

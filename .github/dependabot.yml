@@ -94,6 +94,29 @@ updates:
         applies-to: version-updates
         patterns: ["*"]
 
+  # The self-host bundle pins its third-party images by digest; this keeps the
+  # pins moving with upstream the same way the Dockerfiles above do.
+  - package-ecosystem: docker-compose
+    directory: /release
+    commit-message:
+      prefix: "build(deps)"
+    schedule:
+      interval: weekly
+      day: thursday
+      time: "04:00"
+    open-pull-requests-limit: 5
+    groups:
+      compose-minor-patch:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      compose-major:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["major"]
+      compose-digest:
+        applies-to: version-updates
+        patterns: ["*"]
   - package-ecosystem: nuget
     directory: /
     registries:
