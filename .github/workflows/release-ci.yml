@@ -382,6 +382,21 @@ jobs:
             exit 1
           fi
 
+      - name: Run the shipped backup script
+        # The bundle's own scripts/backup.sh against the running stack: a dump of
+        # both databases, the .env copy that carries the encryption key, and the
+        # checksum file. This is the path a self-hoster takes before every upgrade.
+        working-directory: dist/orkyo-community-v${{ steps.version.outputs.VERSION }}
+        run: |
+          bash scripts/backup.sh
+          LATEST=$(ls -d backups/*/ | sort | tail -n1)
+          test -s "${LATEST}pg_dumpall.sql" || { echo "::error::backup.sh wrote no dump"; exit 1; }
+          grep -q 'CREATE DATABASE keycloak' "${LATEST}pg_dumpall.sql" \
+            || { echo "::error::dump does not contain the Keycloak database"; exit 1; }
+          grep -q '^ORKYO_MASTER_ENCRYPTION_KEY=' "${LATEST}env" \
+            || { echo "::error::backup.sh did not copy .env with the master key"; exit 1; }
+          (cd "$LATEST" && sha256sum -c checksums.sha256)
+
       - name: Verify frontend serves
         run: curl -sf http://localhost/ | grep -q html || (echo "::error::Frontend not responding"; exit 1)
 

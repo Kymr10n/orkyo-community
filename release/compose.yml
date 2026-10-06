@@ -19,9 +19,12 @@ name: orkyo-community
 
 services:
 
+  # Third-party images are pinned by digest so an installation runs what the
+  # release was tested with. Dependabot proposes digest bumps for this file.
+
   # ── Database ──────────────────────────────────────────────────────────────────
   db:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     container_name: orkyo_community_db
     restart: unless-stopped
     environment:
@@ -39,7 +42,7 @@ services:
 
   # ── DB init: create the Keycloak database (idempotent, replaces init-db.sh) ──
   db-init:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     container_name: orkyo_community_db_init
     restart: "no"
     environment:
@@ -59,7 +62,7 @@ services:
 
   # ── Valkey (BFF sessions, Data Protection keys) ────────────────────────────────
   valkey:
-    image: valkey/valkey:8-alpine
+    image: valkey/valkey:8-alpine@sha256:081c2f5cb575efc901aa80ff9cdbd1ec6a301682fd35e1ebb4b0990a4a4a8507
     container_name: orkyo_community_valkey
     restart: unless-stopped
     command: valkey-server --requirepass ${VALKEY_PASSWORD:?set a strong Valkey password}
@@ -206,11 +209,19 @@ services:
   # Note: compose interpolates this block even when the profile is off, so nothing
   # here may introduce a `:?` variable that a non-TLS deployment does not set.
   caddy:
-    image: caddy:2-alpine
+    image: caddy:2-alpine@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f
     container_name: orkyo_community_caddy
     profiles: ["tls"]
     restart: unless-stopped
     command: caddy reverse-proxy --from ${APP_BASE_URL} --to http://frontend:8080
+    # The admin endpoint answers only inside the container; a reply means Caddy
+    # loaded its config and is serving.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2019/config/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     ports:
       - "80:80"
       - "443:443"
