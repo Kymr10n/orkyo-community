@@ -226,6 +226,10 @@ The service owns these properties and nothing else:
 
 Settings you change in the admin console outside this list stay as you set them.
 
+Passkeys need HTTPS. Browsers refuse them on a plain `http://` address other than
+`localhost`. With such an `APP_BASE_URL`, the service logs a warning and passkey sign-in is
+not offered. Password sign-in is not affected.
+
 To read what the last run did:
 
 ```bash

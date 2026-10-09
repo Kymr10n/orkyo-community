@@ -313,6 +313,11 @@ def converge_browser_flow(admin: Admin) -> None:
 
 def main() -> None:
     info(f"converging realm {REALM!r} at {KC} for {APP_BASE_URL}")
+    # Browsers offer passkeys only on a secure origin: https, or localhost for a trial.
+    # The policy is still converged, so passkeys work as soon as the URL moves to https.
+    if urllib.parse.urlsplit(APP_BASE_URL).scheme == "http" and APP_BASE_HOST not in ("localhost", "127.0.0.1"):
+        print(f"[WARN] APP_BASE_URL is http://; browsers refuse passkeys on a non-secure origin. "
+              "Use https:// for passkey sign-in.", flush=True)
     wait_for_keycloak()
     admin = Admin(admin_token())
     converge_backend_client(admin)
