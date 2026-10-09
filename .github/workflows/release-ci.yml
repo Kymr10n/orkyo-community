@@ -5,17 +5,20 @@ name: CI
 #   push to main             — + build images (sha) + container scan
 #   push to v* tags          — + assemble release bundle + smoke-selfhosted + GH Release
 #   workflow_dispatch        — manual run
+#   push to nightly          — the foundation prerelease pin (auto-bump, channel nightly):
+#                              build + test, no images
 #   repository_dispatch      — fired by orkyo-foundation when a new package is published.
 #                              Runs auto-bump only; build/test/smoke are skipped because they
-#                              would test the pre-bump Foundation version. The bump commit
-#                              (push to main) triggers a full CI run against the new version.
+#                              would test the pre-bump Foundation version. The bump lands as
+#                              a PR (stable) or on the nightly branch, and that triggers the
+#                              full CI run against the new version.
 
 on:
   pull_request:
     branches: [main]
     paths-ignore: ['**.md', 'docs/**']
   push:
-    branches: [main]
+    branches: [main, nightly]
     tags: ['v*']
     paths-ignore: ['**.md', 'docs/**']
   schedule:
@@ -675,17 +678,18 @@ jobs:
   # ─────────────────────────────────────────────
   # AUTO-BUMP — fires on every foundation publish (nightly + stable)
   #
-  # Commits the new Foundation pin directly to main. build/test/smoke are
-  # intentionally skipped in the dispatch run (they would test the pre-bump
-  # version). The resulting push to main triggers a full CI run against the
-  # new Foundation version — if Foundation broke us, main goes red immediately.
+  # Stable: opens foundation-bump/<version> as a PR that auto-merges once the
+  # required checks pass, so main changes only after the new pin is validated.
+  # Nightly: force-pushes the `nightly` branch (main + the prerelease pin); CI
+  # runs there and main never carries a prerelease. build/test/smoke are
+  # skipped in the dispatch run itself (they would test the pre-bump version).
   # ─────────────────────────────────────────────
   auto-bump:
     if: github.event_name == 'repository_dispatch'
     permissions:
       contents: write
       issues: write
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-auto-bump.yml@61974cefe46b2effe828dbc0471d3c43d414f1a2
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-auto-bump.yml@132dcd19fdab2c5fce0a4eab9372fcf2eb413c09
     secrets: inherit
 
   # ─────────────────────────────────────────────

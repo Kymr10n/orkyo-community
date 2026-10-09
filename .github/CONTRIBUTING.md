@@ -53,6 +53,10 @@ Changes to `release/` are user-facing for self-hosters. Smoke-test the self-host
    dismiss stale approvals.
 4. A maintainer merges. Maintainers/admins may bypass this only for emergency fixes.
 
+Foundation pin bumps follow the same path: the release train opens a `foundation-bump/<version>`
+PR that auto-merges once CI is green. Nightly prerelease pins never reach `main`; they are
+force-pushed to the `nightly` branch, where CI runs against them.
+
 ## Pull Request Checklist
 
 - [ ] Placement check: belongs in community, not in foundation.
