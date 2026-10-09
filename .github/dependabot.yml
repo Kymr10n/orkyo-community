@@ -75,6 +75,10 @@ updates:
       interval: weekly
       day: thursday
       time: "03:00"
+    # Wait a week after a version is published before proposing it: most compromised
+    # releases are pulled from the registry within days. Security updates skip the wait.
+    cooldown:
+      default-days: 7
 
     open-pull-requests-limit: 10
     groups:
@@ -104,6 +108,8 @@ updates:
       interval: weekly
       day: thursday
       time: "04:00"
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 5
     groups:
       compose-minor-patch:
@@ -129,6 +135,8 @@ updates:
       interval: weekly
       day: thursday
       time: "05:00"
+    cooldown:
+      default-days: 7
 
     # The Orkyo.* pins resolve from $(OrkyoFoundationVersion) in Directory.Build.props
     # and are owned by the release train (reusable-auto-bump.yml). Dependabot would
@@ -156,6 +164,8 @@ updates:
       interval: weekly
       day: thursday
       time: "07:00"
+    cooldown:
+      default-days: 7
 
     open-pull-requests-limit: 5
     groups:
@@ -178,6 +188,8 @@ updates:
       interval: weekly
       day: thursday
       time: "09:00"
+    cooldown:
+      default-days: 7
 
     open-pull-requests-limit: 5
     groups:

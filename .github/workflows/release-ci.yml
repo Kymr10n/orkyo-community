@@ -134,7 +134,7 @@ jobs:
       contents: read
       security-events: write
       pull-requests: read  # ceiling: reusable-audit-secrets' job requests it (gitleaks PR scan)
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-secrets.yml@61974cefe46b2effe828dbc0471d3c43d414f1a2
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-secrets.yml@132dcd19fdab2c5fce0a4eab9372fcf2eb413c09
     with:
       migration-lint-path: backend/migrations/sql
       run-iac-scan: true
@@ -146,7 +146,7 @@ jobs:
     permissions:
       contents: read
       packages: read
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-nuget.yml@02017f9858224cdd824ae6bce347764ddc3d83ca
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-nuget.yml@132dcd19fdab2c5fce0a4eab9372fcf2eb413c09
     with:
       solution-path: Orkyo.Community.slnx
       with-private-registry: true
@@ -157,7 +157,7 @@ jobs:
     if: needs.nightly-change-check.outputs.skip == 'false'
     permissions:
       contents: read
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-npm.yml@61974cefe46b2effe828dbc0471d3c43d414f1a2
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-npm.yml@132dcd19fdab2c5fce0a4eab9372fcf2eb413c09
     with:
       with-private-registry: true
       # DELIBERATE: license scan ON — Community is distributed (AGPL self-host
@@ -180,7 +180,7 @@ jobs:
       contents: read
       packages: write
       pull-requests: read
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-product-ci.yml@02017f9858224cdd824ae6bce347764ddc3d83ca
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-product-ci.yml@132dcd19fdab2c5fce0a4eab9372fcf2eb413c09
     with:
       product: community
       solution-path: Orkyo.Community.slnx
@@ -235,7 +235,7 @@ jobs:
       (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     permissions:
       contents: read
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-container-scan.yml@61974cefe46b2effe828dbc0471d3c43d414f1a2
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-container-scan.yml@132dcd19fdab2c5fce0a4eab9372fcf2eb413c09
     with:
       image-name-prefix: orkyo-community
       services: '["api","worker","migrator","frontend","keycloak"]'
@@ -690,7 +690,7 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-auto-bump.yml@132dcd19fdab2c5fce0a4eab9372fcf2eb413c09
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-auto-bump.yml@02017f9858224cdd824ae6bce347764ddc3d83ca
     secrets: inherit
 
   # ─────────────────────────────────────────────
