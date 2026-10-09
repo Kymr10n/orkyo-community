@@ -106,6 +106,22 @@ jobs:
           fail-on-severity: high
           comment-summary-in-pr: always
   # ─────────────────────────────────────────────
+  # KEYCLOAK CONVERGENCE — the keycloak-config service against a real Keycloak
+  # ─────────────────────────────────────────────
+  # Imports an old shape of the realm, runs release/scripts/keycloak-converge.py
+  # with new .env values, asserts the result through the admin API, and requires
+  # the second run to be a no-op. Upstream images only, so no registry login.
+  keycloak-converge-check:
+    name: Keycloak converge check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: bash scripts/ci/keycloak-converge-check.sh
+
+  # ─────────────────────────────────────────────
   # SECURITY AUDITS — three parallel jobs, all gate downstream builds
   # ─────────────────────────────────────────────
   audit-secrets:

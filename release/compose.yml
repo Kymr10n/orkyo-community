@@ -143,6 +143,8 @@ services:
       db: { condition: service_healthy }
       valkey: { condition: service_healthy }
       migrator: { condition: service_completed_successfully }
+      # The realm must match this release before the API talks to it.
+      keycloak-config: { condition: service_completed_successfully }
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health || exit 1"]
       interval: 10s
@@ -267,6 +269,36 @@ services:
       timeout: 5s
       retries: 30
       start_period: 60s
+
+  # ── Keycloak convergence (one-shot) ──────────────────────────────────────────
+  # Keycloak imports the baked realm on first boot only. This runs on every `up`,
+  # after Keycloak is healthy and before the API starts, and brings an EXISTING
+  # realm to what this release expects: the orkyo-backend secret from .env, the
+  # redirect URIs APP_BASE_URL implies, the WebAuthn Passwordless policy and the
+  # passkey step in the browser flow. Additive and idempotent; it deletes nothing.
+  # Plain python image, standard library only — see scripts/keycloak-converge.py.
+  keycloak-config:
+    image: python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a
+    container_name: orkyo_community_keycloak_config
+    restart: "no"
+    environment:
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-orkyo-community}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      # Bare `:?` on the two secrets: the keycloak service above already names them in
+      # its own messages, and a prose value next to a *_PASSWORD key reads as a secret
+      # to a scanner.
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?}
+      APP_BASE_URL: ${APP_BASE_URL:?public app URL, e.g. https://community.example.com}
+      KEYCLOAK_BACKEND_CLIENT_ID: ${KEYCLOAK_BACKEND_CLIENT_ID:-orkyo-backend}
+      KEYCLOAK_BACKEND_CLIENT_SECRET: ${KEYCLOAK_BACKEND_CLIENT_SECRET:?}
+    volumes:
+      - ./scripts/keycloak-converge.py:/converge.py:ro
+      - ./config/keycloak/realm.json:/realm.json:ro
+    networks: [orkyo-internal]
+    depends_on:
+      keycloak: { condition: service_healthy }
+    command: ["python", "/converge.py"]
 
 networks:
   orkyo-internal:
