@@ -6,16 +6,15 @@
 # Policy: time-bound only. Review date must be within 14 days of added date.
 # Remove entries once the upstream fix is available.
 #
-# Re-verified 2026-09-26 against upstream source (quay.io is unreachable from the session):
-# Keycloak 26.7.4 is still the newest tag; its pom.xml pins freemarker 2.3.32 and quarkus
-# 3.33.3.2, whose BOM pins netty 4.1.136.Final and bouncycastle 1.84; mssql-jdbc
-# 13.2.1.jre11. Nothing below changed between 26.7.3 and 26.7.4. The four Keycloak entries
-# dated 2026-09-26 are renewed for one more window; the FreeMarker and libexpat entries
-# keep their 2026-10-09 review date.
+# 2026-10-09: foundation 1.4.0 moved the Keycloak base to 26.7.5 (community bump ce9a79f).
+# A Trivy scan of quay.io/keycloak/keycloak:26.7.5 (HIGH+CRITICAL, this day) reports only
+# the mssql-jdbc false positive below plus UBI9 pcre2 findings, and the container scan of
+# the built orkyo-community-keycloak image on main is green. The Bouncy Castle, netty,
+# FreeMarker and four Jackson entries that bridged to this release are gone.
 
 # ── Trivy false positive ───────────────────────────────────────────────────────
 # Trivy reports fix as 12.6.5 but KC ships mssql-jdbc 13.2.1.jre11 (newer); false positive.
-CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy compares the installed 13.2.1 against a fix list ending 13.2.1.jre11 and calls it older; the shipped JAR is the fixed version, false positive (re-verified 2026-09-26: 26.7.4 pom still pins 13.2.1.jre11) | Added: 2026-09-26 | Review: 2026-10-10
+CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy compares the installed 13.2.1 against a fix list ending 13.2.1.jre11 and calls it older; the shipped JAR is the fixed version, false positive (re-verified 2026-10-09: Keycloak 26.7.5 still ships 13.2.1) | Added: 2026-10-09 | Review: 2026-10-23
 
 # ── Keycloak base OS layer ────────────────────────────────────────────────────
 # 2026-09-03: the KC-26.6.x-era entries that stood in this file (jackson-databind,
@@ -27,47 +26,13 @@ CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy compare
 # entry below.
 
 
-# ── Keycloak embedded Bouncy Castle — CVE-2026-8763 / CVE-2026-13506 ────────
-# 2026-09-19: bcprov-jdk18on 1.84 is bundled by Keycloak 26.7.3 (the pinned base) and by
-# 26.7.4, the newest published tag — both scanned that day with CI's flags, both report the
-# same findings, so a digest bump cannot clear this. The fix is bcprov 1.85 and no published
-# Keycloak carries it. CVE-2026-8763 is an X.509 Name Constraints bypass in certificate path
-# validation; the realm configures no x509 authenticator, no truststore and no mTLS, so
-# Keycloak never validates a client certificate against a name-constrained CA, and it sits
-# behind nginx and Cloudflare. Mirrors the entries in orkyo-foundation (#197). Drop both
-# when a Keycloak build with bcprov >= 1.85 is published; foundation #178 tracks it.
-CVE-2026-8763  # CRITICAL | bcprov-jdk18on 1.84 bundled by Keycloak 26.7.3 and 26.7.4 (fix 1.85) | no upstream Keycloak with the fix; X.509 name-constraint path validation is unused here (no x509 authenticator, no truststore, no mTLS); KC behind nginx + Cloudflare | Added: 2026-09-26 | Review: 2026-10-10
-CVE-2026-13506  # HIGH | bcprov-jdk18on 1.84, same library and same fix version as CVE-2026-8763 | Added: 2026-09-26 | Review: 2026-10-10
-
-# ── Keycloak embedded netty — CVE-2026-75595 (CRITICAL) ─────────────────────
-# 2026-09-12: netty-handler 4.1.136.Final is bundled by Keycloak 26.7.3 via the
-# foundation image this repo layers on; the fix is 4.1.137/4.2.17 and no published
-# Keycloak carries it. Same entry and reasoning as orkyo-foundation: production and
-# staging ALREADY run this exact netty (deployed 0.22.0 image, digest dd1ae711…,
-# scanned 2026-09-12), so shipping is not a regression, while holding the train keeps
-# the base-image fixes and 0.23.0 out of production. Keycloak sits behind nginx and
-# Cloudflare. Drop when a Keycloak build with netty ≥ 4.1.137 is published
-# (foundation #176).
-CVE-2026-75595  # CRITICAL | netty-handler 4.1.136.Final bundled by Keycloak 26.7.3 (fix 4.1.137 / 4.2.17) | no upstream Keycloak with the fix yet; production already runs this exact netty (0.22.0 image, scanned 2026-09-12) so shipping is not a regression; KC behind nginx + Cloudflare | Added: 2026-09-26 | Review: 2026-10-10
-
-# ── Keycloak embedded FreeMarker — CVE-2026-84939 (CRITICAL) ────────────────
-# 2026-09-25: freemarker 2.3.32 is bundled by Keycloak 26.7.3 via the foundation image
-# this repo layers on; the fix is 2.3.35. Whether a newer Keycloak ships it was not
-# verified (quay.io was unreachable from the session that added this). The finding is a
-# path traversal through a malformed locale identifier; Keycloak accepts a locale from
-# the login request, so it is NOT assessed as unreachable. It is accepted only because
-# production already runs this exact Keycloak build, so shipping 0.27.0 is not a
-# regression. Drop when orkyo-foundation/keycloak/Dockerfile pins a Keycloak build with
-# freemarker >= 2.3.35.
-CVE-2026-84939  # CRITICAL | freemarker 2.3.32 bundled by Keycloak 26.7.3 (fix 2.3.35) | newer Keycloak not verified; locale path traversal NOT assessed as unreachable; accepted because production already runs this Keycloak build (no regression) | Added: 2026-09-25 | Review: 2026-10-09
-
 # ── nginx-alpine libexpat 2.8.4-r0 — CVE-2026-93990 (frontend) ─────────────────
 # 2026-09-25: nginx:1.31-alpine still resolves to the pinned digest 1ed1b0e1… (checked
 # against Docker Hub that day), which carries libexpat 2.8.4-r0; the fix is 2.8.5-r0 and
 # upstream has not rebuilt. Production already runs this digest, so shipping 0.27.0 is
 # not a regression. Same entry as orkyo-saas. Drop and bump the digest when upstream
 # rebuilds.
-CVE-2026-93990  # HIGH | libexpat 2.8.4-r0 in nginx:1.31-alpine@1ed1b0e1 (fix 2.8.5-r0) | upstream digest not rebuilt (checked 2026-09-25); production already runs this digest, so shipping is not a regression | Added: 2026-09-25 | Review: 2026-10-09
+CVE-2026-93990  # HIGH | libexpat 2.8.4-r0 in nginx:1.31-alpine@1ed1b0e1 (fix 2.8.5-r0) | newest upstream digest df221db8 still ships 2.8.4-r0 (scanned 2026-10-09); production already runs this digest, so shipping is not a regression | Added: 2026-10-09 | Review: 2026-10-23
 
 # ── nginx-alpine pcre2 10.48-r0 — CVE-2026-103111 (frontend) ───────────────────
 # Out-of-bounds write via a crafted regular expression. nginx only compiles the
@@ -76,26 +41,10 @@ CVE-2026-93990  # HIGH | libexpat 2.8.4-r0 in nginx:1.31-alpine@1ed1b0e1 (fix 2.
 # so a pin bump does not clear it. Production already runs this digest.
 CVE-2026-103111  # HIGH | pcre2 10.48-r0 in nginx:1.31-alpine@1ed1b0e1 (fix 10.49-r0) | newest upstream digest df221db8 still ships 10.48-r0 (scanned 2026-10-02); regexes come only from our own nginx config; production already runs this digest, so shipping is not a regression | Added: 2026-10-02 | Review: 2026-10-16
 
-# ── Keycloak embedded Jackson — CVE-2026-68497 (HIGH) ───────────────────────
-# jackson-databind 2.21.5 bundled by Keycloak 26.7.4 (fix 2.21.6), inherited from the
-# foundation image. Deserialization of untrusted input needs polymorphic typing, which
-# Keycloak does not enable on its public endpoints. Same entry as foundation.
-CVE-2026-68497  # HIGH | jackson-databind 2.21.5 bundled by Keycloak 26.7.4 (fix 2.21.6) | no upstream Keycloak with the fix | Added: 2026-09-29 | Review: 2026-10-13
-
-# ── Keycloak embedded Jackson — CVE-2026-91776 / CVE-2026-91777 (HIGH) — BRIDGE ─────────
-# Published 2026-10-01 against jackson-databind 2.21.5. Unlike the entries above, the fix is
-# released: Keycloak 26.7.5 bundles 2.21.7 (and bcprov 1.86, netty 4.1.138, freemarker
-# 2.3.35), and foundation moves to it in orkyo-foundation#221. It cannot arrive here before
-# that foundation release, and the release train needs this main green first, so these two
-# bridge the gap. scripts/bump-foundation.sh moves the Keycloak base with the foundation pin:
-# the bump commit for the release carrying #221 makes every Keycloak entry in this file
-# obsolete (Bouncy Castle, netty, FreeMarker, Jackson). Remove them all then; only the
-# mssql-jdbc false positive and the nginx libexpat entry stay.
-CVE-2026-91776  # HIGH | jackson-databind 2.21.5 bundled by Keycloak 26.7.4 (fix 2.21.7) | fixed upstream in Keycloak 26.7.5; arrives with the next foundation release (orkyo-foundation#221) | Added: 2026-10-01 | Review: 2026-10-15
-CVE-2026-91777  # HIGH | jackson-databind 2.21.5, same library and same fix version as CVE-2026-91776 | Added: 2026-10-01 | Review: 2026-10-15
-# 2026-10-02: two more in the same bundled Jackson, this time jackson-core 2.21.5, published after
-# the entries above. Same fix (2.21.7, in Keycloak 26.7.5 — verified: 26.7.5 ships
-# jackson-core-2.21.7.jar), same path here, same removal: the bump commit for the release
-# carrying orkyo-foundation#221 makes all four obsolete.
-CVE-2026-89407  # HIGH | jackson-core 2.21.5 bundled by Keycloak 26.7.4 (fix 2.21.7) | fixed upstream in Keycloak 26.7.5; arrives with the next foundation release (orkyo-foundation#221) | Added: 2026-10-02 | Review: 2026-10-15
-CVE-2026-89425  # HIGH | jackson-core 2.21.5, same library and same fix version as CVE-2026-89407 | Added: 2026-10-02 | Review: 2026-10-15
+# ── nginx-alpine libtiff 4.7.1-r0 — CVE-2026-4775 (frontend) ───────────────────
+# 2026-10-09: arbitrary code execution or denial of service via a signed integer overflow
+# when decoding a TIFF. nginx serves static files and never decodes an image; libtiff is
+# present only as an Alpine dependency of the image. The newest upstream nginx:1.31-alpine
+# digest (df221db8, scanned 2026-10-09) still ships 4.7.1-r0, so a pin bump does not clear
+# it. Production already runs this image. Same entry as orkyo-saas.
+CVE-2026-4775  # HIGH | libtiff 4.7.1-r0 in nginx:1.31-alpine@1ed1b0e1 (fix 4.7.2-r0) | newest upstream digest df221db8 still ships 4.7.1-r0 (scanned 2026-10-09); nginx never decodes a TIFF; production already runs this image, so shipping is not a regression | Added: 2026-10-09 | Review: 2026-10-23
