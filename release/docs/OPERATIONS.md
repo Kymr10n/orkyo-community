@@ -208,37 +208,33 @@ ToS__RequiredVersion: "2026-01"   # any version label you choose
 - Changing the value to a new label forces all users to re-accept.
 - Unsetting it disables the gate again (recorded acceptances are kept).
 
-## Turn on passkeys on an existing installation
+## Realm changes reach an existing installation
 
-New installations get the WebAuthn Passwordless policy from the realm import. Existing installations must set the policy in the admin console. Keycloak imports the realm only on first boot.
+Keycloak imports the realm on the first boot only. Every later release can change the realm:
+a client setting, the passkey policy, a step in the login flow. The `keycloak-config` service
+in `compose.yml` applies these changes on every `docker compose up`. It runs after Keycloak is
+healthy and before the API starts. It adds and updates, and it never deletes.
 
-Log in to the Keycloak admin console at `${KEYCLOAK_URL}/admin`. Select the realm `orkyo-community`.
+The service owns these properties and nothing else:
 
-### Set the WebAuthn Passwordless policy
-
-Go to Authentication → Policies → WebAuthn Passwordless Policy. Set these values:
-
-| Field | Value |
+| Property | Source |
 |---|---|
-| Relying party entity name | `Orkyo` |
-| Relying party ID | The host of `APP_BASE_URL`, without scheme, port, or path |
-| Signature algorithms | `ES256`, `RS256` |
-| Attestation conveyance preference | `none` |
-| Authenticator attachment | `not specified` |
-| Require discoverable credential | `Yes` |
-| User verification requirement | `required` |
-| Timeout | `60` |
-| Avoid same authenticator registration | Off |
-| Passkeys enabled | On |
-| Mediation | `conditional` |
+| `orkyo-backend` client secret | `KEYCLOAK_BACKEND_CLIENT_SECRET` in `.env` |
+| `orkyo-backend` redirect URIs, web origins, post-logout URIs | `APP_BASE_URL` in `.env`, added to the existing list |
+| WebAuthn Passwordless policy (passkeys) | The release. The relying party ID is the host of `APP_BASE_URL`. |
+| "Condition - credential" step in the browser flow | The release |
 
-If `APP_BASE_URL` is `https://orkyo.example.com:8443/app`, the relying party ID is `orkyo.example.com`. Click **Save**.
+Settings you change in the admin console outside this list stay as you set them.
 
-### Add the passkey step to the browser flow
+To read what the last run did:
 
-Go to Authentication → Flows → browser. Find the sub-flow "Browser - Conditional 2FA". Add the step "Condition - credential" to this sub-flow. Set its requirement to **Required**. Open its settings and set `credentials` to `webauthn-passwordless`. Move the step after "Condition - user configured". Click **Save**.
+```bash
+docker compose logs keycloak-config
+```
 
-Users can now add a passkey on the Security page of Orkyo. The login page offers the passkey after the change.
+The last line is `done: N change(s)`. A second run after a successful one reports zero
+changes. If the service fails, the API does not start. Read the log; the message names the
+missing variable or the Keycloak answer.
 
 ## Common issues
 
@@ -248,27 +244,12 @@ Users can now add a passkey on the Security page of Orkyo. The login page offers
 | Keycloak fails healthcheck | First start can take 60–90s on slow hosts. Check `docker compose logs keycloak` for realm-import errors. |
 | API returns 503 from `/health` | Database migrations not applied yet. Check `docker logs orkyo_community_migrator`. |
 | BFF login redirect fails | `BFF_COOKIE_DOMAIN` doesn't match the host the user reaches the app on, or `BFF_COOKIE_SECURE=true` over HTTP. |
-| API returns 401 at login after client secret change | Realm import is one-shot — see below. |
+| API returns 401 at login after client secret change | The `keycloak-config` service did not run after the change. Run `docker compose up -d` and read `docker compose logs keycloak-config`. |
 | QR scanner shows "Scanning needs HTTPS" | Users reach the app over plain HTTP. Browsers give camera access only over HTTPS or on `localhost`. Put a TLS reverse proxy in front of port 80. See [HTTPS / Reverse Proxy](QUICKSTART.md#https--reverse-proxy). |
 
-## Rotating `KEYCLOAK_BACKEND_CLIENT_SECRET` after first boot
+## Rotating `KEYCLOAK_BACKEND_CLIENT_SECRET`
 
-Keycloak only imports the realm on first boot (it skips import if the realm already exists). Changing `KEYCLOAK_BACKEND_CLIENT_SECRET` in `.env` and restarting is not enough — the new value is never written to the Keycloak database.
-
-**Option A — wipe and reimport (recommended if no user data to preserve):**
-
-```bash
-docker compose stop keycloak
-docker volume rm orkyo_community_keycloak   # the named keycloak_data volume from compose.yml
-docker compose up -d keycloak               # reimports realm with new secret
-```
-
-**Option B — update via admin console (preserves existing users and data):**
-
-1. Log in to the Keycloak admin console at `${KEYCLOAK_URL}/admin`.
-2. Realm: `orkyo-community` → Clients → `orkyo-backend` → Credentials tab.
-3. Click **Regenerate** (or enter the new secret and save).
-4. Update `KEYCLOAK_BACKEND_CLIENT_SECRET` in `.env` to match and restart the API:
-   ```bash
-   docker compose up -d api worker
-   ```
+1. Set the new value in `.env`.
+2. Run `docker compose up -d`. The `keycloak-config` service writes the new secret to the
+   realm, and the API and worker restart with it.
+3. Confirm with `docker compose logs keycloak-config`. The log shows `secret set from .env`.
