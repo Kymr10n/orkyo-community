@@ -207,6 +207,8 @@ jobs:
         KEYCLOAK_REALM=orkyo-community
         KEYCLOAK_BACKEND_CLIENT_ID=orkyo-backend
         KEYCLOAK_BACKEND_CLIENT_SECRET=ci-secret
+        KEYCLOAK_PASSWORD_CHECK_CLIENT_ID=orkyo-password-check
+        KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET=ci-secret
         OIDC_AUTHORITY=http://localhost:8082/realms/orkyo-community
         JWT_ISSUER=orkyo-api
         JWT_AUDIENCE=orkyo-app

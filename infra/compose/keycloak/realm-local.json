@@ -92,6 +92,23 @@
       "webOrigins": [
         "http://localhost:5174"
       ]
+    },
+    {
+      "clientId": "orkyo-password-check",
+      "name": "Orkyo Password Check",
+      "description": "Password grant only, for the account password re-check (orkyo-infra ADR 0008). No audience mapper and fullScopeAllowed=false, so its tokens carry no API audience.",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "changeme-check-client",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": false,
+      "redirectUris": [],
+      "webOrigins": []
     }
   ],
   "clientScopeMappings": {

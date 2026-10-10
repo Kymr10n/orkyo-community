@@ -5,11 +5,12 @@
 #
 # Required env vars (deploy will fail with a clear message if missing):
 #   ORKYO_VERSION, POSTGRES_PASSWORD, VALKEY_PASSWORD,
-#   KEYCLOAK_ADMIN_PASSWORD, KEYCLOAK_BACKEND_CLIENT_SECRET,
+#   KEYCLOAK_ADMIN_PASSWORD, KEYCLOAK_BACKEND_CLIENT_SECRET, KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET,
 #   ORKYO_MASTER_ENCRYPTION_KEY, APP_BASE_URL
 #
 # Everything else is derived or optional. `release/generate-env.sh` writes a
-# complete .env from one URL; the five secrets it generates for you.
+# complete .env from one URL; the six secrets it generates for you. On an older
+# .env, `scripts/upgrade.sh` adds KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET.
 #
 # TLS: run with COMPOSE_PROFILES=tls to terminate HTTPS in the stack (Caddy).
 #
@@ -100,6 +101,8 @@ services:
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-orkyo-community}
       KEYCLOAK_BACKEND_CLIENT_ID: ${KEYCLOAK_BACKEND_CLIENT_ID:-orkyo-backend}
       KEYCLOAK_BACKEND_CLIENT_SECRET: ${KEYCLOAK_BACKEND_CLIENT_SECRET:?set the orkyo-backend OIDC client secret}
+      KEYCLOAK_PASSWORD_CHECK_CLIENT_ID: orkyo-password-check
+      KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET: ${KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET:?}
       # Derived from APP_BASE_URL: the bundle serves Keycloak under /auth on the
       # same origin. Set KEYCLOAK_URL only when it lives somewhere else.
       KEYCLOAK_URL: ${KEYCLOAK_URL:-${APP_BASE_URL}/auth}
@@ -167,6 +170,8 @@ services:
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-orkyo-community}
       KEYCLOAK_BACKEND_CLIENT_ID: ${KEYCLOAK_BACKEND_CLIENT_ID:-orkyo-backend}
       KEYCLOAK_BACKEND_CLIENT_SECRET: ${KEYCLOAK_BACKEND_CLIENT_SECRET:?set the orkyo-backend OIDC client secret}
+      KEYCLOAK_PASSWORD_CHECK_CLIENT_ID: orkyo-password-check
+      KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET: ${KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET:?}
       OIDC_INTERNAL_AUTHORITY: http://keycloak:8080/realms/${KEYCLOAK_REALM:-orkyo-community}
       VALKEY_CONNECTION: "valkey:6379,password=${VALKEY_PASSWORD},abortConnect=false"
       # The lifecycle emails build links from this. Without it they throw at runtime:
@@ -256,6 +261,8 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set a strong Keycloak admin password}
       APP_BASE_URL: ${APP_BASE_URL:?public app URL, e.g. https://community.example.com}
       KEYCLOAK_BACKEND_CLIENT_SECRET: ${KEYCLOAK_BACKEND_CLIENT_SECRET:?set the orkyo-backend OIDC client secret}
+      KEYCLOAK_PASSWORD_CHECK_CLIENT_ID: orkyo-password-check
+      KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET: ${KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET:?}
     ports:
       - "${KEYCLOAK_PORT:-9080}:8080"
     volumes:
@@ -292,6 +299,8 @@ services:
       APP_BASE_URL: ${APP_BASE_URL:?public app URL, e.g. https://community.example.com}
       KEYCLOAK_BACKEND_CLIENT_ID: ${KEYCLOAK_BACKEND_CLIENT_ID:-orkyo-backend}
       KEYCLOAK_BACKEND_CLIENT_SECRET: ${KEYCLOAK_BACKEND_CLIENT_SECRET:?}
+      KEYCLOAK_PASSWORD_CHECK_CLIENT_ID: orkyo-password-check
+      KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET: ${KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET:?}
     volumes:
       - ./scripts/keycloak-converge.py:/converge.py:ro
       - ./config/keycloak/realm.json:/realm.json:ro

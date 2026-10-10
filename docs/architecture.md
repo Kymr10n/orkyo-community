@@ -63,7 +63,10 @@ Community uses the same BFF (Backend-for-Frontend) OIDC cookie flow as SaaS, bac
 
 - Seed users (`admin@example.com`, `editor@example.com`, `viewer@example.com`)
 - `orkyo-backend` confidential client with service account roles (`view-users`, `manage-users`).
-  Direct access grants (ROPC) are disabled — nothing in Community performs a password grant.
+  Direct access grants (ROPC) are disabled on it.
+- `orkyo-password-check` confidential client, password grant only, for the account password
+  re-check (change password, removing MFA or a passkey). It has no audience mapper and no full
+  scope, so its tokens are useless to the API (orkyo-infra ADR 0008).
 - Required actions: `VERIFY_PROFILE` disabled to allow seed user login
 
 ## Project Structure
