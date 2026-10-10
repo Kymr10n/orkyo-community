@@ -11,8 +11,11 @@ compose.yml runs this script after Keycloak is healthy and before the API starts
 Owns exactly the realm properties the product depends on, and nothing an operator may have
 tuned by hand:
 
-  1. the `orkyo-backend` client: its secret from .env, and the redirect URIs, web origins and
-     post-logout URIs that APP_BASE_URL implies (added, never removed);
+  1. the `orkyo-backend` client: its secret from .env, the redirect URIs, web origins and
+     post-logout URIs that APP_BASE_URL implies (added, never removed), and its password grant
+     kept off;
+  1b. the `orkyo-password-check` client (orkyo-infra ADR 0008): created when missing, its
+     secret from .env, password grant only, no audience;
   2. the WebAuthn Passwordless policy that passkeys need, read from this release's
      realm.json, with the relying-party id derived from APP_BASE_URL;
   3. the passkey step in the browser flow: "Condition - credential" set to
@@ -46,6 +49,8 @@ REQUIRED_SETTINGS = (
     "APP_BASE_URL",
     "KEYCLOAK_BACKEND_CLIENT_ID",
     "KEYCLOAK_BACKEND_CLIENT_SECRET",
+    "KEYCLOAK_PASSWORD_CHECK_CLIENT_ID",
+    "KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET",
 )
 missing = [name for name in REQUIRED_SETTINGS if not os.environ.get(name)]
 if missing:
@@ -58,6 +63,7 @@ REALM = settings["KEYCLOAK_REALM"]
 ADMIN_USER = settings["KEYCLOAK_ADMIN"]
 APP_BASE_URL = settings["APP_BASE_URL"].rstrip("/")
 CLIENT_ID = settings["KEYCLOAK_BACKEND_CLIENT_ID"]
+CHECK_CLIENT_ID = settings["KEYCLOAK_PASSWORD_CHECK_CLIENT_ID"]
 
 APP_BASE_HOST = urllib.parse.urlsplit(APP_BASE_URL).hostname or ""
 if not APP_BASE_HOST:
@@ -166,6 +172,12 @@ class Admin:
 
 # ── 1. The backend client ────────────────────────────────────────────────────
 
+def secret_update(admin: Admin, client_path: str, setting: str) -> dict[str, object]:
+    """{"secret": value from .env} when the client's secret differs, else {}."""
+    current = (admin.get(f"{client_path}/client-secret") or {}).get("value")
+    return {} if current == settings[setting] else {"secret": settings[setting]}
+
+
 def converge_backend_client(admin: Admin) -> None:
     clients = admin.get(f"/clients?clientId={urllib.parse.quote(CLIENT_ID)}")
     if not clients:
@@ -190,9 +202,11 @@ def converge_backend_client(admin: Admin) -> None:
         attributes["post.logout.redirect.uris"] = "##".join(post_logout + [want_redirect])
         updates["attributes"] = attributes
 
-    current_secret = (admin.get(f"{client_path}/client-secret") or {}).get("value")
-    if current_secret != settings["KEYCLOAK_BACKEND_CLIENT_SECRET"]:
-        updates["secret"] = settings["KEYCLOAK_BACKEND_CLIENT_SECRET"]
+    updates.update(secret_update(admin, client_path, "KEYCLOAK_BACKEND_CLIENT_SECRET"))
+
+    # The password re-check runs on orkyo-password-check; the primary client keeps the grant off.
+    if client.get("directAccessGrantsEnabled"):
+        updates["directAccessGrantsEnabled"] = False
 
     if not updates:
         info(f"client {CLIENT_ID}: already converged")
@@ -200,7 +214,54 @@ def converge_backend_client(admin: Admin) -> None:
     body = {**client, **updates}
     admin.put(client_path, body)
     for key in updates:
-        changed(f"client {CLIENT_ID}: {'secret set from .env' if key == 'secret' else key + ' now includes ' + APP_BASE_URL}")
+        if key == "secret":
+            changed(f"client {CLIENT_ID}: secret set from .env")
+        elif key == "directAccessGrantsEnabled":
+            changed(f"client {CLIENT_ID}: password grant turned off")
+        else:
+            changed(f"client {CLIENT_ID}: {key} now includes {APP_BASE_URL}")
+
+
+# The password-check client's shape (orkyo-infra ADR 0008): password grant only, no mappers and
+# no full scope, so its tokens carry neither the orkyo-backend nor the account audience.
+CHECK_CLIENT_FLAGS = {
+    "publicClient": False,
+    "standardFlowEnabled": False,
+    "implicitFlowEnabled": False,
+    "directAccessGrantsEnabled": True,
+    "serviceAccountsEnabled": False,
+    "fullScopeAllowed": False,
+}
+
+
+def converge_password_check_client(admin: Admin) -> None:
+    clients = admin.get(f"/clients?clientId={urllib.parse.quote(CHECK_CLIENT_ID)}")
+    if not clients:
+        admin.post("/clients", {
+            "clientId": CHECK_CLIENT_ID,
+            "name": "Orkyo Password Check",
+            "enabled": True,
+            "protocol": "openid-connect",
+            "clientAuthenticatorType": "client-secret",
+            "secret": settings["KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET"],
+            "redirectUris": [],
+            "webOrigins": [],
+            **CHECK_CLIENT_FLAGS,
+        })
+        changed(f"client {CHECK_CLIENT_ID}: created")
+        return
+    client = clients[0]
+    client_path = f"/clients/{client['id']}"
+    updates: dict[str, object] = {k: v for k, v in CHECK_CLIENT_FLAGS.items() if client.get(k) != v}
+    if client.get("protocolMappers"):
+        updates["protocolMappers"] = []
+    updates.update(secret_update(admin, client_path, "KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET"))
+    if not updates:
+        info(f"client {CHECK_CLIENT_ID}: already converged")
+        return
+    admin.put(client_path, {**client, **updates})
+    for key in updates:
+        changed(f"client {CHECK_CLIENT_ID}: {'secret set from .env' if key == 'secret' else key + ' converged'}")
 
 
 # ── 2. The WebAuthn Passwordless policy ─────────────────────────────────────
@@ -321,6 +382,7 @@ def main() -> None:
     wait_for_keycloak()
     admin = Admin(admin_token())
     converge_backend_client(admin)
+    converge_password_check_client(admin)
     converge_passwordless_policy(admin)
     converge_browser_flow(admin)
     info(f"done: {len(changes)} change(s)")

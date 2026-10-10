@@ -3,7 +3,7 @@
 #
 # Contract:
 #   - Not zero-downtime (single server, single tenant)
-#   - Steps: backup → set ORKYO_VERSION in .env → pull → up
+#   - Steps: backup → add secrets a newer release requires → set ORKYO_VERSION in .env → pull → up
 #   - Aborts if the backup fails: never upgrade without a backup
 #   - Migrations run inside `docker compose up`: the migrator service is in the
 #     api service's depends_on chain with service_completed_successfully
@@ -23,21 +23,31 @@ echo ""
 
 [ -f "$ENV_FILE" ] || { echo "ERROR: .env not found at ${ENV_FILE}" >&2; exit 1; }
 
-echo "Step 1/3: Pre-upgrade backup (mandatory)..."
+echo "Step 1/4: Pre-upgrade backup (mandatory)..."
 if ! bash "${SCRIPT_DIR}/backup.sh"; then
   echo "ERROR: Backup failed. Upgrade aborted, nothing changed." >&2
   exit 1
 fi
 echo ""
 
-echo "Step 2/3: Setting ORKYO_VERSION=${NEW_VERSION} in .env..."
+echo "Step 2/4: Adding secrets that newer releases require..."
+# The password re-check client's secret (orkyo-infra ADR 0008). compose.yml refuses to start
+# without it; an install from an older bundle has none.
+if ! grep -qE '^KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET=.' "$ENV_FILE"; then
+  command -v openssl >/dev/null 2>&1 || { echo "ERROR: openssl is not installed" >&2; exit 1; }
+  sed -i -E '/^KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET=$/d' "$ENV_FILE"
+  printf 'KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET=%s\n' "$(openssl rand -hex 32)" >> "$ENV_FILE"
+  echo "  added KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET"
+fi
+
+echo "Step 3/4: Setting ORKYO_VERSION=${NEW_VERSION} in .env..."
 if grep -qE '^ORKYO_VERSION=' "$ENV_FILE"; then
   sed -i -E "s|^ORKYO_VERSION=.*|ORKYO_VERSION=${NEW_VERSION}|" "$ENV_FILE"
 else
   printf 'ORKYO_VERSION=%s\n' "$NEW_VERSION" >> "$ENV_FILE"
 fi
 
-echo "Step 3/3: Pulling images and restarting (downtime begins)..."
+echo "Step 4/4: Pulling images and restarting (downtime begins)..."
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" pull
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
 

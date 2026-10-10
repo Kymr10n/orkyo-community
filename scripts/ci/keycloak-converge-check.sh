@@ -6,7 +6,9 @@
 # WebAuthn Passwordless policy), then the converger runs with the new .env values. It must
 #   1. exit 0 and report changes,
 #   2. leave the realm with the new secret, the new redirect URIs beside the old ones, the
-#      passkey policy, and the "Condition - credential" step Required in the browser flow,
+#      passkey policy, the "Condition - credential" step Required in the browser flow, and the
+#      orkyo-password-check client (password grant only, no API audience) while orkyo-backend
+#      refuses the password grant,
 #   3. report zero changes on a second run.
 # Uses the upstream Keycloak image, the same version foundation's image is built from, and the
 # python image compose.yml pins. Needs Docker and a free local port (KC_CHECK_PORT, 18089).
@@ -24,6 +26,7 @@ OLD_URL="http://old.example.test"
 NEW_URL="https://orkyo.example.test:8443"
 OLD_SECRET="old-secret-from-first-boot"
 NEW_SECRET="new-secret-from-env-$$"
+CHECK_SECRET="check-client-from-env-$$"
 
 cleanup() {
   docker rm -f "$ID-kc" >/dev/null 2>&1 || true
@@ -39,8 +42,15 @@ mkdir -p "$WORK/import"
 python3 - "$ROOT/release/config/keycloak/realm.json" "$WORK/import/realm.json" "$OLD_URL" "$OLD_SECRET" <<'PY'
 import json, sys
 src, dst, url, secret = sys.argv[1:]
-text = open(src).read().replace("${APP_BASE_URL}", url).replace("${APP_BASE_HOST}", "old.example.test").replace("${KEYCLOAK_BACKEND_CLIENT_SECRET}", secret)
+text = (open(src).read().replace("${APP_BASE_URL}", url).replace("${APP_BASE_HOST}", "old.example.test")
+        .replace("${KEYCLOAK_BACKEND_CLIENT_SECRET}", secret).replace("${KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET}", secret))
 realm = json.loads(text)
+# An install from before the password-check client: no such client, and the password grant on
+# orkyo-backend.
+realm["clients"] = [c for c in realm["clients"] if c["clientId"] != "orkyo-password-check"]
+for c in realm["clients"]:
+    if c["clientId"] == "orkyo-backend":
+        c["directAccessGrantsEnabled"] = True
 for key in [k for k in realm if k.startswith("webAuthnPolicyPasswordless")]:
     del realm[key]
 realm.pop("loginTheme", None)  # the theme lives in the Orkyo image, not in upstream Keycloak
@@ -100,6 +110,8 @@ converge() {
     -e APP_BASE_URL="$NEW_URL" \
     -e KEYCLOAK_BACKEND_CLIENT_ID=orkyo-backend \
     -e KEYCLOAK_BACKEND_CLIENT_SECRET="$NEW_SECRET" \
+    -e KEYCLOAK_PASSWORD_CHECK_CLIENT_ID=orkyo-password-check \
+    -e KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET="$CHECK_SECRET" \
     "$PY_IMAGE" python /converge.py
 }
 
@@ -112,9 +124,9 @@ second="$(converge)"; echo "$second"
 grep -q 'done: 0 change' <<<"$second" || fail "second run was not a no-op"
 
 echo "== assertions through the admin API"
-python3 - "$PORT" "$NEW_URL" "$NEW_SECRET" "$OLD_URL" <<'PY'
-import json, sys, urllib.parse, urllib.request
-port, new_url, new_secret, old_url = sys.argv[1:]
+python3 - "$PORT" "$NEW_URL" "$NEW_SECRET" "$OLD_URL" "$CHECK_SECRET" <<'PY'
+import base64, json, sys, urllib.error, urllib.parse, urllib.request
+port, new_url, new_secret, old_url, check_secret = sys.argv[1:]
 base = f"http://localhost:{port}"
 
 def call(method, path, token=None, form=None):
@@ -156,6 +168,41 @@ assert step["requirement"] == "REQUIRED", step["requirement"]
 cfg = call("GET", f"{R}/authentication/config/{step['authenticationConfig']}", token)
 assert cfg["config"]["credentials"] == "webauthn-passwordless", cfg
 assert ids.index("conditional-credential") == ids.index("conditional-user-configured") + 1, ids
-print("all assertions passed:", ids)
+
+# The password-check client (orkyo-infra ADR 0008): created on the existing install, password
+# grant only, no audience mapper, no full scope; orkyo-backend lost the grant.
+def token_error(client_id, secret, username, password):
+    form = urllib.parse.urlencode({"grant_type": "password", "client_id": client_id, "client_secret": secret,
+                                   "username": username, "password": password}).encode()
+    try:
+        with urllib.request.urlopen(urllib.request.Request(f"{base}/realms/orkyo-community/protocol/openid-connect/token", data=form)) as r:
+            return None, json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        body = json.loads(e.read() or b"{}")
+        return body.get("error"), body
+
+check = call("GET", f"{R}/clients?clientId=orkyo-password-check", token)
+assert check, "orkyo-password-check was not created"
+check = check[0]
+assert check["fullScopeAllowed"] is False and check["directAccessGrantsEnabled"] is True, check
+assert not any(m.get("protocolMapper") == "oidc-audience-mapper" for m in check.get("protocolMappers") or []), check
+assert client["directAccessGrantsEnabled"] is False, "orkyo-backend still allows the password grant"
+assert token_error("orkyo-password-check", check_secret, "no-such-user", "x")[0] == "invalid_grant"
+assert token_error("orkyo-backend", new_secret, "no-such-user", "x")[0] == "unauthorized_client"
+
+# A real user's token from the check client carries no API audience.
+req = urllib.request.Request(base + f"{R}/users", method="POST",
+    data=json.dumps({"username": "probe", "enabled": True, "email": "probe@example.test", "emailVerified": True,
+                     "firstName": "P", "lastName": "R",
+                     "credentials": [{"type": "password", "value": "Probe-value-1", "temporary": False}]}).encode(),
+    headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"})
+urllib.request.urlopen(req)
+err, ok = token_error("orkyo-password-check", check_secret, "probe@example.test", "Probe-value-1")
+assert err is None, ok
+part = ok["access_token"].split(".")[1]; part += "=" * (-len(part) % 4)
+aud = json.loads(base64.urlsafe_b64decode(part)).get("aud", [])
+aud = [aud] if isinstance(aud, str) else aud
+assert not {"orkyo-backend", "account"} & set(aud), aud
+print("all assertions passed:", ids, "| password-check client: no API audience")
 PY
 echo "keycloak-converge-check: OK"

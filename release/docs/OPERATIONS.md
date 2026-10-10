@@ -77,6 +77,18 @@ docker compose pull
 docker compose up -d
 ```
 
+### Secrets that a release adds
+
+A release can add a secret that compose refuses to start without. `scripts/upgrade.sh` adds
+each missing one to `.env` before it pulls. With Portainer or a manual CLI upgrade, add it
+yourself first:
+
+| Variable | What it is for | How to make a value |
+|---|---|---|
+| `KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET` | The Keycloak client that re-checks a password before a password change or removing MFA or a passkey | `openssl rand -hex 32` |
+
+The `keycloak-config` service creates the matching Keycloak client on the next start.
+
 ### Verifying the upgrade
 
 ```bash
@@ -98,7 +110,8 @@ in the bundle directory.
 - `backup.sh` writes `pg_dumpall.sql`, a copy of `.env` named `env`, and a SHA-256
   checksum file to `backups/<timestamp>/`. It refuses to record an empty dump.
 - `upgrade.sh <version>` runs `backup.sh` first. If the backup fails, the upgrade stops.
-  Then it sets `ORKYO_VERSION` in `.env`, pulls the images, and runs `docker compose up -d`.
+  Then it adds any secret a newer release requires, sets `ORKYO_VERSION` in `.env`, pulls the
+  images, and runs `docker compose up -d`.
   The migrator runs inside that step, before the API starts.
 
 ```bash
@@ -220,6 +233,8 @@ The service owns these properties and nothing else:
 | Property | Source |
 |---|---|
 | `orkyo-backend` client secret | `KEYCLOAK_BACKEND_CLIENT_SECRET` in `.env` |
+| `orkyo-backend` password grant (always off) | The release |
+| `orkyo-password-check` client: created when missing, its secret, password grant only | `KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET` in `.env`; the shape from the release |
 | `orkyo-backend` redirect URIs, web origins, post-logout URIs | `APP_BASE_URL` in `.env`, added to the existing list |
 | WebAuthn Passwordless policy (passkeys) | The release. The relying party ID is the host of `APP_BASE_URL`. |
 | "Condition - credential" step in the browser flow | The release |

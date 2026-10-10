@@ -81,7 +81,7 @@
       "publicClient": false,
       "secret": "${KEYCLOAK_BACKEND_CLIENT_SECRET}",
       "protocol": "openid-connect",
-      "directAccessGrantsEnabled": true,
+      "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": true,
       "standardFlowEnabled": true,
       "fullScopeAllowed": true,
@@ -94,6 +94,23 @@
         "http://localhost:5174",
         "${APP_BASE_URL}"
       ]
+    },
+    {
+      "clientId": "orkyo-password-check",
+      "name": "Orkyo Password Check",
+      "description": "Password grant only, for the account password re-check (orkyo-infra ADR 0008). No audience mapper and fullScopeAllowed=false, so its tokens carry no API audience.",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET}",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": false,
+      "redirectUris": [],
+      "webOrigins": []
     }
   ],
   "clientScopeMappings": {
