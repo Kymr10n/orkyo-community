@@ -166,6 +166,12 @@ updates:
       time: "07:00"
     cooldown:
       default-days: 7
+    # FullCalendar 7 folded the daygrid/timegrid/list/interaction plugins into
+    # `@fullcalendar/react/*` subpaths, so a bump of core+react alone cannot resolve.
+    # The calendar lives in orkyo-foundation; the v7 move is a foundation change first.
+    ignore:
+      - dependency-name: "@fullcalendar/*"
+        update-types: ["version-update:semver-major"]
 
     open-pull-requests-limit: 5
     groups:
