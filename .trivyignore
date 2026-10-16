@@ -12,14 +12,13 @@
 # the built orkyo-community-keycloak image on main is green. The Bouncy Castle, netty,
 # FreeMarker and four Jackson entries that bridged to this release are gone.
 #
+# 2026-10-16: foundation 1.6.6 moves the Keycloak base to 26.8.1, which ships mssql-jdbc
+# 13.4.0.jre11 (past the fix) on a UBI9 layer with pcre2 10.40-7.el9_8. No active exceptions.
+#
 # 2026-10-16: upstream rebuilt nginx:1.31-alpine (digest 892bb215, Alpine 3.24.2); a Trivy
 # scan at HIGH/CRITICAL with --ignore-unfixed reports 0 findings, so the libexpat, pcre2 and
 # libtiff entries are gone with the digest bump in frontend/Dockerfile. The mssql-jdbc entry
 # stays: this repo ships foundation 1.6.5's Keycloak 26.7 image, which still carries 13.2.1.
-
-# ── Trivy false positive ───────────────────────────────────────────────────────
-# Trivy reports fix as 12.6.5 but KC ships mssql-jdbc 13.2.1.jre11 (newer); false positive.
-CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy compares the installed 13.2.1 against a fix list ending 13.2.1.jre11 and calls it older; the shipped JAR is the fixed version, false positive (re-verified 2026-10-09: Keycloak 26.7.5 still ships 13.2.1) | Added: 2026-10-09 | Review: 2026-10-23
 
 # ── Keycloak base OS layer ────────────────────────────────────────────────────
 # 2026-09-03: the KC-26.6.x-era entries that stood in this file (jackson-databind,
@@ -29,15 +28,3 @@ CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy compare
 # ghcr.io/kymr10n/orkyo-community-keycloak:sha-b1290a37, both with CI's flags and with
 # --ignore-unfixed OFF: the only findings are the mssql-jdbc false positive above and the
 # entry below.
-
-# ── Keycloak base OS layer: pcre2 10.40-6.el9 — three HIGHs (keycloak) ──────────
-# 2026-10-16: the UBI9 layer of quay.io/keycloak/keycloak:26.8.0 (and 26.7.5, which this
-# repo ships through FOUNDATION_KC_IMAGE 26.7-orkyo-1.6.5) carries pcre2 10.40-6.el9; the
-# fix is 10.40-7.el9_8. Keycloak 26.8.1 is rebuilt on it and scans clean (verified locally
-# with Trivy, HIGH/CRITICAL, --ignore-unfixed). The path is foundation #256 (26.8.1), then
-# the foundation 1.6.6 release moves FOUNDATION_KC_IMAGE here. Keycloak compiles regexes
-# only from its own configuration, never from user input. Production already runs this
-# image, so shipping is not a regression. Drop all three when 1.6.6 lands.
-CVE-2026-103111  # HIGH | pcre2 10.40-6.el9 in the Keycloak UBI9 base (fix 10.40-7.el9_8) | fixed in keycloak 26.8.1 (foundation #256), reaches this repo with foundation 1.6.6; regexes come only from Keycloak's own config | Added: 2026-10-16 | Review: 2026-10-30
-CVE-2026-86145  # HIGH | pcre2 10.40-6.el9 in the Keycloak UBI9 base (fix 10.40-7.el9_8) | same path as CVE-2026-103111 above | Added: 2026-10-16 | Review: 2026-10-30
-CVE-2026-89161  # HIGH | pcre2 10.40-6.el9 in the Keycloak UBI9 base (fix 10.40-7.el9_8) | same path as CVE-2026-103111 above | Added: 2026-10-16 | Review: 2026-10-30
