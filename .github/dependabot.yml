@@ -2,21 +2,24 @@
 # the runtime bases are pinned by sha256 digest, so without automation every
 # upstream rebuild silently ages our pins until trivy findings pile up.
 # backend/keycloak/Dockerfile is excluded — its base comes from the
-# FOUNDATION_KC_IMAGE build arg, not a pinned digest.
-# Also covers NuGet (central versions in Directory.Packages.props), npm, and
-# the SHA-pinned GitHub Actions in workflows.
+# FOUNDATION_KC_IMAGE build arg, which the foundation bump script moves.
+# Also covers the self-host bundle's compose pins, NuGet (central versions in
+# Directory.Packages.props), npm, and the SHA-pinned GitHub Actions in workflows.
 #
-# Each ecosystem raises at most three pull requests per run: one batching all
-# minor and patch updates, one batching majors, and one batching the bumps that
-# carry no semver update-type at all (digests, SHA pins). Majors are grouped,
-# never ignored — an ignore rule also suppresses the security pull request when
-# an advisory is only fixed in a new major. `applies-to: version-updates` keeps
-# Dependabot security updates out of the groups, so an advisory-driven fix
-# arrives on its own and immediately.
+# SHAPE. Per ecosystem and week: ONE pull request batching every minor and patch
+# update, ONE per major (majors are deliberately ungrouped — a group holding one
+# upstream-blocked major blocked four others for a month), and for digest-only
+# bumps ONE patterns-only catch-all. Security updates have their own group per
+# ecosystem (`applies-to: security-updates`) so an advisory arrives as one PR, at
+# once, and never waits for the cooldown.
+#
+# COOLDOWN. Three days for minor, patch and digest bumps, seven for majors: most
+# compromised releases are pulled from the registry within days. Security updates
+# are exempt by Dependabot's own rule.
 #
 # GROUP ORDER MATTERS. A dependency joins the FIRST group it matches, so the
-# patterns-only catch-all must stay last — above it, the update-types filters
-# claim majors and minor/patch first.
+# patterns-only catch-all must stay last — above it, the update-types filter
+# claims minor/patch first. Majors match no version-update group and open alone.
 #
 # SCHEDULE IS STAGGERED across the four repos, one weekday each, two hours
 # between ecosystems: infra Monday, foundation Tuesday, saas Wednesday,
@@ -25,32 +28,27 @@
 # HTTP 429 on 2026-08-17; this repo raised the same six and only escaped by
 # firing in a quieter window.
 #
-# NO AUTO-MERGE IN THIS REPO — a decision, not a gap. main-protection carries a
-# pull_request rule (one approving review + a code-owner review), and GitHub's
-# deferred auto-merge path does NOT re-check ruleset bypass_actors when it
-# completes: the pull request stays BLOCKED / REVIEW_REQUIRED for good, even
-# with the bot listed as a bypass actor. Calling the merge endpoint directly
-# succeeds for the same actor, which isolates it to the auto-merge path. GitHub
-# support has said engineering will not resolve it in the near term.
+# AUTO-MERGE. dependabot-auto-merge.yml approves and queues a squash merge for
+# every non-major pull request. The approval (owner token, CODEOWNERS is the owner)
+# satisfies the main ruleset's review rule, so the queued merge completes once the
+# required checks pass. Majors are never auto-merged. GitHub's deferred auto-merge
+# does not re-check ruleset bypass actors, so a bypass would not work — the review
+# itself is what unblocks it:
 #   https://github.com/orgs/community/discussions/162623
-#   https://github.com/orgs/community/discussions/142206
 #
-# Two workarounds were considered and rejected. Dropping the pull_request rule
-# weakens the gate for human pull requests too, to serve a bot. A
-# workflow_run-triggered direct merge needs a github-actions[bot] bypass, which
-# is a wider hole than the Dependabot one, and puts real complexity in a merge
-# path. The grouping above already cuts this repo to roughly one pull request
-# per ecosystem per week, so the remaining manual merge is cheap. Revisit only
-# if GitHub fixes the bypass.
+# IGNORED MAJORS are upstream-blocked, not unwanted. Each entry names the blocker.
+# The monthly freshness report lists them so they are re-checked, and the entry is
+# dropped the moment the blocker ships.
 #
-# orkyo-saas and orkyo-infra have no pull_request rule on main, so auto-merge
-# completes there and is enabled in those two repos.
+# NOT TRACKED: compose.local.yml. Dependabot's docker-compose ecosystem only reads
+# files named compose.y(a)ml or docker-compose.y(a)ml, so the local postgres, valkey
+# and mailhog pins move by hand (or with the CI service pins in foundation's
+# reusable-product-ci.yml, which use the same digests).
 version: 2
 
-# The Orkyo.* packages live on GitHub Packages, not nuget.org. Without these
-# credentials Dependabot cannot restore the dependency graph at all, so the whole
-# nuget run aborts and NO update is raised — which is why this repo saw docker and
-# npm pull requests but never a nuget one.
+# The Orkyo.* NuGet packages and @kymr10n/foundation live on GitHub Packages, not
+# on nuget.org or npmjs. Without credentials Dependabot cannot restore the dependency
+# graph at all, so the whole run aborts and NO update is raised.
 # The token is a Dependabot-scoped secret (Settings → Secrets and variables →
 # Dependabot), separate from Actions secrets, and needs only `read:packages`.
 registries:
@@ -59,6 +57,10 @@ registries:
     url: https://nuget.pkg.github.com/Kymr10n/index.json
     username: Kymr10n
     password: ${{secrets.DEPENDABOT_PACKAGES_TOKEN}}
+  orkyo-github-npm:
+    type: npm-registry
+    url: https://npm.pkg.github.com
+    token: ${{secrets.DEPENDABOT_PACKAGES_TOKEN}}
 
 updates:
   - package-ecosystem: docker
@@ -75,31 +77,32 @@ updates:
       interval: weekly
       day: thursday
       time: "03:00"
-    # Wait a week after a version is published before proposing it: most compromised
-    # releases are pulled from the registry within days. Security updates skip the wait.
     cooldown:
-      default-days: 7
-
+      default-days: 3
+      semver-major-days: 7
+      semver-minor-days: 3
+      semver-patch-days: 3
+    # Four directories; a digest bump is one PR across all of them, a major one per image.
     open-pull-requests-limit: 10
     groups:
+      docker-security:
+        applies-to: security-updates
+        patterns: ["*"]
       docker-minor-patch:
         applies-to: version-updates
         patterns: ["*"]
         update-types: ["minor", "patch"]
-      docker-major:
-        applies-to: version-updates
-        patterns: ["*"]
-        update-types: ["major"]
       docker-digest:
-        # A digest-only bump has no semver update-type, so it matches neither group
-        # above and Dependabot raises one pull request PER DIRECTORY — four identical
-        # dotnet/sdk bumps in this repo before this group existed. Patterns-only
+        # A digest-only bump has no semver update-type, so it matches no group
+        # above and Dependabot raises one pull request PER DIRECTORY. Patterns-only
         # catches them and batches them into one.
         applies-to: version-updates
         patterns: ["*"]
 
   # The self-host bundle pins its third-party images by digest; this keeps the
-  # pins moving with upstream the same way the Dockerfiles above do.
+  # pins moving with upstream the same way the Dockerfiles above do. A major here
+  # (postgres, valkey) is a data migration for every self-hoster, so it opens alone
+  # and is never auto-merged.
   - package-ecosystem: docker-compose
     directory: /release
     commit-message:
@@ -109,26 +112,27 @@ updates:
       day: thursday
       time: "04:00"
     cooldown:
-      default-days: 7
+      default-days: 3
+      semver-major-days: 7
+      semver-minor-days: 3
+      semver-patch-days: 3
     open-pull-requests-limit: 5
     groups:
+      compose-security:
+        applies-to: security-updates
+        patterns: ["*"]
       compose-minor-patch:
         applies-to: version-updates
         patterns: ["*"]
         update-types: ["minor", "patch"]
-      compose-major:
-        applies-to: version-updates
-        patterns: ["*"]
-        update-types: ["major"]
       compose-digest:
         applies-to: version-updates
         patterns: ["*"]
+
   - package-ecosystem: nuget
     directory: /
     registries:
       - orkyo-github-packages
-    # A conventional subject so the bump is exempt from the docs-impact trailer rule by
-    # type (`build:`), instead of escaping it by having no type at all.
     commit-message:
       prefix: "build(deps)"
     schedule:
@@ -136,8 +140,10 @@ updates:
       day: thursday
       time: "05:00"
     cooldown:
-      default-days: 7
-
+      default-days: 3
+      semver-major-days: 7
+      semver-minor-days: 3
+      semver-patch-days: 3
     # The Orkyo.* pins resolve from $(OrkyoFoundationVersion) in Directory.Build.props
     # and are owned by the release train (reusable-auto-bump.yml). Dependabot would
     # replace that property reference with a literal version and race the train.
@@ -145,19 +151,18 @@ updates:
       - dependency-name: "Orkyo.*"
     open-pull-requests-limit: 5
     groups:
+      nuget-security:
+        applies-to: security-updates
+        patterns: ["*"]
       nuget-minor-patch:
         applies-to: version-updates
         patterns: ["*"]
         update-types: ["minor", "patch"]
-      nuget-major:
-        applies-to: version-updates
-        patterns: ["*"]
-        update-types: ["major"]
 
   - package-ecosystem: npm
     directory: /frontend
-    # A conventional subject so the bump is exempt from the docs-impact trailer rule by
-    # type (`build:`), instead of escaping it by having no type at all.
+    registries:
+      - orkyo-github-npm
     commit-message:
       prefix: "build(deps)"
     schedule:
@@ -165,46 +170,46 @@ updates:
       day: thursday
       time: "07:00"
     cooldown:
-      default-days: 7
-    # FullCalendar 7 folded the daygrid/timegrid/list/interaction plugins into
-    # `@fullcalendar/react/*` subpaths, so a bump of core+react alone cannot resolve.
-    # The calendar lives in orkyo-foundation; the v7 move is a foundation change first.
+      default-days: 3
+      semver-major-days: 7
+      semver-minor-days: 3
+      semver-patch-days: 3
     ignore:
+      # @kymr10n/foundation is pinned by the release train (bump-foundation), same as
+      # the Orkyo.* NuGet packages above.
+      - dependency-name: "@kymr10n/*"
+      # FullCalendar 7 folded the daygrid/timegrid/list/interaction plugins into
+      # `@fullcalendar/react/*` subpaths, so a bump of core+react alone cannot resolve.
+      # The calendar lives in orkyo-foundation; the v7 move is a foundation change first.
       - dependency-name: "@fullcalendar/*"
         update-types: ["version-update:semver-major"]
-      # TypeScript 7 is unsupported by typescript-eslint (typescript <6.1); a major
-      # group that carries it cannot install.
+      # TypeScript 7: typescript-eslint supports typescript <6.1.0.
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
-      # ESLint 10 is unsupported by eslint-plugin-react (eslint <=9); a major group that
-      # carries it cannot install. @eslint/js moves with eslint.
+      # ESLint 10: eslint-plugin-react 7.37.5 (latest) accepts eslint ^9.7 at most.
+      # @eslint/js moves with eslint.
       - dependency-name: "eslint"
         update-types: ["version-update:semver-major"]
       - dependency-name: "@eslint/js"
         update-types: ["version-update:semver-major"]
-      # Vitest 5 changed Assertion to two type parameters, so @testing-library/jest-dom
-      # 7.0.1 no longer augments it and every toBeInTheDocument fails the type check.
-      # Drop when jest-dom ships vitest 5 support (testing-library/jest-dom#742).
+      # Vitest 5 changed Assertion to two type parameters; @testing-library/jest-dom
+      # 7.0.1 no longer augments it (testing-library/jest-dom#738, fix in #742).
       - dependency-name: "vitest"
         update-types: ["version-update:semver-major"]
       - dependency-name: "@vitest/*"
         update-types: ["version-update:semver-major"]
-
     open-pull-requests-limit: 5
     groups:
+      npm-security:
+        applies-to: security-updates
+        patterns: ["*"]
       npm-minor-patch:
         applies-to: version-updates
         patterns: ["*"]
         update-types: ["minor", "patch"]
-      npm-major:
-        applies-to: version-updates
-        patterns: ["*"]
-        update-types: ["major"]
 
   - package-ecosystem: github-actions
     directory: /
-    # A conventional subject so the bump is exempt from the docs-impact trailer rule by
-    # type (`build:`), instead of escaping it by having no type at all.
     commit-message:
       prefix: "build(deps)"
     schedule:
@@ -212,24 +217,24 @@ updates:
       day: thursday
       time: "09:00"
     cooldown:
-      default-days: 7
-
+      default-days: 3
+      semver-major-days: 7
+      semver-minor-days: 3
+      semver-patch-days: 3
     open-pull-requests-limit: 5
     groups:
+      actions-security:
+        applies-to: security-updates
+        patterns: ["*"]
       actions-minor-patch:
         applies-to: version-updates
         patterns: ["*"]
         update-types: ["minor", "patch"]
-      actions-major:
-        applies-to: version-updates
-        patterns: ["*"]
-        update-types: ["major"]
       actions-digest:
-        # Same failure mode the docker-digest group above fixes, for Actions.
-        # The reusable workflows this repo calls from orkyo-foundation are
-        # referenced by commit SHA, not by tag, so they resolve to no semver
-        # release, carry no update-type, and match neither group above. Before
-        # this group they arrived as one pull request PER WORKFLOW FILE — six of
-        # them on 2026-08-17 (#90–#95). Patterns-only batches them into one.
+        # The reusable workflows this repo calls from orkyo-foundation are referenced
+        # by commit SHA, not by tag, so they resolve to no semver release, carry no
+        # update-type, and match no group above. Before this group they arrived as one
+        # pull request PER WORKFLOW FILE — six of them on 2026-08-17 (#90–#95).
+        # Patterns-only batches them into one.
         applies-to: version-updates
         patterns: ["*"]
