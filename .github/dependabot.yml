@@ -182,6 +182,13 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "@eslint/js"
         update-types: ["version-update:semver-major"]
+      # Vitest 5 changed Assertion to two type parameters, so @testing-library/jest-dom
+      # 7.0.1 no longer augments it and every toBeInTheDocument fails the type check.
+      # Drop when jest-dom ships vitest 5 support (testing-library/jest-dom#742).
+      - dependency-name: "vitest"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitest/*"
+        update-types: ["version-update:semver-major"]
 
     open-pull-requests-limit: 5
     groups:
