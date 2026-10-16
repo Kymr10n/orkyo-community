@@ -11,6 +11,11 @@
 # the mssql-jdbc false positive below plus UBI9 pcre2 findings, and the container scan of
 # the built orkyo-community-keycloak image on main is green. The Bouncy Castle, netty,
 # FreeMarker and four Jackson entries that bridged to this release are gone.
+#
+# 2026-10-16: upstream rebuilt nginx:1.31-alpine (digest 892bb215, Alpine 3.24.2); a Trivy
+# scan at HIGH/CRITICAL with --ignore-unfixed reports 0 findings, so the libexpat, pcre2 and
+# libtiff entries are gone with the digest bump in frontend/Dockerfile. The mssql-jdbc entry
+# stays: this repo ships foundation 1.6.5's Keycloak 26.7 image, which still carries 13.2.1.
 
 # ── Trivy false positive ───────────────────────────────────────────────────────
 # Trivy reports fix as 12.6.5 but KC ships mssql-jdbc 13.2.1.jre11 (newer); false positive.
@@ -24,27 +29,3 @@ CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy compare
 # ghcr.io/kymr10n/orkyo-community-keycloak:sha-b1290a37, both with CI's flags and with
 # --ignore-unfixed OFF: the only findings are the mssql-jdbc false positive above and the
 # entry below.
-
-
-# ── nginx-alpine libexpat 2.8.4-r0 — CVE-2026-93990 (frontend) ─────────────────
-# 2026-09-25: nginx:1.31-alpine still resolves to the pinned digest 1ed1b0e1… (checked
-# against Docker Hub that day), which carries libexpat 2.8.4-r0; the fix is 2.8.5-r0 and
-# upstream has not rebuilt. Production already runs this digest, so shipping 0.27.0 is
-# not a regression. Same entry as orkyo-saas. Drop and bump the digest when upstream
-# rebuilds.
-CVE-2026-93990  # HIGH | libexpat 2.8.4-r0 in nginx:1.31-alpine@1ed1b0e1 (fix 2.8.5-r0) | newest upstream digest df221db8 still ships 2.8.4-r0 (scanned 2026-10-09); production already runs this digest, so shipping is not a regression | Added: 2026-10-09 | Review: 2026-10-23
-
-# ── nginx-alpine pcre2 10.48-r0 — CVE-2026-103111 (frontend) ───────────────────
-# Out-of-bounds write via a crafted regular expression. nginx only compiles the
-# regexes in our own config, never user input. The newest upstream
-# nginx:1.31-alpine digest (df221db8, scanned 2026-10-02) still ships 10.48-r0,
-# so a pin bump does not clear it. Production already runs this digest.
-CVE-2026-103111  # HIGH | pcre2 10.48-r0 in nginx:1.31-alpine@1ed1b0e1 (fix 10.49-r0) | newest upstream digest df221db8 still ships 10.48-r0 (scanned 2026-10-02); regexes come only from our own nginx config; production already runs this digest, so shipping is not a regression | Added: 2026-10-02 | Review: 2026-10-16
-
-# ── nginx-alpine libtiff 4.7.1-r0 — CVE-2026-4775 (frontend) ───────────────────
-# 2026-10-09: arbitrary code execution or denial of service via a signed integer overflow
-# when decoding a TIFF. nginx serves static files and never decodes an image; libtiff is
-# present only as an Alpine dependency of the image. The newest upstream nginx:1.31-alpine
-# digest (df221db8, scanned 2026-10-09) still ships 4.7.1-r0, so a pin bump does not clear
-# it. Production already runs this image. Same entry as orkyo-saas.
-CVE-2026-4775  # HIGH | libtiff 4.7.1-r0 in nginx:1.31-alpine@1ed1b0e1 (fix 4.7.2-r0) | newest upstream digest df221db8 still ships 4.7.1-r0 (scanned 2026-10-09); nginx never decodes a TIFF; production already runs this image, so shipping is not a regression | Added: 2026-10-09 | Review: 2026-10-23
