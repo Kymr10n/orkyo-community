@@ -172,6 +172,10 @@ updates:
     ignore:
       - dependency-name: "@fullcalendar/*"
         update-types: ["version-update:semver-major"]
+      # TypeScript 7 is unsupported by typescript-eslint (typescript <6.1); a major
+      # group that carries it cannot install.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
     open-pull-requests-limit: 5
     groups:
