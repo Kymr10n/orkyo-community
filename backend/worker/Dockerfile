@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:e1fc6e423f543119c406d24e2e687d67c569f18f04a37a8b0005d80ad0dcee80 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa AS build
 WORKDIR /src
 
 # Central Package Management: every PackageReference is versionless, so restore
@@ -23,7 +23,7 @@ RUN dotnet publish backend/worker/Orkyo.Community.Worker.csproj \
     -c Release -o /app/publish --no-restore \
     -r linux-musl-x64 --no-self-contained /p:PublishReadyToRun=true
 
-FROM mcr.microsoft.com/dotnet/runtime:10.0-alpine@sha256:c15a47adcecef15a0590a1186f0d066c2590a86ae188d29456a672ace4db7b09 AS runtime
+FROM mcr.microsoft.com/dotnet/runtime:10.0-alpine@sha256:e90a4b984926ed14328afec87e9be930b00dba55fed7e1743fbd585022afbad7 AS runtime
 LABEL org.opencontainers.image.source=https://github.com/Kymr10n/orkyo-community
 WORKDIR /app
 # The IANA time zone database. Alpine ships without it, and SchedulingEngine resolves
