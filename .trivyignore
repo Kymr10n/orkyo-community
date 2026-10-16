@@ -29,3 +29,15 @@ CVE-2025-59250  # HIGH | mssql-jdbc: improper input validation — Trivy compare
 # ghcr.io/kymr10n/orkyo-community-keycloak:sha-b1290a37, both with CI's flags and with
 # --ignore-unfixed OFF: the only findings are the mssql-jdbc false positive above and the
 # entry below.
+
+# ── Keycloak base OS layer: pcre2 10.40-6.el9 — three HIGHs (keycloak) ──────────
+# 2026-10-16: the UBI9 layer of quay.io/keycloak/keycloak:26.8.0 (and 26.7.5, which this
+# repo ships through FOUNDATION_KC_IMAGE 26.7-orkyo-1.6.5) carries pcre2 10.40-6.el9; the
+# fix is 10.40-7.el9_8. Keycloak 26.8.1 is rebuilt on it and scans clean (verified locally
+# with Trivy, HIGH/CRITICAL, --ignore-unfixed). The path is foundation #256 (26.8.1), then
+# the foundation 1.6.6 release moves FOUNDATION_KC_IMAGE here. Keycloak compiles regexes
+# only from its own configuration, never from user input. Production already runs this
+# image, so shipping is not a regression. Drop all three when 1.6.6 lands.
+CVE-2026-103111  # HIGH | pcre2 10.40-6.el9 in the Keycloak UBI9 base (fix 10.40-7.el9_8) | fixed in keycloak 26.8.1 (foundation #256), reaches this repo with foundation 1.6.6; regexes come only from Keycloak's own config | Added: 2026-10-16 | Review: 2026-10-30
+CVE-2026-86145  # HIGH | pcre2 10.40-6.el9 in the Keycloak UBI9 base (fix 10.40-7.el9_8) | same path as CVE-2026-103111 above | Added: 2026-10-16 | Review: 2026-10-30
+CVE-2026-89161  # HIGH | pcre2 10.40-6.el9 in the Keycloak UBI9 base (fix 10.40-7.el9_8) | same path as CVE-2026-103111 above | Added: 2026-10-16 | Review: 2026-10-30
