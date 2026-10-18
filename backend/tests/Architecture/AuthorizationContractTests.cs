@@ -27,4 +27,31 @@ public class AuthorizationContractTests
 
         Assert.True(ungoverned.Count == 0, AuthorizationContract.Explain(ungoverned));
     }
+
+    [Fact]
+    public void EveryAdminRoute_ReadsIncluded_IsGoverned()
+    {
+        var dataSource = _fixture.Factory.Services.GetRequiredService<EndpointDataSource>();
+
+        var ungoverned = AuthorizationContract.FindUngovernedAdminRoutes<AuthorizationGoverned>(dataSource);
+
+        Assert.True(ungoverned.Count == 0,
+            "These /api/admin routes have no gate. Map them with MapSiteAdminGroup():\n  "
+            + string.Join("\n  ", ungoverned));
+    }
+
+    [Fact]
+    public void EveryApiRoute_DeclaresItsAuthentication()
+    {
+        // Community maps no anonymous routes of its own; foundation's list is the whole list.
+        var dataSource = _fixture.Factory.Services.GetRequiredService<EndpointDataSource>();
+
+        var undeclared = AuthorizationContract.FindUnauthenticatedRoutes(
+            dataSource, AuthorizationContract.FoundationAnonymousRoutes);
+
+        Assert.True(undeclared.Count == 0,
+            "These /api routes answer anonymous callers. Give the group RequireAuthorization (or a "
+            + "Require* convention), or allow-list a route that is anonymous on purpose:\n  "
+            + string.Join("\n  ", undeclared));
+    }
 }
