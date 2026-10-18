@@ -28,3 +28,6 @@
 # ghcr.io/kymr10n/orkyo-community-keycloak:sha-b1290a37, both with CI's flags and with
 # --ignore-unfixed OFF: the only findings are the mssql-jdbc false positive above and the
 # entry below.
+
+# ── nginx base, waiting for the upstream rebuild ──────────────────────────────
+CVE-2026-77214  # HIGH | libexpat: information disclosure via heap buffer over-read, in the nginx:1.31-alpine base; Alpine fixed it in 2.8.5-r0 but upstream nginx has not rebuilt (digest 892bb215 unchanged on 2026-10-18). The frontend serves static files and never feeds XML to expat. Drop with the next digest bump. | Added: 2026-10-18 | Review: 2026-11-01
