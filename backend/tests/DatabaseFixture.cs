@@ -111,6 +111,20 @@ public class DatabaseFixture : IAsyncLifetime
         userCmd.Parameters.AddWithValue("name", "Test User");
         await userCmd.ExecuteNonQueryAsync();
 
+        // The site-admin probe (RateLimitWiringTests) is a known, linked user: access is by
+        // invitation only, so a Keycloak subject nobody provisioned no longer yields a principal.
+        await using var adminCmd = new NpgsqlCommand(
+            @"INSERT INTO users (id, email, display_name, status, created_at, updated_at)
+              VALUES (@id, @email, 'Site Admin', 'active', NOW(), NOW())
+              ON CONFLICT (id) DO NOTHING;
+              INSERT INTO user_identities (user_id, provider, provider_subject, provider_email, created_at)
+              VALUES (@id, 'keycloak', @subject, @email, NOW())
+              ON CONFLICT DO NOTHING", conn);
+        adminCmd.Parameters.AddWithValue("id", SiteAdminProbe.UserId);
+        adminCmd.Parameters.AddWithValue("email", SiteAdminProbe.Email);
+        adminCmd.Parameters.AddWithValue("subject", SiteAdminProbe.Subject);
+        await adminCmd.ExecuteNonQueryAsync();
+
         await using var criteriaCmd = new NpgsqlCommand(@"
             INSERT INTO criteria (name, description, data_type, enum_values, created_at, updated_at)
             VALUES
