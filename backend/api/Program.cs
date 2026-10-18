@@ -44,6 +44,13 @@ try
 
     // ── Foundation services ───────────────────────────────────────────────────
     builder.Services.AddFoundationServices(builder.Configuration);
+
+    // Access is by invitation only. An identity nobody invited is rejected at link time
+    // instead of being created on the fly; migration 3030 removed the trigger that made
+    // every created identity an admin. Stated here rather than in an env var so an unset
+    // variable cannot silently reopen the front door (IdentityProvisioningOptions).
+    builder.Services.Configure<IdentityProvisioningOptions>(
+        o => o.AllowSelfRegistration = false);
     // Explicit-registration rule: UseAuthentication()/UseAuthorization() below must
     // have matching Add* calls in this file rather than relying on AddFoundationServices.
     // AddFoundationServices() also calls AddOrkyoAuthentication() internally; as of

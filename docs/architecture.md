@@ -61,7 +61,7 @@ The migrator runs against a single Postgres database.
 
 Community uses the same BFF (Backend-for-Frontend) OIDC cookie flow as SaaS, backed by Keycloak. The local realm (`orkyo-community`) is imported from `infra/compose/keycloak/realm-local.json` with:
 
-- Seed users (`admin@example.com`, `editor@example.com`, `viewer@example.com`)
+- One seed user (`admin@example.com`); everyone else is invited from Settings → Users
 - `orkyo-backend` confidential client with service account roles (`view-users`, `manage-users`).
   Direct access grants (ROPC) are disabled on it.
 - `orkyo-password-check` confidential client, password grant only, for the account password

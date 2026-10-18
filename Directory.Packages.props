@@ -13,6 +13,7 @@
   <!-- Orkyo foundation packages (used by the CI/Docker package path) -->
   <ItemGroup>
     <PackageVersion Include="Orkyo.Foundation.Core" Version="$(OrkyoFoundationVersion)" />
+    <PackageVersion Include="Orkyo.Foundation.Hosting" Version="$(OrkyoFoundationVersion)" />
     <PackageVersion Include="Orkyo.Foundation.Migrations" Version="$(OrkyoFoundationVersion)" />
     <PackageVersion Include="Orkyo.Foundation.Seed" Version="$(OrkyoFoundationVersion)" />
     <PackageVersion Include="Orkyo.Foundation.TestSupport" Version="$(OrkyoFoundationVersion)" />
