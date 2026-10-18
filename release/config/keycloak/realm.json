@@ -256,48 +256,6 @@
       ]
     },
     {
-      "username": "editor@example.com",
-      "email": "editor@example.com",
-      "firstName": "Editor",
-      "lastName": "User",
-      "enabled": true,
-      "emailVerified": true,
-      "requiredActions": [
-        "UPDATE_PASSWORD"
-      ],
-      "realmRoles": [
-        "user"
-      ],
-      "credentials": [
-        {
-          "type": "password",
-          "value": "ChangeMe-Editor-1",
-          "temporary": true
-        }
-      ]
-    },
-    {
-      "username": "viewer@example.com",
-      "email": "viewer@example.com",
-      "firstName": "Viewer",
-      "lastName": "User",
-      "enabled": true,
-      "emailVerified": true,
-      "requiredActions": [
-        "UPDATE_PASSWORD"
-      ],
-      "realmRoles": [
-        "user"
-      ],
-      "credentials": [
-        {
-          "type": "password",
-          "value": "ChangeMe-Viewer-1",
-          "temporary": true
-        }
-      ]
-    },
-    {
       "username": "service-account-orkyo-backend",
       "enabled": true,
       "serviceAccountClientId": "orkyo-backend",

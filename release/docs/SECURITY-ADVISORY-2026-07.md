@@ -13,6 +13,8 @@ checked by hand; see below.
 Community holds one workspace per installation. By design, *every user of an
 install is an admin of that install's organization* — a database trigger grants
 admin membership whenever a user record is created. That is reasonable on a private network.
+(Current releases remove that trigger — migration 3030 — and reject identities nobody
+invited; an invited person gets the invited role.)
 
 Realms shipped before 0.12.0 also enabled **Keycloak self-registration** with no
 password policy. Together, those two facts mean anyone who could reach the

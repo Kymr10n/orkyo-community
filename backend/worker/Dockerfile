@@ -41,7 +41,10 @@ RUN adduser -D -u 1001 -s /sbin/nologin appuser \
     && chown -R appuser:appuser /app
 USER appuser
 
+# The loop touches the heartbeat file after every pass (WorkerHeartbeat in foundation core).
+# A process check only proved the process existed; a loop stuck on a hung connection stayed
+# "healthy" indefinitely.
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD pgrep -f Orkyo.Community.Worker.dll || exit 1
+  CMD find /tmp/orkyo-worker.heartbeat -mmin -3 | grep -q . || exit 1
 
 ENTRYPOINT ["dotnet", "Orkyo.Community.Worker.dll"]

@@ -10,11 +10,13 @@
     <When Condition="'$(OrkyoUseFoundationPackage)' != 'true' AND Exists('..\..\..\orkyo-foundation\backend\core\Orkyo.Foundation.Core.csproj')">
       <ItemGroup>
         <ProjectReference Include="..\..\..\orkyo-foundation\backend\core\Orkyo.Foundation.Core.csproj" />
+        <ProjectReference Include="..\..\..\orkyo-foundation\backend\hosting\Orkyo.Foundation.Hosting.csproj" />
       </ItemGroup>
     </When>
     <Otherwise>
       <ItemGroup>
         <PackageReference Include="Orkyo.Foundation.Core" />
+        <PackageReference Include="Orkyo.Foundation.Hosting" />
       </ItemGroup>
     </Otherwise>
   </Choose>

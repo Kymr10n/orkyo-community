@@ -1,89 +1,16 @@
-using Api.Configuration;
-using Api.Integrations.Keycloak;
+using Api.Hosting;
 using Api.Repositories;
 using Api.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Orkyo.Shared;
-using Orkyo.Shared.Keycloak;
-using Serilog;
 
-// ── Worker logging contract (kept in lockstep with the other edition's worker) ──
-// Shared invariants: Information default with Microsoft→Warning; a fatal crash
-// does Log.Fatal + Environment.ExitCode = 1, and finally CloseAndFlush. Both
-// editions write to stdout only: the container runtime captures it (self-host
-// docker logs; Alloy → Loki in the hosted stack).
-// Do not extract a shared helper: the common config is ~2 lines and foundation
-// core would gain a Serilog dependency for it (optimization plan W4.8).
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
-    .WriteTo.Console()
-    .CreateLogger();
-
-try
-{
-    Log.Information("Starting Orkyo Community Worker");
-
-    // Fail fast if the runtime image lacks tzdata: auto-scheduling resolves each site's
-    // IANA time zone, and a missing database must kill the container at boot rather than
-    // fail per tenant in the middle of a run. Same probe the API runs via
-    // ConfigurationValidator, which the workers have no --validate path for.
-    if (ConfigurationValidator.TimeZoneDataError() is { } timeZoneError)
-        throw new InvalidOperationException(timeZoneError);
-
-    using var host = Host.CreateDefaultBuilder(args)
-        .UseSerilog()
-        .ConfigureServices((context, services) =>
-        {
-            // Edition-specific: single-tenant DB factory (all connection types map to the one community DB).
-            services.AddSingleton<IDbConnectionFactory>(
-                _ => SingleTenantDbConnectionFactory.FromConfiguration(context.Configuration));
-            // Shared worker graph (HTTP client, Keycloak, email, announcements, user lifecycle).
-            services.AddFoundationWorkerServices(context.Configuration);
-            // The shared loop with this edition's job list.
-            services.AddFoundationWorkerLoop(sp =>
-            {
-                var userLifecycle = sp.GetRequiredService<UserLifecycleService>();
-                var announcements = sp.GetRequiredService<IAnnouncementBroadcastService>();
-                var logger = sp.GetRequiredService<ILogger<WorkerHost>>();
-                return
-                [
-                    // Run GDPR user lifecycle once per day
-                    new WorkerJob(WorkerJobNames.UserLifecycle, WorkerSchedulePolicy.ShouldRunUserLifecycle, async ct =>
-                    {
-                        logger.LogInformation("Running user lifecycle check");
-                        await userLifecycle.ProcessAsync(ct);
-                    }),
-                    // Announcement email broadcasts are time-sensitive — attempt every loop,
-                    // but single-flight across instances so replicas cannot double-send.
-                    new WorkerJob(WorkerJobNames.AnnouncementBroadcast, (_, _) => true,
-                        ct => announcements.ProcessPendingBroadcastsAsync(ct)),
-                ];
-            });
-            services.AddHostedService<WorkerHost>();
-        })
-        .Build();
-
-    await host.RunAsync();
-}
-catch (Exception ex)
-{
-    Log.Fatal(ex, "Worker terminated unexpectedly");
-    // Signal failure so container restart policies see the crash (was exiting 0).
-    Environment.ExitCode = 1;
-}
-finally
-{
-    Log.CloseAndFlush();
-}
-
-/// <summary>
-/// The hosted shell around foundation's <see cref="FoundationWorkerLoop"/>; the jobs are
-/// declared above and the loop itself lives in core.
-/// </summary>
-internal sealed class WorkerHost(FoundationWorkerLoop loop) : BackgroundService
-{
-    protected override Task ExecuteAsync(CancellationToken stoppingToken) => loop.RunAsync(stoppingToken);
-}
+// The worker is foundation's shared host plus this edition's data: the single-tenant
+// connection factory. The jobs (email outbox, user lifecycle, announcements) live in
+// OrkyoWorkerHost.BuildJobs, where a test pins that every declared job is registered — a
+// hand-copied list here is how the outbox drain went unregistered in every release up to 1.6.7.
+return await OrkyoWorkerHost.RunAsync(
+    "Orkyo.Community.Worker",
+    args,
+    configureEditionServices: (context, services) =>
+        services.AddSingleton<IDbConnectionFactory>(
+            _ => SingleTenantDbConnectionFactory.FromConfiguration(context.Configuration)),
+    extraJobs: _ => []);

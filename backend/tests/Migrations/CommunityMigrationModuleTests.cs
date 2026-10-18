@@ -24,5 +24,6 @@ public class CommunityMigrationModuleTests
     {
         Ids.Should().Contain(id => id.StartsWith("3000."));
         Ids.Should().Contain(id => id.StartsWith("3020."));
+        Ids.Should().Contain(id => id.StartsWith("3030."), "invitation-only depends on it");
     }
 }

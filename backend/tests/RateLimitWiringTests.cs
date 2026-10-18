@@ -19,19 +19,19 @@ namespace Orkyo.Community.Tests;
 [Collection("Database collection")]
 public class RateLimitWiringTests
 {
-    // Site-admin comes from the token's realm roles; a Keycloak "sub" with no linked DB user still yields a
-    // partial principal with IsSiteAdmin=true (ContextEnrichmentMiddleware), which is enough to pass authz.
+    // Site-admin comes from the token's realm roles. The subject is linked to a users row the
+    // fixture seeds: access is by invitation only, so an unknown subject gets no principal.
     private static readonly string SiteAdminToken = Convert.ToBase64String(
         Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new
         {
-            UserId = "22222222-2222-2222-2222-222222222222",
-            Email = "siteadmin@orkyo.example",
+            UserId = SiteAdminProbe.UserId.ToString(),
+            Email = SiteAdminProbe.Email,
             DisplayName = "Site Admin",
             TenantId = "00000000-0000-0000-0000-000000000000",
             TenantSlug = "",
             IsTenantAdmin = false,
             Role = "viewer",
-            Sub = "kc-siteadmin-ratelimit",
+            Sub = SiteAdminProbe.Subject,
             RealmRoles = new[] { "user", "site-admin" },
         })));
 

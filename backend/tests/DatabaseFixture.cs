@@ -74,6 +74,8 @@ public class DatabaseFixture : IAsyncLifetime
         _ = Factory.Services; // Eagerly start the server; CreateClient() no longer does this lazily in MvcTesting 10.x
     }
 
+    public string TenantConnectionString => BuildConnectionString(TestConstants.TenantDatabase);
+
     private string BuildConnectionString(string database) =>
         new NpgsqlConnectionStringBuilder(AdminConnectionString) { Database = database }.ConnectionString;
 
@@ -92,18 +94,36 @@ public class DatabaseFixture : IAsyncLifetime
 
     private async Task SeedTestDataAsync()
     {
-        // tenants and tenant_memberships are compat views in community — nothing to seed for those.
+        // The test user and its admin membership of the single tenant, as an invitation
+        // would create them. Nothing grants a membership implicitly any more (migration 3030).
         await using var conn = new NpgsqlConnection(BuildConnectionString(TestConstants.TenantDatabase));
         await conn.OpenAsync();
 
         await using var userCmd = new NpgsqlCommand(
             @"INSERT INTO users (id, email, display_name, status, created_at, updated_at)
               VALUES (@id, @email, @name, 'active', NOW(), NOW())
-              ON CONFLICT (id) DO NOTHING", conn);
-        userCmd.Parameters.AddWithValue("id", new Guid("11111111-1111-1111-1111-111111111111"));
+              ON CONFLICT (id) DO NOTHING;
+              INSERT INTO tenant_memberships (user_id, tenant_id, role, status, created_at, updated_at)
+              VALUES (@id, '00000000-0000-0000-0000-000000000001', 'admin', 'active', NOW(), NOW())
+              ON CONFLICT (user_id, tenant_id) DO NOTHING", conn);
+        userCmd.Parameters.AddWithValue("id", TestConstants.UserId);
         userCmd.Parameters.AddWithValue("email", "test@orkyo.example");
         userCmd.Parameters.AddWithValue("name", "Test User");
         await userCmd.ExecuteNonQueryAsync();
+
+        // The site-admin probe (RateLimitWiringTests) is a known, linked user: access is by
+        // invitation only, so a Keycloak subject nobody provisioned no longer yields a principal.
+        await using var adminCmd = new NpgsqlCommand(
+            @"INSERT INTO users (id, email, display_name, status, created_at, updated_at)
+              VALUES (@id, @email, 'Site Admin', 'active', NOW(), NOW())
+              ON CONFLICT (id) DO NOTHING;
+              INSERT INTO user_identities (user_id, provider, provider_subject, provider_email, created_at)
+              VALUES (@id, 'keycloak', @subject, @email, NOW())
+              ON CONFLICT DO NOTHING", conn);
+        adminCmd.Parameters.AddWithValue("id", SiteAdminProbe.UserId);
+        adminCmd.Parameters.AddWithValue("email", SiteAdminProbe.Email);
+        adminCmd.Parameters.AddWithValue("subject", SiteAdminProbe.Subject);
+        await adminCmd.ExecuteNonQueryAsync();
 
         await using var criteriaCmd = new NpgsqlCommand(@"
             INSERT INTO criteria (name, description, data_type, enum_values, created_at, updated_at)
