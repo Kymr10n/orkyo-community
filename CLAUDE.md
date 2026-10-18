@@ -57,6 +57,11 @@ Local ports: API `5002` · Keycloak `8082` · Postgres `5433` · Frontend `5174`
 3. `.github/workflows/release-ci.yml` — release model
 4. `orkyo-infra/docs/00-overview.md` — the live cross-repo architecture (`docs/plans/structural-hardening-2026-05.md` there is historical context only)
 
+## Before every push
+
+Run `./dev.sh check`. It is the backend-ci job, step for step, against a local Postgres; a push
+that skipped it is how a red CI run starts. `--fast` is the pre-push hook's subset.
+
 ## Test coverage (every code change)
 
 **Every change ships at or above 80% patch coverage.** Measure locally before opening a PR —
