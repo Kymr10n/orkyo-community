@@ -125,10 +125,15 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
             // ConfigureAppConfiguration overrides run, so the health check would otherwise
             // use the appsettings.json default (localhost:5432) instead of the test port.
             var testDbCs = $"Host=localhost;Port={_databaseFixture.DatabasePort};Database={TestConstants.TenantDatabase};Username=postgres;Password=postgres";
+            // The test host has no Valkey either: the readiness probe AddOrkyoValkey registers
+            // (foundation 1.6.9) would turn /health into 503 here, so it goes too.
             services.Configure<HealthCheckServiceOptions>(opts =>
             {
-                var existing = opts.Registrations.FirstOrDefault(r => r.Name == "postgres");
-                if (existing is not null) opts.Registrations.Remove(existing);
+                foreach (var name in new[] { "postgres", "valkey" })
+                {
+                    var existing = opts.Registrations.FirstOrDefault(r => r.Name == name);
+                    if (existing is not null) opts.Registrations.Remove(existing);
+                }
             });
             services.AddHealthChecks()
                 .AddPostgresCheck(NpgsqlDataSource.Create(testDbCs), "postgres", "db", "ready");
