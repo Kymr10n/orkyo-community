@@ -65,6 +65,13 @@ repos:
         stages: [pre-push]
         files: '^frontend/.*\.(ts|tsx)$'
 
+      - id: backend-fast-tests
+        name: architecture tests (no database)
+        entry: ./dev.sh check --fast
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+        files: '\.(cs|csproj|slnx|props)$'
       - id: foundation-package-parity
         name: foundation package parity (CI-mode build)
         entry: scripts/check-foundation-parity.sh

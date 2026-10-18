@@ -48,6 +48,7 @@ Host processes (fast hot-reload, run after ./dev.sh infra):
 
 Other:
   doctor    Show startup sequences and runtime URLs
+  check     Run what CI runs (add --fast for the no-database architecture tests only)
   help      Show this help
 EOF
 }

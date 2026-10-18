@@ -18,7 +18,12 @@ public class DatabaseFixture : IAsyncLifetime
     public string AdminConnectionString { get; private set; } = "";
     public ApiWebApplicationFactory Factory { get; private set; } = null!;
 
-    private bool UseCiDatabase =>
+    /// <summary>
+    /// The external-database mode: <c>CI=true</c> and a <c>ConnectionStrings__Postgres</c> value
+    /// select a server on <c>localhost</c> at that value's port (user and password
+    /// <c>postgres</c>) instead of Testcontainers. `./dev.sh check` uses it on port 5442.
+    /// </summary>
+    private static bool UseCiDatabase =>
         Environment.GetEnvironmentVariable("CI") == "true"
         && !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ConnectionStrings__Postgres"));
 
@@ -34,8 +39,8 @@ public class DatabaseFixture : IAsyncLifetime
     {
         if (UseCiDatabase)
         {
-            DatabasePort = 5432;
-            AdminConnectionString = "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres";
+            DatabasePort = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("ConnectionStrings__Postgres")).Port;
+            AdminConnectionString = $"Host=localhost;Port={DatabasePort};Database=postgres;Username=postgres;Password=postgres";
         }
         else
         {

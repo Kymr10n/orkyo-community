@@ -128,9 +128,14 @@ cp .env.template .env
 | MailHog  | http://localhost:8026 |
 
 ```bash
-dotnet test backend/tests/          # backend unit + integration (needs Docker)
+./dev.sh check          # what CI runs: restore, format, build, migration lint, dead registrations, every test
+./dev.sh check --fast   # architecture tests only, no database (the pre-push hook)
 cd frontend && npm test -- --run    # frontend unit tests
 ```
+
+The full check keeps one Postgres container (`orkyo-test-postgres-community`, port 5442) running between
+runs and points the fixture at it through its `CI=true` + `ConnectionStrings__Postgres` switch.
+Nothing else starts Testcontainers, which cannot map ports under rootless Docker.
 
 ## Architecture
 
