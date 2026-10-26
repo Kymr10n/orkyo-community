@@ -1,16 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { AUTH_STAGES, ROUTE_SITE_ADMIN } from '@kymr10n/foundation/src/constants/auth';
+import { mockAuth, resetMockAuth } from '@/test/mocks/foundation-auth';
 import App from './App';
 
-// ── Mutable state (per-test override) ─────────────────────────────────────────
-const mockAuthState = {
-  authStage: 'initializing' as string,
-  canAccessAdminPage: false,
-};
+const mockLocation = vi.hoisted(() => ({ pathname: '/' }));
 
-const mockLocation = { pathname: '/' };
-
-// ── Mocks ─────────────────────────────────────────────────────────────────────
+// The admin page is code-split; the chunk resolves when a test says so, which is how the
+// Suspense fallback gets observed once before the module is cached for the rest of the file.
+const adminChunk = vi.hoisted(() => {
+  let resolve!: (module: unknown) => void;
+  const promise = new Promise<unknown>((r) => {
+    resolve = r;
+  });
+  return { promise, resolve };
+});
 
 vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<object>();
@@ -23,117 +27,76 @@ vi.mock('react-router', async (importOriginal) => {
   };
 });
 
-vi.mock('@kymr10n/foundation/src/contexts/AuthContext', () => ({
-  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  useAuth: () => mockAuthState,
-}));
+vi.mock('@kymr10n/foundation/src/contexts/AuthContext', () => import('@/test/mocks/foundation-auth'));
 
 vi.mock('@kymr10n/foundation/src/components/auth/ApexGateway', () => ({
-  // Mirrors the one piece of the real gateway this shell relies on: at /site-admin, for a
-  // site admin, it renders the injected admin slot in any pipeline stage. Everything else
-  // is the pipeline, stood in for by the marker.
-  ApexGateway: ({ renderAdminPage }: { renderAdminPage?: () => React.ReactNode }) => {
-    const onAdminRoute =
-      mockLocation.pathname === '/site-admin' || mockLocation.pathname.startsWith('/site-admin/');
-    if (onAdminRoute && mockAuthState.canAccessAdminPage && renderAdminPage) {
-      return <>{renderAdminPage()}</>;
-    }
-    return <div data-testid="apex-gateway" />;
-  },
+  // The pipeline itself is foundation's; the shell's only contract with it is the admin slot.
+  ApexGateway: ({ renderAdminPage }: { renderAdminPage?: () => React.ReactNode }) => (
+    <div data-testid="apex-gateway" data-admin-slot={renderAdminPage ? 'present' : 'missing'} />
+  ),
 }));
 
 vi.mock('@kymr10n/foundation/src/components/auth/TenantApp', () => ({
   TenantApp: () => <div data-testid="tenant-app" />,
 }));
 
-vi.mock('@kymr10n/foundation/src/components/layout/ThemeToggle', () => ({
-  ThemeToggle: () => <div data-testid="theme-toggle" />,
-}));
+vi.mock('@/pages/CommunityAdminPage', () => adminChunk.promise);
 
-vi.mock('@/pages/CommunityAdminPage', () => ({
-  CommunityAdminPage: () => <div data-testid="community-admin-page" />,
-}));
+const ADMIN_PAGE = { CommunityAdminPage: () => <div data-testid="community-admin-page" /> };
 
-// ─────────────────────────────────────────────────────────────────────────────
+function ready(pathname: string, canAccessAdminPage: boolean) {
+  mockAuth.authStage = AUTH_STAGES.READY;
+  mockAuth.canAccessAdminPage = canAccessAdminPage;
+  mockLocation.pathname = pathname;
+}
 
 describe('App / CommunityShell routing', () => {
   beforeEach(() => {
     mockLocation.pathname = '/';
-    mockAuthState.authStage = 'initializing';
-    mockAuthState.canAccessAdminPage = false;
+    resetMockAuth();
   });
 
-  // ── Auth pipeline not ready ──────────────────────────────────────────────────
-
-  it('shows ApexGateway when auth is not ready', () => {
+  it('renders the auth pipeline with the admin slot and a theme toggle until auth is ready', () => {
     render(<App />);
-    expect(screen.getByTestId('apex-gateway')).toBeInTheDocument();
-  });
 
-  it('shows ThemeToggle alongside ApexGateway when not ready', () => {
-    render(<App />);
-    expect(screen.getByTestId('theme-toggle')).toBeInTheDocument();
-  });
-
-  it('does not show TenantApp when auth is not ready', () => {
-    render(<App />);
+    expect(screen.getByTestId('apex-gateway')).toHaveAttribute('data-admin-slot', 'present');
+    expect(screen.getByRole('button', { name: /toggle theme/i })).toBeInTheDocument();
     expect(screen.queryByTestId('tenant-app')).not.toBeInTheDocument();
   });
 
-  // ── Auth pipeline ready ───────────────────────────────────────────────────────
-
-  it('shows TenantApp when auth stage is ready', () => {
-    mockAuthState.authStage = 'ready';
+  it('shows the loading spinner while the admin chunk loads, then the admin page', async () => {
+    // First render of the lazy page in this file: the chunk is still pending.
+    ready(ROUTE_SITE_ADMIN, true);
     render(<App />);
-    expect(screen.getByTestId('tenant-app')).toBeInTheDocument();
-  });
 
-  it('does not show ApexGateway when auth stage is ready', () => {
-    mockAuthState.authStage = 'ready';
-    render(<App />);
+    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(screen.queryByTestId('community-admin-page')).not.toBeInTheDocument();
+
+    adminChunk.resolve(ADMIN_PAGE);
+
+    expect(await screen.findByTestId('community-admin-page')).toBeInTheDocument();
+    expect(screen.queryByTestId('tenant-app')).not.toBeInTheDocument();
     expect(screen.queryByTestId('apex-gateway')).not.toBeInTheDocument();
   });
 
-  // ── Admin route ───────────────────────────────────────────────────────────────
-  // Before READY the page arrives through the slot the shell hands ApexGateway; at READY
-  // the shell renders the same slot itself (TenantApp has no admin route yet).
-
-  it('shows CommunityAdminPage on /site-admin when canAccessAdminPage is true', async () => {
-    mockLocation.pathname = '/site-admin';
-    mockAuthState.canAccessAdminPage = true;
+  it('renders the admin page on an admin sub-path once ready', async () => {
+    ready(`${ROUTE_SITE_ADMIN}/settings`, true);
     render(<App />);
+
     expect(await screen.findByTestId('community-admin-page')).toBeInTheDocument();
   });
 
-  it('shows CommunityAdminPage on /site-admin/* when canAccessAdminPage is true', async () => {
-    mockLocation.pathname = '/site-admin/settings';
-    mockAuthState.canAccessAdminPage = true;
+  it.each([
+    ['the admin route without access', ROUTE_SITE_ADMIN, false],
+    ['a path that only starts with the admin route', `${ROUTE_SITE_ADMIN}istrator`, true],
+    ['a non-admin route with access', '/dashboard', true],
+    ['the root route', '/', false],
+  ])('renders the tenant app for %s once ready', (_, pathname, canAccessAdminPage) => {
+    ready(pathname, canAccessAdminPage);
     render(<App />);
-    expect(await screen.findByTestId('community-admin-page')).toBeInTheDocument();
-  });
 
-  it('does not show CommunityAdminPage on /site-admin when canAccessAdminPage is false', () => {
-    mockLocation.pathname = '/site-admin';
-    mockAuthState.canAccessAdminPage = false;
-    render(<App />);
-    expect(screen.queryByTestId('community-admin-page')).not.toBeInTheDocument();
-  });
-
-  it('does not show CommunityAdminPage on non-admin routes even with access', () => {
-    mockLocation.pathname = '/dashboard';
-    mockAuthState.canAccessAdminPage = true;
-    mockAuthState.authStage = 'ready';
-    render(<App />);
-    expect(screen.queryByTestId('community-admin-page')).not.toBeInTheDocument();
     expect(screen.getByTestId('tenant-app')).toBeInTheDocument();
-  });
-
-  it('shows CommunityAdminPage regardless of auth stage when on /site-admin with access', async () => {
-    mockLocation.pathname = '/site-admin';
-    mockAuthState.canAccessAdminPage = true;
-    mockAuthState.authStage = 'ready'; // even when ready, admin takes priority
-    render(<App />);
-    expect(await screen.findByTestId('community-admin-page')).toBeInTheDocument();
-    expect(screen.queryByTestId('tenant-app')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('community-admin-page')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('apex-gateway')).not.toBeInTheDocument();
   });
 });
