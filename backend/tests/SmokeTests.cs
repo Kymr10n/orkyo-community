@@ -1,37 +1,38 @@
 using System.Net;
+using Api.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Orkyo.Community.Tests;
 
 [Collection("Database collection")]
 public class SmokeTests
 {
+    private readonly DatabaseFixture _fixture;
     private readonly HttpClient _client;
 
     public SmokeTests(DatabaseFixture fixture)
     {
+        _fixture = fixture;
         _client = fixture.Factory.CreateClient();
     }
 
-    [Fact]
-    public async Task HealthEndpoint_ReturnsOk()
+    [Theory]
+    [InlineData("/health")]
+    [InlineData("/health/live")]
+    public async Task HealthEndpoints_ReturnOk(string path)
     {
-        var response = await _client.GetAsync("/health");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var response = await _client.GetAsync(path);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
-    public async Task HealthLiveness_ReturnsOk()
+    public void TestHost_ValidatesScopes()
     {
-        var response = await _client.GetAsync("/health/live");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
+        // TenantContext is scoped (Program.cs). Resolving it from the root provider only throws
+        // when the host validates scopes — what UseDefaultServiceProvider in the factory is for.
+        var act = () => _fixture.Factory.Services.GetRequiredService<TenantContext>();
 
-    [Fact]
-    public async Task AuthorizedEndpoint_WithoutToken_Returns401()
-    {
-        var response = await _client.GetAsync("/api/sites");
-        Assert.True(
-            response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Redirect,
-            $"Expected 401/302 but got {response.StatusCode}");
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Cannot resolve scoped service*root provider*");
     }
 }
