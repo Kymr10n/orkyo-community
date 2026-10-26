@@ -1,3 +1,6 @@
+using System.Text.Json;
+using Api.Constants;
+using Api.Helpers;
 using Api.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -15,108 +18,53 @@ public class SingleTenantMiddlewareTests
         Status = "active",
     };
 
-    // ── Tenant resolved successfully ──────────────────────────────────────────
-
-    [Fact]
-    public async Task InvokeAsync_WhenTenantResolved_StoresTenantInItems()
+    /// <summary>Runs the middleware with a resolver that yields <paramref name="resolved"/>.</summary>
+    private static async Task<(DefaultHttpContext Context, bool NextCalled)> InvokeAsync(TenantContext? resolved)
     {
+        var nextCalled = false;
         var context = new DefaultHttpContext();
         context.Response.Body = new MemoryStream();
         var middleware = new SingleTenantMiddleware(
-            next: _ => Task.CompletedTask,
-            resolver: new StubTenantResolver(SomeTenant),
+            next: _ => { nextCalled = true; return Task.CompletedTask; },
+            resolver: new StubTenantResolver(resolved),
             logger: NullLogger<SingleTenantMiddleware>.Instance);
 
         await middleware.InvokeAsync(context);
 
-        context.Items["TenantContext"].Should().BeSameAs(SomeTenant);
+        return (context, nextCalled);
     }
 
     [Fact]
-    public async Task InvokeAsync_WhenTenantResolved_StoresOrgContextDerivedFromTenant()
+    public async Task InvokeAsync_WhenTenantResolved_StoresBothContextsAndCallsNext()
     {
-        var context = new DefaultHttpContext();
-        context.Response.Body = new MemoryStream();
-        var middleware = new SingleTenantMiddleware(
-            next: _ => Task.CompletedTask,
-            resolver: new StubTenantResolver(SomeTenant),
-            logger: NullLogger<SingleTenantMiddleware>.Instance);
+        var (context, nextCalled) = await InvokeAsync(SomeTenant);
 
-        await middleware.InvokeAsync(context);
-
+        nextCalled.Should().BeTrue();
+        context.Response.StatusCode.Should().Be(StatusCodes.Status200OK);
+        context.Items[HttpContextItemKeys.TenantContext].Should().BeSameAs(SomeTenant);
         // Foundation endpoints read this via GetOrgContext(HttpContext) for tenant-audit writes
         // (floorplan download, site/settings mutations). Missing it → 500 "Org context not available".
-        var org = context.Items["OrgContext"].Should().BeOfType<OrgContext>().Subject;
+        var org = context.Items[HttpContextItemKeys.OrgContext].Should().BeOfType<OrgContext>().Subject;
         org.OrgId.Should().Be(SomeTenant.TenantId);
         org.OrgSlug.Should().Be(SomeTenant.TenantSlug);
         org.DbConnectionString.Should().Be(SomeTenant.TenantDbConnectionString);
     }
 
     [Fact]
-    public async Task InvokeAsync_WhenTenantResolved_CallsNext()
+    public async Task InvokeAsync_WhenResolverReturnsNull_Writes503ProblemAndStops()
     {
-        var nextCalled = false;
-        var context = new DefaultHttpContext();
-        context.Response.Body = new MemoryStream();
-        var middleware = new SingleTenantMiddleware(
-            next: _ => { nextCalled = true; return Task.CompletedTask; },
-            resolver: new StubTenantResolver(SomeTenant),
-            logger: NullLogger<SingleTenantMiddleware>.Instance);
-
-        await middleware.InvokeAsync(context);
-
-        nextCalled.Should().BeTrue();
-    }
-
-    // ── Tenant resolver returns null ──────────────────────────────────────────
-
-    [Fact]
-    public async Task InvokeAsync_WhenResolverReturnsNull_Returns503()
-    {
-        var context = new DefaultHttpContext();
-        context.Response.Body = new MemoryStream();
-        var middleware = new SingleTenantMiddleware(
-            next: _ => Task.CompletedTask,
-            resolver: new StubTenantResolver(null),
-            logger: NullLogger<SingleTenantMiddleware>.Instance);
-
-        await middleware.InvokeAsync(context);
-
-        context.Response.StatusCode.Should().Be(503);
-    }
-
-    [Fact]
-    public async Task InvokeAsync_WhenResolverReturnsNull_DoesNotCallNext()
-    {
-        var nextCalled = false;
-        var context = new DefaultHttpContext();
-        context.Response.Body = new MemoryStream();
-        var middleware = new SingleTenantMiddleware(
-            next: _ => { nextCalled = true; return Task.CompletedTask; },
-            resolver: new StubTenantResolver(null),
-            logger: NullLogger<SingleTenantMiddleware>.Instance);
-
-        await middleware.InvokeAsync(context);
+        var (context, nextCalled) = await InvokeAsync(null);
 
         nextCalled.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task InvokeAsync_WhenResolverReturnsNull_WritesErrorBody()
-    {
-        var context = new DefaultHttpContext();
-        context.Response.Body = new MemoryStream();
-        var middleware = new SingleTenantMiddleware(
-            next: _ => Task.CompletedTask,
-            resolver: new StubTenantResolver(null),
-            logger: NullLogger<SingleTenantMiddleware>.Instance);
-
-        await middleware.InvokeAsync(context);
+        context.Items.Should().NotContainKey(HttpContextItemKeys.TenantContext);
+        context.Response.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
+        context.Response.ContentType.Should().Be("application/problem+json");
 
         context.Response.Body.Seek(0, SeekOrigin.Begin);
-        using var reader = new StreamReader(context.Response.Body);
-        var body = await reader.ReadToEndAsync();
-        body.Should().Contain("not configured");
+        var problem = await JsonSerializer.DeserializeAsync<OrkyoProblemDetails>(context.Response.Body, JsonSerializerOptions.Web);
+        problem!.Code.Should().Be("community_tenant_unconfigured");
+        problem.Status.Should().Be(StatusCodes.Status503ServiceUnavailable);
+        problem.Detail.Should().Contain("not configured");
     }
 }
 

@@ -34,7 +34,8 @@ public sealed class SingleTenantMiddleware
             _logger.LogError("SingleTenantResolver returned null — community tenant not configured");
             const string code = "community_tenant_unconfigured";
             context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
-            context.Response.ContentType = "application/problem+json";
+            // WriteAsJsonAsync assigns the content type itself (application/json unless told
+            // otherwise), so it has to be passed here rather than set on the response first.
             await context.Response.WriteAsJsonAsync(new OrkyoProblemDetails
             {
                 Type = OrkyoProblemDetails.TypeFor(code),
@@ -42,7 +43,7 @@ public sealed class SingleTenantMiddleware
                 Detail = "Community tenant not configured",
                 Status = StatusCodes.Status503ServiceUnavailable,
                 Code = code,
-            });
+            }, options: null, contentType: "application/problem+json");
             return;
         }
 
