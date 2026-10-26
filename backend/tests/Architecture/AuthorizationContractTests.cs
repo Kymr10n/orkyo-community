@@ -10,6 +10,7 @@ namespace Orkyo.Community.Tests.Architecture;
 /// under SingleTenantMiddleware) keeps every mutating route governed, and it starts failing the
 /// day a Community-only write is added without a convention.
 /// </summary>
+[Trait(TestCategories.Name, TestCategories.Database)]
 [Collection("Database collection")]
 public class AuthorizationContractTests
 {

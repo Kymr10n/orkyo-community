@@ -15,6 +15,7 @@ namespace Orkyo.Community.Tests.Endpoints;
 /// The full gate matrix is covered by foundation's OrkyoMetricsEndpointTests; this file
 /// only proves Community's Program.cs plumbs the config key into the helper.
 /// </summary>
+[Trait(TestCategories.Name, TestCategories.Database)]
 [Collection("Database collection")]
 public class MetricsEndpointTests
 {
