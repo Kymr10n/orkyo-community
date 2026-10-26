@@ -9,6 +9,9 @@ namespace Orkyo.Community.Tests.Middleware;
 
 public class CommunityJitProvisioningMiddlewareTests
 {
+    private const string Subject = "kc-sub-001";
+    private const string Email = "user@example.com";
+
     public CommunityJitProvisioningMiddlewareTests()
     {
         // The known-provisioned cache is static; clear it so tests don't leak
@@ -18,133 +21,120 @@ public class CommunityJitProvisioningMiddlewareTests
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private static ClaimsPrincipal AuthenticatedPrincipal(string subject = "kc-sub-001",
-        string? email = "user@example.com")
+    /// <summary>A principal carrying an email and, unless null, a Keycloak subject.</summary>
+    private static ClaimsPrincipal PrincipalWithSubject(string? sub, bool authenticated = true)
     {
-        var claims = new List<Claim>
+        var claims = new List<Claim> { new(KeycloakClaims.Email, Email) };
+        if (sub is not null)
         {
-            new(KeycloakClaims.Subject, subject),
-            new(ClaimTypes.NameIdentifier, subject),
-        };
-        if (email != null) claims.Add(new Claim(KeycloakClaims.Email, email));
+            claims.Add(new Claim(KeycloakClaims.Subject, sub));
+            claims.Add(new Claim(ClaimTypes.NameIdentifier, sub));
+        }
 
-        var identity = new ClaimsIdentity(claims, authenticationType: "TestScheme");
-        return new ClaimsPrincipal(identity);
+        // No authentication type → IsAuthenticated == false, claims or not.
+        return new ClaimsPrincipal(authenticated
+            ? new ClaimsIdentity(claims, authenticationType: TestConstants.AuthScheme)
+            : new ClaimsIdentity(claims));
     }
 
-    private static DefaultHttpContext MakeContext(ClaimsPrincipal? principal = null)
+    private static PrincipalContext ExistingUser(string sub = Subject) => new()
     {
+        UserId = Guid.NewGuid(),
+        Email = Email,
+        DisplayName = "User",
+        AuthProvider = AuthProvider.Keycloak,
+        ExternalSubject = sub,
+    };
+
+    private static CommunityJitProvisioningMiddleware Sut(IIdentityLinkService linkSvc)
+        => new(linkSvc, NullLogger<CommunityJitProvisioningMiddleware>.Instance);
+
+    /// <summary>Runs the middleware for <paramref name="principal"/> (null = anonymous) and reports whether next ran.</summary>
+    private static async Task<bool> InvokeAsync(CommunityJitProvisioningMiddleware sut, ClaimsPrincipal? principal)
+    {
+        var nextCalled = false;
         var ctx = new DefaultHttpContext();
-        ctx.Response.Body = new MemoryStream();
-        if (principal != null) ctx.User = principal;
-        return ctx;
+        if (principal is not null) ctx.User = principal;
+
+        await sut.InvokeAsync(ctx, _ => { nextCalled = true; return Task.CompletedTask; });
+
+        return nextCalled;
     }
 
-    // ── Unauthenticated request ───────────────────────────────────────────────
+    // ── Requests that never reach the database ───────────────────────────────
 
-    [Fact]
-    public async Task InvokeAsync_UnauthenticatedRequest_SkipsProvisioningAndCallsNext()
+    [Theory]
+    [InlineData(false)] // anonymous
+    [InlineData(true)]  // a subject claim on an identity that is not authenticated
+    public async Task InvokeAsync_NotAuthenticated_SkipsProvisioningAndCallsNext(bool withSubjectClaim)
     {
-        var nextCalled = false;
         var linkSvc = new SpyIdentityLinkService();
-        var sut = new CommunityJitProvisioningMiddleware(
-            linkSvc, NullLogger<CommunityJitProvisioningMiddleware>.Instance);
+        var principal = withSubjectClaim ? PrincipalWithSubject(Subject, authenticated: false) : null;
 
-        await sut.InvokeAsync(MakeContext(), _ => { nextCalled = true; return Task.CompletedTask; });
+        var nextCalled = await InvokeAsync(Sut(linkSvc), principal);
 
         nextCalled.Should().BeTrue();
         linkSvc.FindCallCount.Should().Be(0);
         linkSvc.LinkCallCount.Should().Be(0);
     }
 
-    // ── Authenticated, user already in DB ────────────────────────────────────
-
-    [Fact]
-    public async Task InvokeAsync_AuthenticatedUserAlreadyExists_DoesNotProvision()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task InvokeAsync_NoOrEmptySubjectClaim_SkipsProvisioningAndCallsNext(string? sub)
     {
-        var linkSvc = new SpyIdentityLinkService(existingPrincipal: new PrincipalContext
-        {
-            UserId = Guid.NewGuid(),
-            Email = "user@example.com",
-            DisplayName = "User",
-            AuthProvider = AuthProvider.Keycloak,
-            ExternalSubject = "kc-sub-001",
-        });
-        var sut = new CommunityJitProvisioningMiddleware(
-            linkSvc, NullLogger<CommunityJitProvisioningMiddleware>.Instance);
-
-        await sut.InvokeAsync(MakeContext(AuthenticatedPrincipal()), _ => Task.CompletedTask);
-
-        linkSvc.LinkCallCount.Should().Be(0);
-    }
-
-    [Fact]
-    public async Task InvokeAsync_AuthenticatedUserAlreadyExists_CallsNext()
-    {
-        var nextCalled = false;
-        var linkSvc = new SpyIdentityLinkService(existingPrincipal: new PrincipalContext
-        {
-            UserId = Guid.NewGuid(),
-            Email = "user@example.com",
-            DisplayName = "User",
-            AuthProvider = AuthProvider.Keycloak,
-            ExternalSubject = "kc-sub-001",
-        });
-        var sut = new CommunityJitProvisioningMiddleware(
-            linkSvc, NullLogger<CommunityJitProvisioningMiddleware>.Instance);
-
-        await sut.InvokeAsync(MakeContext(AuthenticatedPrincipal()), _ => { nextCalled = true; return Task.CompletedTask; });
-
-        nextCalled.Should().BeTrue();
-    }
-
-    // ── Authenticated, user NOT in DB → JIT provision ────────────────────────
-
-    [Fact]
-    public async Task InvokeAsync_AuthenticatedUserNotInDb_CallsLinkIdentityAsync()
-    {
-        var linkSvc = new SpyIdentityLinkService(existingPrincipal: null);
-        var sut = new CommunityJitProvisioningMiddleware(
-            linkSvc, NullLogger<CommunityJitProvisioningMiddleware>.Instance);
-
-        await sut.InvokeAsync(MakeContext(AuthenticatedPrincipal()), _ => Task.CompletedTask);
-
-        linkSvc.LinkCallCount.Should().Be(1);
-    }
-
-    [Fact]
-    public async Task InvokeAsync_AfterProvisioning_StillCallsNext()
-    {
-        var nextCalled = false;
-        var linkSvc = new SpyIdentityLinkService(existingPrincipal: null);
-        var sut = new CommunityJitProvisioningMiddleware(
-            linkSvc, NullLogger<CommunityJitProvisioningMiddleware>.Instance);
-
-        await sut.InvokeAsync(
-            MakeContext(AuthenticatedPrincipal()),
-            _ => { nextCalled = true; return Task.CompletedTask; });
-
-        nextCalled.Should().BeTrue();
-    }
-
-    // ── Authenticated but token has no Subject (invalid token) ───────────────
-
-    [Fact]
-    public async Task InvokeAsync_AuthenticatedButNoSubjectClaim_SkipsProvisioning()
-    {
-        var identity = new ClaimsIdentity(
-            new[] { new Claim(KeycloakClaims.Email, "x@x.com") },
-            authenticationType: "TestScheme");
-        var principal = new ClaimsPrincipal(identity);
-
         var linkSvc = new SpyIdentityLinkService();
-        var sut = new CommunityJitProvisioningMiddleware(
-            linkSvc, NullLogger<CommunityJitProvisioningMiddleware>.Instance);
 
-        await sut.InvokeAsync(MakeContext(principal), _ => Task.CompletedTask);
+        var nextCalled = await InvokeAsync(Sut(linkSvc), PrincipalWithSubject(sub));
 
+        nextCalled.Should().BeTrue();
         linkSvc.FindCallCount.Should().Be(0);
         linkSvc.LinkCallCount.Should().Be(0);
+    }
+
+    // ── Authenticated requests ───────────────────────────────────────────────
+
+    [Fact]
+    public async Task InvokeAsync_UserAlreadyExists_DoesNotLink_AndCallsNext()
+    {
+        var linkSvc = new SpyIdentityLinkService(existingPrincipal: ExistingUser());
+
+        var nextCalled = await InvokeAsync(Sut(linkSvc), PrincipalWithSubject(Subject));
+
+        nextCalled.Should().BeTrue();
+        linkSvc.LastFind.Should().Be((AuthProvider.Keycloak, Subject));
+        linkSvc.LinkCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_UserNotInDb_LinksTheTokenIdentity_AndCallsNext()
+    {
+        var linkSvc = new SpyIdentityLinkService(existingPrincipal: null);
+
+        var nextCalled = await InvokeAsync(Sut(linkSvc), PrincipalWithSubject(Subject));
+
+        nextCalled.Should().BeTrue();
+        linkSvc.LastFind.Should().Be((AuthProvider.Keycloak, Subject));
+        var token = linkSvc.LastLinkedToken;
+        token.Should().NotBeNull();
+        token!.Provider.Should().Be(AuthProvider.Keycloak);
+        token.Subject.Should().Be(Subject);
+        token.Email.Should().Be(Email);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenTheLookupThrows_PropagatesAndDoesNotCallNext()
+    {
+        var linkSvc = new SpyIdentityLinkService(findThrows: new InvalidOperationException("db down"));
+        var sut = Sut(linkSvc);
+
+        var act = () => InvokeAsync(sut, PrincipalWithSubject(Subject));
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("db down");
+        linkSvc.LinkCallCount.Should().Be(0);
+        // Nothing was cached: the next request looks the subject up again.
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        linkSvc.FindCallCount.Should().Be(2);
     }
 
     // ── Known-provisioned cache (positive existence only) ────────────────────
@@ -152,19 +142,11 @@ public class CommunityJitProvisioningMiddlewareTests
     [Fact]
     public async Task InvokeAsync_SubjectKnownToExist_SecondRequestSkipsDbLookup()
     {
-        var linkSvc = new SpyIdentityLinkService(existingPrincipal: new PrincipalContext
-        {
-            UserId = Guid.NewGuid(),
-            Email = "user@example.com",
-            DisplayName = "User",
-            AuthProvider = AuthProvider.Keycloak,
-            ExternalSubject = "kc-sub-001",
-        });
-        var sut = new CommunityJitProvisioningMiddleware(
-            linkSvc, NullLogger<CommunityJitProvisioningMiddleware>.Instance);
+        var linkSvc = new SpyIdentityLinkService(existingPrincipal: ExistingUser());
+        var sut = Sut(linkSvc);
 
-        await sut.InvokeAsync(MakeContext(AuthenticatedPrincipal()), _ => Task.CompletedTask);
-        await sut.InvokeAsync(MakeContext(AuthenticatedPrincipal()), _ => Task.CompletedTask);
+        await InvokeAsync(sut, PrincipalWithSubject(Subject));
+        await InvokeAsync(sut, PrincipalWithSubject(Subject));
 
         linkSvc.FindCallCount.Should().Be(1);
         linkSvc.LinkCallCount.Should().Be(0);
@@ -174,11 +156,10 @@ public class CommunityJitProvisioningMiddlewareTests
     public async Task InvokeAsync_AfterSuccessfulProvisioning_SecondRequestSkipsDbLookup()
     {
         var linkSvc = new SpyIdentityLinkService(existingPrincipal: null);
-        var sut = new CommunityJitProvisioningMiddleware(
-            linkSvc, NullLogger<CommunityJitProvisioningMiddleware>.Instance);
+        var sut = Sut(linkSvc);
 
-        await sut.InvokeAsync(MakeContext(AuthenticatedPrincipal()), _ => Task.CompletedTask);
-        await sut.InvokeAsync(MakeContext(AuthenticatedPrincipal()), _ => Task.CompletedTask);
+        await InvokeAsync(sut, PrincipalWithSubject(Subject));
+        await InvokeAsync(sut, PrincipalWithSubject(Subject));
 
         linkSvc.FindCallCount.Should().Be(1);
         linkSvc.LinkCallCount.Should().Be(1);
@@ -188,11 +169,10 @@ public class CommunityJitProvisioningMiddlewareTests
     public async Task InvokeAsync_FailedProvisioning_IsNotCached_RetriesNextRequest()
     {
         var linkSvc = new SpyIdentityLinkService(existingPrincipal: null, linkSucceeds: false);
-        var sut = new CommunityJitProvisioningMiddleware(
-            linkSvc, NullLogger<CommunityJitProvisioningMiddleware>.Instance);
+        var sut = Sut(linkSvc);
 
-        await sut.InvokeAsync(MakeContext(AuthenticatedPrincipal()), _ => Task.CompletedTask);
-        await sut.InvokeAsync(MakeContext(AuthenticatedPrincipal()), _ => Task.CompletedTask);
+        await InvokeAsync(sut, PrincipalWithSubject(Subject));
+        await InvokeAsync(sut, PrincipalWithSubject(Subject));
 
         linkSvc.FindCallCount.Should().Be(2);
         linkSvc.LinkCallCount.Should().Be(2);
@@ -201,19 +181,11 @@ public class CommunityJitProvisioningMiddlewareTests
     [Fact]
     public async Task InvokeAsync_CacheIsPerSubject_DifferentSubjectStillLookedUp()
     {
-        var linkSvc = new SpyIdentityLinkService(existingPrincipal: new PrincipalContext
-        {
-            UserId = Guid.NewGuid(),
-            Email = "user@example.com",
-            DisplayName = "User",
-            AuthProvider = AuthProvider.Keycloak,
-            ExternalSubject = "kc-sub-001",
-        });
-        var sut = new CommunityJitProvisioningMiddleware(
-            linkSvc, NullLogger<CommunityJitProvisioningMiddleware>.Instance);
+        var linkSvc = new SpyIdentityLinkService(existingPrincipal: ExistingUser());
+        var sut = Sut(linkSvc);
 
-        await sut.InvokeAsync(MakeContext(AuthenticatedPrincipal("kc-sub-001")), _ => Task.CompletedTask);
-        await sut.InvokeAsync(MakeContext(AuthenticatedPrincipal("kc-sub-002")), _ => Task.CompletedTask);
+        await InvokeAsync(sut, PrincipalWithSubject("kc-sub-001"));
+        await InvokeAsync(sut, PrincipalWithSubject("kc-sub-002"));
 
         linkSvc.FindCallCount.Should().Be(2);
     }
@@ -225,22 +197,27 @@ public class CommunityJitProvisioningMiddlewareTests
 /// </summary>
 file sealed class SpyIdentityLinkService(
     PrincipalContext? existingPrincipal = null,
-    bool linkSucceeds = true) : IIdentityLinkService
+    bool linkSucceeds = true,
+    Exception? findThrows = null) : IIdentityLinkService
 {
     public int FindCallCount { get; private set; }
     public int LinkCallCount { get; private set; }
+    public (AuthProvider Provider, string Subject)? LastFind { get; private set; }
+    public ExternalIdentityToken? LastLinkedToken { get; private set; }
 
     public Task<PrincipalContext?> FindByExternalIdentityAsync(
         AuthProvider provider, string externalSubject, CancellationToken ct = default)
     {
         FindCallCount++;
-        return Task.FromResult(existingPrincipal);
+        LastFind = (provider, externalSubject);
+        return findThrows is null ? Task.FromResult(existingPrincipal) : Task.FromException<PrincipalContext?>(findThrows);
     }
 
     public Task<IdentityLinkResult> LinkIdentityAsync(
         ExternalIdentityToken token, CancellationToken ct = default)
     {
         LinkCallCount++;
+        LastLinkedToken = token;
         return Task.FromResult(new IdentityLinkResult
         {
             Success = linkSucceeds,
