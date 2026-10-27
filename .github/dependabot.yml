@@ -79,9 +79,6 @@ updates:
       time: "03:00"
     cooldown:
       default-days: 3
-      semver-major-days: 7
-      semver-minor-days: 3
-      semver-patch-days: 3
     # Four directories; a digest bump is one PR across all of them, a major one per image.
     open-pull-requests-limit: 10
     groups:
@@ -113,9 +110,6 @@ updates:
       time: "04:00"
     cooldown:
       default-days: 3
-      semver-major-days: 7
-      semver-minor-days: 3
-      semver-patch-days: 3
     open-pull-requests-limit: 5
     groups:
       compose-security:
@@ -218,9 +212,6 @@ updates:
       time: "09:00"
     cooldown:
       default-days: 3
-      semver-major-days: 7
-      semver-minor-days: 3
-      semver-patch-days: 3
     open-pull-requests-limit: 5
     groups:
       actions-security:
