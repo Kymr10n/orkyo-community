@@ -138,7 +138,7 @@ jobs:
       contents: read
       security-events: write
       pull-requests: read  # ceiling: reusable-audit-secrets' job requests it (gitleaks PR scan)
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-secrets.yml@705f5fc9cf24825e010a5971348011fd1f9d18f7
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-secrets.yml@14132aabce791eb332d17878c46d47c47d05e5b8
     with:
       migration-lint-path: backend/migrations/sql
       run-iac-scan: true
@@ -150,7 +150,7 @@ jobs:
     permissions:
       contents: read
       packages: read
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-nuget.yml@705f5fc9cf24825e010a5971348011fd1f9d18f7
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-nuget.yml@14132aabce791eb332d17878c46d47c47d05e5b8
     with:
       solution-path: Orkyo.Community.slnx
       with-private-registry: true
@@ -161,7 +161,7 @@ jobs:
     if: needs.nightly-change-check.outputs.skip == 'false'
     permissions:
       contents: read
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-npm.yml@705f5fc9cf24825e010a5971348011fd1f9d18f7
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-audit-npm.yml@14132aabce791eb332d17878c46d47c47d05e5b8
     with:
       with-private-registry: true
       # DELIBERATE: license scan ON — Community is distributed (AGPL self-host
@@ -184,7 +184,7 @@ jobs:
       contents: read
       packages: write
       pull-requests: read
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-product-ci.yml@705f5fc9cf24825e010a5971348011fd1f9d18f7
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-product-ci.yml@14132aabce791eb332d17878c46d47c47d05e5b8
     with:
       product: community
       solution-path: Orkyo.Community.slnx
@@ -241,7 +241,7 @@ jobs:
       (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     permissions:
       contents: read
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-container-scan.yml@705f5fc9cf24825e010a5971348011fd1f9d18f7
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-container-scan.yml@14132aabce791eb332d17878c46d47c47d05e5b8
     with:
       image-name-prefix: orkyo-community
       services: '["api","worker","migrator","frontend","keycloak"]'
@@ -279,7 +279,7 @@ jobs:
           echo "MINOR=$MINOR" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GHCR
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -373,7 +373,7 @@ jobs:
             || (echo "::error::.env.template was not stamped with ${{ steps.version.outputs.VERSION }}" && exit 1)
 
       - name: Log in to GHCR
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -611,7 +611,7 @@ jobs:
       packages: write
     steps:
       - name: Log in to GHCR
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
