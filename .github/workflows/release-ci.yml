@@ -40,7 +40,7 @@ concurrency:
     release-ci-${{ github.event_name == 'repository_dispatch'
       && format('bump-{0}', github.event.client_payload.channel)
       || github.ref }}
-  cancel-in-progress: ${{ github.event_name != 'repository_dispatch' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions: {}
 
@@ -700,7 +700,7 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-auto-bump.yml@4a6972d13d1e0e12ea55ea0a08eb585af5f65d35
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-auto-bump.yml@bf227b049cfb0093dd4f4da955f3027325534175
     secrets: inherit
 
   # ─────────────────────────────────────────────
