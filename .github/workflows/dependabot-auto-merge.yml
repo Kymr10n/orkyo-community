@@ -25,5 +25,5 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-dependabot-auto-merge.yml@705f5fc9cf24825e010a5971348011fd1f9d18f7
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-dependabot-auto-merge.yml@bf227b049cfb0093dd4f4da955f3027325534175
     secrets: inherit
