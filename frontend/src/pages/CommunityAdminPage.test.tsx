@@ -1,178 +1,141 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
-import { CommunityAdminPage } from './CommunityAdminPage';
+import { axe } from 'jest-axe';
+import { mockAuth, resetMockAuth } from '@/test/mocks/foundation-auth';
+import { tabFailure } from '@/test/mocks/admin-tabs';
+import { renderAdminPage, openUserMenu } from '@/test/render';
 
-// ── Mutable auth state (per-test override) ────────────────────────────────────
-const mockAuth = {
-  appUser: { displayName: 'Alex Admin', email: 'alex@example.com' } as
-    | { displayName: string; email: string }
-    | null,
-  logout: vi.fn(),
-};
-
-const mockNavigate = vi.fn();
+const mockNavigate = vi.hoisted(() => vi.fn());
 
 vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<object>();
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-vi.mock('@kymr10n/foundation/src/contexts/AuthContext', () => ({
-  useAuth: () => mockAuth,
-}));
+vi.mock('@kymr10n/foundation/src/contexts/AuthContext', () => import('@/test/mocks/foundation-auth'));
 
-vi.mock('@kymr10n/foundation/src/components/layout/ThemeToggle', () => ({
-  ThemeToggle: () => <div data-testid="theme-toggle" />,
-}));
-
-// Mock tabs that have their own API calls / complex state
-vi.mock('@kymr10n/foundation/src/components/admin/SettingsTab', () => ({
-  SettingsTab: () => <div data-testid="settings-tab">Settings</div>,
-}));
-
-vi.mock('@kymr10n/foundation/src/components/admin/DiagnosticsTab', () => ({
-  DiagnosticsTab: () => <div data-testid="diagnostics-tab">Diagnostics</div>,
-}));
-
-vi.mock('@kymr10n/foundation/src/components/admin/AnnouncementsTab', () => ({
-  AnnouncementsTab: () => <div data-testid="announcements-tab">Announcements</div>,
-}));
-
-vi.mock('@kymr10n/foundation/src/components/admin/AuditLogTab', () => ({
-  AuditLogTab: () => <div data-testid="audit-log-tab">Audit Log</div>,
-}));
-
-vi.mock('@kymr10n/foundation/src/components/admin/FeedbackTab', () => ({
-  FeedbackTab: () => <div data-testid="feedback-tab">Feedback</div>,
-}));
-
-// Test CommunityConfigurationTab in isolation; mock here to keep test boundaries clean
-vi.mock('@/components/admin/CommunityConfigurationTab', () => ({
-  CommunityConfigurationTab: () => <div data-testid="configuration-tab">Configuration</div>,
-}));
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-/** Opens the user menu popover. The trigger is the only icon-only (no text) button. */
-async function openUserMenu() {
-  const allButtons = screen.getAllByRole('button');
-  const userMenuButton = allButtons.find((btn) => !btn.textContent?.trim());
-  if (!userMenuButton) throw new Error('User menu button not found');
-  await userEvent.click(userMenuButton);
-}
-
-/** Render inside a router so the page's useSearchParams (?tab=) has context. */
-function renderPage(path = '/') {
-  return render(
-    <MemoryRouter initialEntries={[path]}>
-      <CommunityAdminPage />
-    </MemoryRouter>,
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
+// The foundation tabs fetch on mount; the stubs only say which tab is shown. The
+// Configuration tab is Community's own static card and renders for real.
+vi.mock('@kymr10n/foundation/src/components/admin/SettingsTab', () => import('@/test/mocks/admin-tabs'));
+vi.mock('@kymr10n/foundation/src/components/admin/DiagnosticsTab', () => import('@/test/mocks/admin-tabs'));
+vi.mock('@kymr10n/foundation/src/components/admin/AnnouncementsTab', () => import('@/test/mocks/admin-tabs'));
+vi.mock('@kymr10n/foundation/src/components/admin/AuditLogTab', () => import('@/test/mocks/admin-tabs'));
+vi.mock('@kymr10n/foundation/src/components/admin/FeedbackTab', () => import('@/test/mocks/admin-tabs'));
 
 describe('CommunityAdminPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockAuth.appUser = { displayName: 'Alex Admin', email: 'alex@example.com' };
-    mockAuth.logout = vi.fn();
+    resetMockAuth();
   });
 
-  // ── Header ──────────────────────────────────────────────────────────────────
+  afterEach(() => {
+    tabFailure.settings = null;
+  });
 
-  it('renders the Orkyo brand in the header', () => {
-    renderPage();
+  it('renders the shell for the signed-in admin with the Configuration tab open', async () => {
+    renderAdminPage();
+
     expect(screen.getByText('Orkyo')).toBeInTheDocument();
-  });
-
-  it('renders the Administration label', () => {
-    renderPage();
     expect(screen.getByText('Administration')).toBeInTheDocument();
-  });
+    expect(screen.getByRole('tabpanel')).toContainElement(
+      screen.getByRole('heading', { name: 'Configuration' }),
+    );
 
-  it('navigates to / when Open Application is clicked', async () => {
-    renderPage();
-    await userEvent.click(screen.getByRole('button', { name: /open application/i }));
-    expect(mockNavigate).toHaveBeenCalledWith('/');
-  });
-
-  // ── User menu ───────────────────────────────────────────────────────────────
-
-  it('shows user display name in the user menu', async () => {
-    renderPage();
     await openUserMenu();
     expect(screen.getByText('Alex Admin')).toBeInTheDocument();
-  });
-
-  it('shows user email in the user menu', async () => {
-    renderPage();
-    await openUserMenu();
     expect(screen.getByText('alex@example.com')).toBeInTheDocument();
   });
 
-  it('falls back to "Admin" when display name is empty', async () => {
-    mockAuth.appUser = { displayName: '', email: 'admin@example.com' };
-    renderPage();
+  it.each([
+    ['Settings', 'settings-tab'],
+    ['Diagnostics', 'diagnostics-tab'],
+    ['Announcements', 'announcements-tab'],
+    ['Audit Log', 'audit-log-tab'],
+    ['Feedback', 'feedback-tab'],
+  ])('switches to the %s tab', async (name, testId) => {
+    renderAdminPage();
+
+    await userEvent.click(screen.getByRole('tab', { name }));
+
+    expect(screen.getByTestId(testId)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Configuration' })).not.toBeInTheDocument();
+  });
+
+  it('selects the tab from the ?tab= query param (deep-link)', () => {
+    renderAdminPage('/?tab=diagnostics');
+
+    expect(screen.getByTestId('diagnostics-tab')).toBeInTheDocument();
+  });
+
+  it('shows no tab body for an unknown ?tab= value', () => {
+    // useTabParam takes the URL as the source of truth and does not validate it; a stale or
+    // mistyped deep link leaves the tab strip usable and the body empty.
+    renderAdminPage('/?tab=bogus');
+
+    expect(screen.getAllByRole('tab')).toHaveLength(6);
+    expect(screen.queryByRole('tabpanel')).not.toBeInTheDocument();
+  });
+
+  it('navigates to / when Open Application is clicked', async () => {
+    renderAdminPage();
+
+    await userEvent.click(screen.getByRole('button', { name: /open application/i }));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/');
+  });
+
+  it.each([
+    ['no app user', null],
+    ['an empty display name', { displayName: '', email: 'admin@example.com' }],
+  ])('falls back to "Admin" in the user menu with %s', async (_, appUser) => {
+    mockAuth.appUser = appUser;
+    renderAdminPage();
+
     await openUserMenu();
+
     expect(screen.getByText('Admin')).toBeInTheDocument();
+    if (appUser === null) expect(screen.queryByText(/@/)).not.toBeInTheDocument();
   });
 
   it('calls logout when Sign out is clicked', async () => {
-    renderPage();
+    renderAdminPage();
     await openUserMenu();
+
     await userEvent.click(screen.getByText('Sign out'));
+
     expect(mockAuth.logout).toHaveBeenCalledOnce();
   });
 
   it('navigates to /account when Manage Account is clicked', async () => {
-    renderPage();
+    renderAdminPage();
     await openUserMenu();
+
     await userEvent.click(screen.getByText('Manage Account'));
+
     expect(mockNavigate).toHaveBeenCalledWith('/account');
   });
 
-  // ── Tabs ────────────────────────────────────────────────────────────────────
+  it('contains a tab that throws to its own error boundary and keeps the header', async () => {
+    tabFailure.settings = new Error('settings exploded');
+    // React reports the caught render error on console.error; the boundary handles it.
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderAdminPage();
 
-  it('shows the Configuration tab by default', () => {
-    renderPage();
-    expect(screen.getByTestId('configuration-tab')).toBeInTheDocument();
-  });
-
-  it('switches to Settings tab', async () => {
-    renderPage();
     await userEvent.click(screen.getByRole('tab', { name: 'Settings' }));
-    expect(screen.getByTestId('settings-tab')).toBeInTheDocument();
+
+    expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+    expect(screen.getByText(/The Settings view\s+failed to render/)).toBeInTheDocument();
+    expect(screen.getByText('settings exploded')).toBeInTheDocument();
+    expect(screen.getByText('Orkyo')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Settings' })).toBeInTheDocument();
   });
 
-  it('switches to Diagnostics tab', async () => {
-    renderPage();
-    await userEvent.click(screen.getByRole('tab', { name: 'Diagnostics' }));
-    expect(screen.getByTestId('diagnostics-tab')).toBeInTheDocument();
-  });
+  it('has no detectable a11y violations with the default tab, and with the user menu open', async () => {
+    const { container } = renderAdminPage();
+    expect(await axe(container)).toHaveNoViolations();
 
-  it('switches to Announcements tab', async () => {
-    renderPage();
-    await userEvent.click(screen.getByRole('tab', { name: 'Announcements' }));
-    expect(screen.getByTestId('announcements-tab')).toBeInTheDocument();
-  });
-
-  it('switches to Audit Log tab', async () => {
-    renderPage();
-    await userEvent.click(screen.getByRole('tab', { name: 'Audit Log' }));
-    expect(screen.getByTestId('audit-log-tab')).toBeInTheDocument();
-  });
-
-  it('switches to Feedback tab', async () => {
-    renderPage();
-    await userEvent.click(screen.getByRole('tab', { name: 'Feedback' }));
-    expect(screen.getByTestId('feedback-tab')).toBeInTheDocument();
-  });
-
-  it('selects the tab from the ?tab= query param (deep-link)', () => {
-    renderPage('/?tab=diagnostics');
-    expect(screen.getByTestId('diagnostics-tab')).toBeInTheDocument();
+    await openUserMenu();
+    expect(await axe(container)).toHaveNoViolations();
   });
 });
