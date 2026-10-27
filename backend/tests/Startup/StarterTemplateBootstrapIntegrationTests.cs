@@ -9,6 +9,7 @@ namespace Orkyo.Community.Tests.Startup;
 /// the office preset's rows into the shared test database; no other Community test counts
 /// resources, and the rows are the same on every run (foundation adopts them by code).
 /// </summary>
+[Trait(TestCategories.Name, TestCategories.Database)]
 [Collection("Database collection")]
 public class StarterTemplateBootstrapIntegrationTests
 {

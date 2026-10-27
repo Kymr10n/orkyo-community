@@ -7,6 +7,7 @@ namespace Orkyo.Community.Tests.Endpoints;
 /// <summary>
 /// Integration tests for <see cref="Orkyo.Community.Api.Endpoints.CommunityTenantEndpoints"/>.
 /// </summary>
+[Trait(TestCategories.Name, TestCategories.Database)]
 [Collection("Database collection")]
 public class CommunityTenantEndpointsTests
 {

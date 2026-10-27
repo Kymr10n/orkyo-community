@@ -10,6 +10,7 @@ namespace Orkyo.Community.Tests.Migrations;
 /// account is the only pre-created user, and the API rejects identities nobody invited.
 /// Each fact failed on main before migration 3030.
 /// </summary>
+[Trait(TestCategories.Name, TestCategories.Database)]
 [Collection("Database collection")]
 public sealed class InvitationOnlyTests
 {

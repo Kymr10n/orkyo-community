@@ -16,6 +16,7 @@ namespace Orkyo.Community.Tests;
 /// Registration of the full foundation policy set is covered by the foundation
 /// RateLimitingServiceExtensionsTests; this test proves Community's call is wired and live.
 /// </summary>
+[Trait(TestCategories.Name, TestCategories.Database)]
 [Collection("Database collection")]
 public class RateLimitWiringTests
 {

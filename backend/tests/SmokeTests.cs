@@ -2,6 +2,7 @@ using System.Net;
 
 namespace Orkyo.Community.Tests;
 
+[Trait(TestCategories.Name, TestCategories.Database)]
 [Collection("Database collection")]
 public class SmokeTests
 {

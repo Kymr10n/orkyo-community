@@ -25,6 +25,7 @@ namespace Orkyo.Community.Tests.Architecture;
 /// The two deliberately differ where the editions differ (route inventory),
 /// so they are NOT G4-manifest-synced — port structural improvements both ways.
 /// </summary>
+[Trait(TestCategories.Name, TestCategories.Database)]
 [Collection("Database collection")]
 public class RouteInventoryTests
 {
