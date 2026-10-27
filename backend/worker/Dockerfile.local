@@ -22,6 +22,7 @@ COPY orkyo-foundation/backend/migrations-foundation/Orkyo.Foundation.Migrations.
 COPY orkyo-foundation/backend/migrator-runtime/Orkyo.Migrator.csproj  orkyo-foundation/backend/migrator-runtime/
 COPY orkyo-foundation/backend/shared/Orkyo.Shared.csproj  orkyo-foundation/backend/shared/
 COPY orkyo-foundation/backend/src/Orkyo.Foundation.Web.csproj  orkyo-foundation/backend/src/
+COPY orkyo-foundation/backend/hosting/Orkyo.Foundation.Hosting.csproj  orkyo-foundation/backend/hosting/
 
 RUN dotnet restore orkyo-community/backend/worker/Orkyo.Community.Worker.csproj
 
@@ -32,6 +33,7 @@ COPY orkyo-foundation/backend/src                     orkyo-foundation/backend/s
 COPY orkyo-foundation/backend/migration-abstractions  orkyo-foundation/backend/migration-abstractions/
 COPY orkyo-foundation/backend/migrator-runtime        orkyo-foundation/backend/migrator-runtime/
 COPY orkyo-foundation/backend/migrations-foundation   orkyo-foundation/backend/migrations-foundation/
+COPY orkyo-foundation/backend/hosting                 orkyo-foundation/backend/hosting/
 COPY orkyo-community/backend/migrations  orkyo-community/backend/migrations/
 COPY orkyo-community/backend/src         orkyo-community/backend/src/
 COPY orkyo-community/backend/worker      orkyo-community/backend/worker/
