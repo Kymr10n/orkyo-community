@@ -31,6 +31,9 @@ public class StarterTemplateBootstrapTests
 
     private static readonly SingleTenantOptions Tenant = new();
 
+    // Exactly the keys StarterTemplateCatalog.IsPresetTemplate accepts, in catalog order.
+    private const string AcceptedKeys = "camping-site, construction-site, manufacturing, office";
+
     private static StarterTemplateBootstrap Create(string? value, RecordingStarterTemplates service)
     {
         var configuration = new ConfigurationBuilder()
@@ -49,7 +52,7 @@ public class StarterTemplateBootstrapTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    [InlineData("empty")]
+    [InlineData(StarterTemplateCatalog.Empty)]
     public async Task UnsetOrEmpty_AppliesNothing(string? value)
     {
         // Empty counts as unset: the deploy pipeline writes KEY= for every unset key.
@@ -60,32 +63,39 @@ public class StarterTemplateBootstrapTests
         service.Calls.Should().BeEmpty();
     }
 
-    [Fact]
-    public async Task AKnownKey_AppliesItToTheSingleTenant_Once()
+    [Theory]
+    [InlineData(StarterTemplateCatalog.Manufacturing)]
+    [InlineData(StarterTemplateCatalog.Office)]
+    public async Task AShippedPresetKey_AppliesItToTheSingleTenant_Once(string key)
     {
         var service = new RecordingStarterTemplates();
 
-        await Create(StarterTemplateCatalog.Manufacturing, service).StartAsync(CancellationToken.None);
+        await Create(key, service).StartAsync(CancellationToken.None);
 
         service.Calls.Should().ContainSingle()
-            .Which.Should().Be((Tenant.TenantId, Tenant.TenantSlug, Guid.Empty, StarterTemplateCatalog.Manufacturing));
+            .Which.Should().Be((Tenant.TenantId, Tenant.TenantSlug, Guid.Empty, key));
     }
 
-    [Fact]
-    public async Task AnUnknownKey_RefusesToStart()
+    [Theory]
+    [InlineData("manufacutring")]            // a typo
+    [InlineData("Office")]                   // keys are case-sensitive
+    [InlineData(" office")]                  // and not trimmed
+    [InlineData("   ")]                      // whitespace is not "unset"
+    [InlineData(StarterTemplateCatalog.Demo)] // foundation's demo template is not a preset
+    public async Task AKeyTheGateRejects_RefusesToStart(string value)
     {
         // A typo silently ignored is an operator who expected data and got an empty install.
         var service = new RecordingStarterTemplates();
 
-        var act = () => Create("manufacutring", service).StartAsync(CancellationToken.None);
+        var act = () => Create(value, service).StartAsync(CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*ORKYO_STARTER_TEMPLATE must be one of: manufacturing, office*manufacutring*");
+            .WithMessage($"*ORKYO_STARTER_TEMPLATE must be one of: {AcceptedKeys} (or unset); got '{value}'*");
         service.Calls.Should().BeEmpty();
     }
 
     [Fact]
-    public async Task AFailedApply_IsLogged_AndDoesNotBlockStartup()
+    public async Task AFailedApply_DoesNotBlockStartup()
     {
         // Nothing is recorded on failure, so the next start retries; the API must still come up.
         var service = new RecordingStarterTemplates { Throws = new InvalidOperationException("db down") };
@@ -97,8 +107,13 @@ public class StarterTemplateBootstrapTests
     }
 
     [Fact]
-    public async Task StopAsync_IsANoOp()
+    public async Task ACancelledApply_Propagates()
     {
-        await Create(null, new RecordingStarterTemplates()).StopAsync(CancellationToken.None);
+        // Host shutdown during the apply is not a failure to swallow.
+        var service = new RecordingStarterTemplates { Throws = new OperationCanceledException() };
+
+        var act = () => Create(StarterTemplateCatalog.Office, service).StartAsync(CancellationToken.None);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
     }
 }

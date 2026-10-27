@@ -1,102 +1,67 @@
-using Api.Constants;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Npgsql;
 using Orkyo.Community.Migrations;
 using Orkyo.Foundation.Migrations;
 using Orkyo.Migrations.Abstractions;
-using Orkyo.Migrator;
 using Testcontainers.PostgreSql;
 
 namespace Orkyo.Community.Tests;
 
-public class DatabaseFixture : IAsyncLifetime
+/// <summary>
+/// The shared database fixture: foundation's base resolves the server (the `./dev.sh check`
+/// server on port 5442 under <c>CI=true</c>, or the Testcontainers one started here), and this
+/// class creates and migrates Community's single database, seeds it and boots the host.
+/// </summary>
+public class DatabaseFixture : ProductDatabaseFixtureBase<Program, ApiWebApplicationFactory>, IAsyncLifetime
 {
     private PostgreSqlContainer? _postgresContainer;
 
-    public int DatabasePort { get; private set; }
-    public string AdminConnectionString { get; private set; } = "";
-    public ApiWebApplicationFactory Factory { get; private set; } = null!;
-
-    /// <summary>
-    /// The external-database mode: <c>CI=true</c> and a <c>ConnectionStrings__Postgres</c> value
-    /// select a server on <c>localhost</c> at that value's port (user and password
-    /// <c>postgres</c>) instead of Testcontainers. `./dev.sh check` uses it on port 5442.
-    /// </summary>
-    private static bool UseCiDatabase =>
-        Environment.GetEnvironmentVariable("CI") == "true"
-        && !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ConnectionStrings__Postgres"));
-
-    public HttpClient CreateAuthorizedClient(string tenantSlug = TestConstants.TenantSlug)
-    {
-        var client = Factory.CreateClient();
-        client.DefaultRequestHeaders.Add(HeaderConstants.TenantSlug, tenantSlug);
-        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {TestConstants.TestBearerToken}");
-        return client;
-    }
-
-    public async Task InitializeAsync()
-    {
-        if (UseCiDatabase)
-        {
-            DatabasePort = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("ConnectionStrings__Postgres")).Port;
-            AdminConnectionString = $"Host=localhost;Port={DatabasePort};Database=postgres;Username=postgres;Password=postgres";
-        }
-        else
-        {
-            _postgresContainer = new PostgreSqlBuilder("postgres:16-alpine")
-                .WithUsername("postgres")
-                .WithPassword("postgres")
-                .WithDatabase("postgres")
-                .Build();
-
-            await _postgresContainer.StartAsync();
-            DatabasePort = _postgresContainer.GetMappedPublicPort(5432);
-            AdminConnectionString = _postgresContainer.GetConnectionString();
-        }
-
-        DatabaseTestUtils.SetDatabasePort(DatabasePort);
-        await CreateAndMigrateDatabasesAsync();
-
-        // Program.cs reads several config values directly from builder.Configuration
-        // BEFORE WebApplicationFactory's ConfigureAppConfiguration callback runs.
-        // For those, the only timing-safe override is the process environment.
-        // Set placeholder values for the runtime-required keys here so the host
-        // builds; the actual integration-test behaviour is unaffected because
-        // the corresponding services are lazy-resolved and never used by the
-        // tests we run today (health checks + endpoint routing).
-        Environment.SetEnvironmentVariable("VALKEY_CONNECTION",
-            "localhost:6379,abortConnect=false");
-        Environment.SetEnvironmentVariable("ORKYO_MASTER_ENCRYPTION_KEY",
-            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
-
-        Factory = new ApiWebApplicationFactory(this);
-        _ = Factory.Services; // Eagerly start the server; CreateClient() no longer does this lazily in MvcTesting 10.x
-    }
-
     public string TenantConnectionString => BuildConnectionString(TestConstants.TenantDatabase);
 
-    private string BuildConnectionString(string database) =>
-        new NpgsqlConnectionStringBuilder(AdminConnectionString) { Database = database }.ConnectionString;
+    protected override async Task<(int Port, string AdminConnectionString)> StartLocalServerAsync()
+    {
+        _postgresContainer = new PostgreSqlBuilder("postgres:16-alpine")
+            .WithUsername("postgres")
+            .WithPassword("postgres")
+            .WithDatabase("postgres")
+            .Build();
 
-    private async Task CreateAndMigrateDatabasesAsync()
+        await _postgresContainer.StartAsync();
+        return (_postgresContainer.GetMappedPublicPort(5432), _postgresContainer.GetConnectionString());
+    }
+
+    protected override async Task StopLocalServerAsync()
+    {
+        if (_postgresContainer is not null)
+            await _postgresContainer.DisposeAsync();
+    }
+
+    protected override async Task CreateAndMigrateDatabasesAsync()
     {
         // Community uses a single database for everything — no separate control_plane.
         await CreateDatabaseAsync(TestConstants.TenantDatabase);
 
-        var cs = BuildConnectionString(TestConstants.TenantDatabase);
-        var runner = BuildRunner();
-        await runner.RunAsync(cs, MigrationTargetDatabase.ControlPlane, "orkyo:community:cp");
-        await runner.RunAsync(cs, MigrationTargetDatabase.Tenant, "orkyo:community:tenant");
+        var runner = BuildMigrationRunner(s => s.AddCommunityFoundationMigrations().AddCommunityMigrations());
+        await runner.RunAsync(TenantConnectionString, MigrationTargetDatabase.ControlPlane, "orkyo:community:cp");
+        await runner.RunAsync(TenantConnectionString, MigrationTargetDatabase.Tenant, "orkyo:community:tenant");
 
         await SeedTestDataAsync();
     }
+
+    // Program.cs requires VALKEY_CONNECTION at startup and reads it before the factory's
+    // configuration callback applies, so only the process environment reaches it. The
+    // Singleton ConnectionMultiplexer factory only resolves when something actually uses
+    // Valkey — health/live does not, and the integration tests in this fixture don't exercise
+    // Valkey-backed code paths. A non-functional placeholder is enough to pass the presence check.
+    protected override void BeforeFactoryStart()
+        => Environment.SetEnvironmentVariable("VALKEY_CONNECTION", "localhost:6379,abortConnect=false");
+
+    protected override ApiWebApplicationFactory CreateFactory() => new(this);
 
     private async Task SeedTestDataAsync()
     {
         // The test user and its admin membership of the single tenant, as an invitation
         // would create them. Nothing grants a membership implicitly any more (migration 3030).
-        await using var conn = new NpgsqlConnection(BuildConnectionString(TestConstants.TenantDatabase));
+        await using var conn = new NpgsqlConnection(TenantConnectionString);
         await conn.OpenAsync();
 
         await using var userCmd = new NpgsqlCommand(
@@ -134,35 +99,6 @@ public class DatabaseFixture : IAsyncLifetime
                 ('seed_enum',    'Seed Enum criterion',    'Enum',    '[""Option A"",""Option B""]'::jsonb, NOW(), NOW())
             ON CONFLICT (name) DO NOTHING", conn);
         await criteriaCmd.ExecuteNonQueryAsync();
-    }
-
-    private async Task CreateDatabaseAsync(string dbName)
-    {
-        await using var conn = new NpgsqlConnection(AdminConnectionString);
-        await conn.OpenAsync();
-        await using var check = new NpgsqlCommand("SELECT 1 FROM pg_database WHERE datname = @n", conn);
-        check.Parameters.AddWithValue("n", dbName);
-        if (await check.ExecuteScalarAsync() is not null) return;
-        await using var create = new NpgsqlCommand($"CREATE DATABASE \"{dbName}\"", conn);
-        await create.ExecuteNonQueryAsync();
-    }
-
-    private static MigrationRunner BuildRunner()
-    {
-        var services = new ServiceCollection()
-            .AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning))
-            .AddOrkyoMigrationPlatform()
-            .AddCommunityFoundationMigrations()
-            .AddCommunityMigrations()
-            .BuildServiceProvider();
-        return services.GetRequiredService<MigrationRunner>();
-    }
-
-    public async Task DisposeAsync()
-    {
-        Factory?.Dispose();
-        if (_postgresContainer is not null)
-            await _postgresContainer.DisposeAsync();
     }
 }
 

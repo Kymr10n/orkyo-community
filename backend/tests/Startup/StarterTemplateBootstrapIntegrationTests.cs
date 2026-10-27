@@ -22,8 +22,7 @@ public class StarterTemplateBootstrapIntegrationTests
 
     private async Task<long> CountAsync(string sql)
     {
-        var cs = $"Host=localhost;Port={_databaseFixture.DatabasePort};Database={TestConstants.TenantDatabase};Username=postgres;Password=postgres";
-        await using var conn = new NpgsqlConnection(cs);
+        await using var conn = new NpgsqlConnection(_databaseFixture.TenantConnectionString);
         await conn.OpenAsync();
         await using var cmd = new NpgsqlCommand(sql, conn);
         return (long)(await cmd.ExecuteScalarAsync())!;

@@ -42,7 +42,8 @@ public sealed class StarterTemplateBootstrap(
         if (!StarterTemplateCatalog.IsPresetTemplate(key))
             throw new InvalidOperationException(
                 $"{CommunityConfigKeys.StarterTemplate} must be one of: "
-                + $"{StarterTemplateCatalog.Manufacturing}, {StarterTemplateCatalog.Office} (or unset); got '{key}'.");
+                + string.Join(", ", StarterTemplateCatalog.All.Select(t => t.Key).Where(StarterTemplateCatalog.IsPresetTemplate))
+                + $" (or unset); got '{key}'.");
 
         logger.LogInformation("{Key}={Template}: applying starter setup", CommunityConfigKeys.StarterTemplate, key);
         try

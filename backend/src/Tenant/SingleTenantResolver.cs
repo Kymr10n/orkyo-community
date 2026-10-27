@@ -16,8 +16,10 @@ public sealed class SingleTenantResolver : ITenantResolver
     public SingleTenantResolver(IOptions<SingleTenantOptions> options, IConfiguration configuration)
     {
         var opts = options.Value;
-        var connStr = configuration.GetConnectionString(CommunityConfigKeys.DefaultConnection)
-            ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is required");
+        var connStr = configuration.GetConnectionString(CommunityConfigKeys.DefaultConnection);
+        // Empty counts as unset, as in Program.cs: the deploy pipeline writes KEY= for every unset key.
+        if (string.IsNullOrEmpty(connStr))
+            throw new InvalidOperationException($"{CommunityConfigKeys.DefaultConnectionEnvVar} is required");
 
         _fixed = new TenantContext
         {

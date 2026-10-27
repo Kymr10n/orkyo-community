@@ -1,112 +1,56 @@
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
 using Orkyo.Community.Tenant;
+using Orkyo.Shared;
 
 namespace Orkyo.Community.Tests.Tenant;
 
 public class SingleTenantResolverTests
 {
-    private static readonly SingleTenantOptions DefaultOptions = new()
+    // Deliberately not SingleTenantOptions' defaults: a resolver that ignored IOptions would
+    // otherwise pass by accident.
+    private static readonly SingleTenantOptions Options = new()
     {
-        TenantId = new Guid("00000000-0000-0000-0000-000000000001"),
-        TenantSlug = "community",
-        TenantName = "Test Community",
+        TenantId = new Guid("7b5a2a4e-2d7e-4e0c-9c3c-1f6b4a0c9d11"),
+        TenantSlug = "acme-works",
+        TenantName = "Acme Works",
     };
 
-    private static IConfiguration ConfigWith(string? connectionString)
+    private const string ConnectionString = "Host=db;Database=acme";
+
+    private static SingleTenantResolver Create(string? connectionString = ConnectionString)
     {
         var values = new Dictionary<string, string?>();
-        if (connectionString != null)
-            values[$"ConnectionStrings:{Orkyo.Community.CommunityConfigKeys.DefaultConnection}"] = connectionString;
-        return new ConfigurationBuilder().AddInMemoryCollection(values).Build();
+        if (connectionString is not null)
+            values[$"ConnectionStrings:{CommunityConfigKeys.DefaultConnection}"] = connectionString;
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
+
+        return new SingleTenantResolver(Microsoft.Extensions.Options.Options.Create(Options), configuration);
     }
 
-    // ── Constructor ───────────────────────────────────────────────────────────
-
-    [Fact]
-    public void Constructor_WhenConnectionStringPresent_DoesNotThrow()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")] // the deploy pipeline writes KEY= for every unset key
+    public void Constructor_WhenConnectionStringMissingOrEmpty_Throws(string? connectionString)
     {
-        var act = () => new SingleTenantResolver(
-            Options.Create(DefaultOptions),
-            ConfigWith("Host=localhost;Database=community"));
-
-        act.Should().NotThrow();
-    }
-
-    [Fact]
-    public void Constructor_WhenConnectionStringMissing_ThrowsInvalidOperationException()
-    {
-        var act = () => new SingleTenantResolver(
-            Options.Create(DefaultOptions),
-            ConfigWith(connectionString: null));
+        var act = () => Create(connectionString);
 
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*ConnectionStrings__DefaultConnection*");
-    }
-
-    // ── ResolveTenantAsync ────────────────────────────────────────────────────
-
-    [Fact]
-    public async Task ResolveTenantAsync_ReturnsConfiguredTenantId()
-    {
-        var sut = new SingleTenantResolver(
-            Options.Create(DefaultOptions),
-            ConfigWith("Host=localhost;Database=community"));
-
-        var result = await sut.ResolveTenantAsync(subdomain: null, tenantHeader: null);
-
-        result.Should().NotBeNull();
-        result!.TenantId.Should().Be(DefaultOptions.TenantId);
+            .WithMessage($"*{CommunityConfigKeys.DefaultConnectionEnvVar}*");
     }
 
     [Fact]
-    public async Task ResolveTenantAsync_ReturnsConfiguredSlug()
+    public async Task ResolveTenantAsync_ReturnsTheConfiguredTenant_ForAnyArguments_AsOneInstance()
     {
-        var sut = new SingleTenantResolver(
-            Options.Create(DefaultOptions),
-            ConfigWith("Host=localhost;Database=community"));
+        var sut = Create();
 
-        var result = await sut.ResolveTenantAsync(subdomain: null, tenantHeader: null);
+        var first = await sut.ResolveTenantAsync(subdomain: "acme", tenantHeader: "other");
+        var second = await sut.ResolveTenantAsync(subdomain: null, tenantHeader: null);
 
-        result!.TenantSlug.Should().Be(DefaultOptions.TenantSlug);
-    }
-
-    [Fact]
-    public async Task ResolveTenantAsync_IgnoresSubdomainArgument()
-    {
-        var sut = new SingleTenantResolver(
-            Options.Create(DefaultOptions),
-            ConfigWith("Host=localhost;Database=community"));
-
-        var r1 = await sut.ResolveTenantAsync(subdomain: "acme", tenantHeader: null);
-        var r2 = await sut.ResolveTenantAsync(subdomain: null, tenantHeader: "other");
-
-        r1!.TenantId.Should().Be(r2!.TenantId);
-    }
-
-    [Fact]
-    public async Task ResolveTenantAsync_ReturnsSameInstanceOnEveryCall()
-    {
-        var sut = new SingleTenantResolver(
-            Options.Create(DefaultOptions),
-            ConfigWith("Host=localhost;Database=community"));
-
-        var r1 = await sut.ResolveTenantAsync(null, null);
-        var r2 = await sut.ResolveTenantAsync(null, null);
-
-        r1.Should().BeSameAs(r2);
-    }
-
-    // ── InvalidateCache ───────────────────────────────────────────────────────
-
-    [Fact]
-    public void InvalidateCache_DoesNotThrow()
-    {
-        var sut = new SingleTenantResolver(
-            Options.Create(DefaultOptions),
-            ConfigWith("Host=localhost;Database=community"));
-
-        var act = () => sut.InvalidateCache("community");
-        act.Should().NotThrow();
+        first.Should().NotBeNull();
+        first!.TenantId.Should().Be(Options.TenantId);
+        first.TenantSlug.Should().Be(Options.TenantSlug);
+        first.TenantDbConnectionString.Should().Be(ConnectionString);
+        first.Status.Should().Be(TenantStatusConstants.Active);
+        second.Should().BeSameAs(first);
     }
 }

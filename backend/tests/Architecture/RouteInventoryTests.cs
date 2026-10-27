@@ -1,5 +1,3 @@
-using System.Net;
-
 namespace Orkyo.Community.Tests.Architecture;
 
 /// <summary>
@@ -11,9 +9,10 @@ namespace Orkyo.Community.Tests.Architecture;
 /// silently missed — the API still boots (no DI dep), but every route under
 /// the removed map silently 404s.
 ///
-/// Assertion strategy: an unauthenticated GET to a registered endpoint returns
-/// 401 (auth middleware intercepts). An unregistered endpoint returns 404 from
-/// the routing fallback. So "anything-but-404" proves the route is mapped.
+/// Assertion strategy (foundation's <see cref="RouteInventoryProbe"/>): an unauthenticated
+/// GET to a registered endpoint returns 401 (auth middleware intercepts). An unregistered
+/// endpoint returns 404 from the routing fallback, and a mapped route whose service or
+/// rate-limit policy is missing returns 500. So "anything but 404/500" proves the route is mapped.
 ///
 /// One [InlineData] per top-level Map* call in Foundation's endpoint set.
 /// Probe paths are chosen to be unique to that Map* call so a single missing
@@ -53,12 +52,8 @@ public class RouteInventoryTests
     [InlineData("/api/resource-groups", "MapResourceGroupEndpoints")]
     public async Task ExpectedRoute_IsRegistered(string path, string expectedMapCall)
     {
-        var response = await _client.GetAsync(path);
+        var failure = await RouteInventoryProbe.ProbeAsync(_client, path, expectedMapCall);
 
-        Assert.False(
-            response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.InternalServerError,
-            $"Route '{path}' returned {(int)response.StatusCode}. 404 = likely missing '{expectedMapCall}()' " +
-            $"call in Program.cs; 500 = the route is mapped but a service or rate-limit policy behind it is not " +
-            $"registered. Cross-reference with FoundationWebApplicationFactory.cs (lines ~417-452).");
+        failure.Should().BeNull();
     }
 }

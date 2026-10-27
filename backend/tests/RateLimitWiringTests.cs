@@ -1,6 +1,4 @@
 using System.Net;
-using System.Text;
-using System.Text.Json;
 
 namespace Orkyo.Community.Tests;
 
@@ -22,19 +20,16 @@ public class RateLimitWiringTests
 {
     // Site-admin comes from the token's realm roles. The subject is linked to a users row the
     // fixture seeds: access is by invitation only, so an unknown subject gets no principal.
-    private static readonly string SiteAdminToken = Convert.ToBase64String(
-        Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new
-        {
-            UserId = SiteAdminProbe.UserId.ToString(),
-            Email = SiteAdminProbe.Email,
-            DisplayName = "Site Admin",
-            TenantId = "00000000-0000-0000-0000-000000000000",
-            TenantSlug = "",
-            IsTenantAdmin = false,
-            Role = "viewer",
-            Sub = SiteAdminProbe.Subject,
-            RealmRoles = new[] { "user", "site-admin" },
-        })));
+    private static readonly string SiteAdminToken = TestConstants.BearerToken(
+        userId: SiteAdminProbe.UserId.ToString(),
+        email: SiteAdminProbe.Email,
+        displayName: "Site Admin",
+        tenantId: Guid.Empty.ToString(),
+        tenantSlug: "",
+        isTenantAdmin: false,
+        role: "viewer",
+        sub: SiteAdminProbe.Subject,
+        realmRoles: ["user", "site-admin"]);
 
     private readonly HttpClient _siteAdmin;
     private readonly HttpClient _anon;

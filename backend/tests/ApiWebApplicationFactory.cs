@@ -1,30 +1,21 @@
 using Api.Configuration;
-using Api.Integrations.Keycloak;
-using Api.Services;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Logging;
 using Npgsql;
+using Orkyo.Shared;
 
 namespace Orkyo.Community.Tests;
 
-public class ApiWebApplicationFactory : WebApplicationFactory<Program>
+/// <summary>
+/// The Community test host: foundation's product base supplies the shared configuration, the
+/// test authentication scheme and the Keycloak mock; this class adds what is Community-specific.
+/// </summary>
+public class ApiWebApplicationFactory : ProductWebApplicationFactoryBase<Program>
 {
-    // The password-check client's test values as named constants: a quoted value beside a
-    // key containing "PASSWORD" reads as a leaked secret to the PR secret scanner.
-    private const string CheckClientId = "test-check-client";
-    private const string CheckClientCredential = "test-check-client-credential";
-
     private readonly DatabaseFixture _databaseFixture;
     private readonly IReadOnlyDictionary<string, string?> _extraConfiguration;
-
-    public MockKeycloakAdminService MockKeycloakAdminService { get; } = new();
 
     /// <param name="extraConfiguration">
     /// Keys layered over the fixture's configuration, for a test that needs the host to start
@@ -40,104 +31,52 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment(TestConstants.EnvironmentName);
-
         // Validate the real container. ASP.NET Core only does this in Development, and tests run
         // in their own environment — so a singleton capturing a scoped service passed here and
-        // failed at the first `./dev.sh rebuild` instead.
+        // failed at the first `./dev.sh rebuild` instead. The base registers ServiceProviderOptions
+        // through IOptions, which the minimal-hosting DefaultServiceProviderFactory never reads;
+        // this call reaches it through UseServiceProviderFactory. SmokeTests.TestHost_ValidatesScopes
+        // guards it.
         builder.UseDefaultServiceProvider(o =>
         {
             o.ValidateScopes = true;
             o.ValidateOnBuild = true;
         });
 
-        builder.ConfigureAppConfiguration((context, config) =>
+        base.ConfigureWebHost(builder);
+    }
+
+    protected override void AddProductConfiguration(IDictionary<string, string?> configuration)
+    {
+        // Community uses one database for everything — every connection-string key points to it.
+        // SingleTenantResolver reads DefaultConnection.
+        var connectionString = _databaseFixture.TenantConnectionString;
+        configuration[ConfigKeys.ConnectionStringPostgresPath] = connectionString;
+        configuration[ConfigKeys.ConnectionStringControlPlanePath] = connectionString;
+        configuration[$"ConnectionStrings:{CommunityConfigKeys.DefaultConnection}"] = connectionString;
+    }
+
+    // Last source, so a test's keys win over the fixture's.
+    protected override void ConfigureAppConfigurationSources(IConfigurationBuilder config)
+        => config.AddInMemoryCollection(_extraConfiguration);
+
+    protected override void ConfigureTestServices(IServiceCollection services)
+    {
+        // Re-register the NpgSql health check with the correct test connection string.
+        // Program.cs captures the connection string value before WebApplicationFactory's
+        // ConfigureAppConfiguration overrides run, so the health check would otherwise
+        // use the appsettings.json default (localhost:5432) instead of the test port.
+        // The test host has no Valkey either: the readiness probe AddOrkyoValkey registers
+        // (foundation 1.6.9) would turn /health into 503 here, so it goes too.
+        services.Configure<HealthCheckServiceOptions>(opts =>
         {
-            config.Sources.Clear();
-            config.AddJsonFile("appsettings.json", optional: false);
-            config.AddJsonFile("appsettings.Test.json", optional: true);
-
-            var port = _databaseFixture.DatabasePort;
-            // Community uses one database for everything — both connection string keys point to it.
-            var testConnectionString = $"Host=localhost;Port={port};Database={TestConstants.TenantDatabase};Username=postgres;Password=postgres";
-
-            config.AddInMemoryCollection(new Dictionary<string, string?>
+            foreach (var name in new[] { "postgres", "valkey" })
             {
-                ["ASPNETCORE_ENVIRONMENT"] = TestConstants.EnvironmentName,
-                ["ConnectionStrings:Postgres"] = testConnectionString,
-                ["ConnectionStrings:ControlPlane"] = testConnectionString,
-                // Community collapses to a single DB — SingleTenantResolver reads DefaultConnection.
-                ["ConnectionStrings:DefaultConnection"] = testConnectionString,
-                ["SMTP_HOST"] = "localhost",
-                ["SMTP_PORT"] = "1025",
-                ["SMTP_USE_SSL"] = "false",
-                ["SMTP_FROM_EMAIL"] = "test@test.local",
-                ["SMTP_FROM_NAME"] = "Test",
-                ["APP_BASE_URL"] = "http://localhost:5173",
-                ["CORS_ALLOWED_ORIGINS"] = "http://localhost:5173",
-                // `.invalid` (RFC 2606) fails DNS resolution instantly. A `.local` host
-                // triggers mDNS/Avahi resolution that hangs ~15s before failing, adding
-                // ~20s to every test that exercises an (intentionally unreachable) Keycloak.
-                ["OIDC_AUTHORITY"] = "http://test-keycloak.invalid/realms/test",
-                ["KEYCLOAK_URL"] = "http://test-keycloak.invalid",
-                ["KEYCLOAK_REALM"] = "test",
-                ["KEYCLOAK_BACKEND_CLIENT_ID"] = "test-backend",
-                ["KEYCLOAK_BACKEND_CLIENT_SECRET"] = "test-backend-secret",
-                ["KEYCLOAK_PASSWORD_CHECK_CLIENT_ID"] = CheckClientId,
-                ["KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET"] = CheckClientCredential,
-                ["BFF_ENABLED"] = "true",
-                ["BFF_REDIRECT_URI"] = "http://localhost/api/auth/bff/callback",
-                ["BFF_ALLOWED_HOSTS"] = "orkyo.com,*.orkyo.com,localhost",
-                ["BFF_COOKIE_SECURE"] = "false",
-                // Program.cs requires VALKEY_CONNECTION at startup. The Singleton
-                // ConnectionMultiplexer factory only resolves when something
-                // actually uses Valkey — health/live does not, and integration
-                // tests in this fixture don't exercise Valkey-backed code paths.
-                // A non-functional placeholder is enough to pass the presence check.
-                ["VALKEY_CONNECTION"] = "localhost:6379,abortConnect=false",
-                // 32 zero-bytes encoded as base64 — satisfies ConfigurationValidator's
-                // format check (valid base64, exactly 32 bytes). No real encryption
-                // runs in integration tests so this value is never used operationally.
-                ["ORKYO_MASTER_ENCRYPTION_KEY"] = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
-
-            });
-            // Last, so a test's keys win over the fixture's.
-            config.AddInMemoryCollection(_extraConfiguration);
+                var existing = opts.Registrations.FirstOrDefault(r => r.Name == name);
+                if (existing is not null) opts.Registrations.Remove(existing);
+            }
         });
-
-        builder.ConfigureServices(services =>
-        {
-            services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = TestConstants.AuthScheme;
-                options.DefaultChallengeScheme = TestConstants.AuthScheme;
-                options.DefaultScheme = TestConstants.AuthScheme;
-            })
-                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestConstants.AuthScheme, options => { });
-
-            services.RemoveAll<IKeycloakAdminService>();
-            services.AddSingleton<IKeycloakAdminService>(MockKeycloakAdminService);
-
-            // Community has no break-glass store — nothing to replace here.
-
-            // Re-register the NpgSql health check with the correct test connection string.
-            // Program.cs captures the connection string value before WebApplicationFactory's
-            // ConfigureAppConfiguration overrides run, so the health check would otherwise
-            // use the appsettings.json default (localhost:5432) instead of the test port.
-            var testDbCs = $"Host=localhost;Port={_databaseFixture.DatabasePort};Database={TestConstants.TenantDatabase};Username=postgres;Password=postgres";
-            // The test host has no Valkey either: the readiness probe AddOrkyoValkey registers
-            // (foundation 1.6.9) would turn /health into 503 here, so it goes too.
-            services.Configure<HealthCheckServiceOptions>(opts =>
-            {
-                foreach (var name in new[] { "postgres", "valkey" })
-                {
-                    var existing = opts.Registrations.FirstOrDefault(r => r.Name == name);
-                    if (existing is not null) opts.Registrations.Remove(existing);
-                }
-            });
-            services.AddHealthChecks()
-                .AddPostgresCheck(NpgsqlDataSource.Create(testDbCs), "postgres", "db", "ready");
-
-        });
+        services.AddHealthChecks()
+            .AddPostgresCheck(NpgsqlDataSource.Create(_databaseFixture.TenantConnectionString), "postgres", "db", "ready");
     }
 }
