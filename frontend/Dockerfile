@@ -21,7 +21,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-FROM nginx:1.31-alpine@sha256:892bb2152464f0c5d8972593a5f5afaf8054552580b699d95f8ff4af08c2d33d AS runtime
+FROM nginx:1.31-alpine@sha256:a3554c0d0b48177b1413c26e01f695334428020d9df01243fbae3e11cfd17417 AS runtime
 LABEL org.opencontainers.image.source=https://github.com/Kymr10n/orkyo-community
 # Base image is digest-pinned; nightly security-refresh.yml re-resolves the
 # pinned tag and rebuilds against the current upstream digest. No ad-hoc
