@@ -39,6 +39,10 @@
 # foundation bump that ships a rebuilt base drops the entry.
 CVE-2026-114406  # CRITICAL | ca-certificates 2025.2.80_v9.0.305-91.el9: Red Hat distrusts an eMudhra intermediate CA, fixed in 2026.2.92_v9.0.319-90.3.el9_8. Keycloak's outbound TLS (SMTP relay, Cloudflare-fronted hosts) involves no eMudhra-issued certificate and inbound TLS terminates at nginx. Drop with the foundation bump that ships the a78d6b7-based Keycloak base. | Added: 2026-10-27 | Review: 2026-11-10
 
+# 2026-10-28: Keycloak 26.8.1, the newest upstream release, ships Guava 33.6.0-jre. Trivy reports
+# the deserialization DoS below; Guava 33.7.2 fixes it, and no Keycloak release carries it yet.
+CVE-2026-102554  # HIGH | guava 33.6.0-jre (lib/main in the Keycloak 26.8.1 base): denial of service through unthrottled memory allocation during deserialization, fixed in 33.7.2. Clients reach Keycloak over HTTP with form and JSON bodies only, and its embedded Infinispan cache marshals with ProtoStream, not Java serialization of client input. Drop with the foundation bump that ships a Keycloak base on Guava 33.7.2 or later. | Added: 2026-10-28 | Review: 2026-11-11
+
 # ── nginx base, waiting for the upstream rebuild ──────────────────────────────
 CVE-2026-111497  # HIGH | brotli-libs 1.2.0-r1: out-of-bounds write in the Brotli decoder, in the nginx:1.31-alpine base (digest a3554c0d); Alpine fixed it in 1.2.1-r0 but the upstream rebuild predates that package. The frontend nginx loads no brotli module (frontend/nginx/default.conf) and never decodes Brotli input. Drop with the next digest bump. | Added: 2026-10-27 | Review: 2026-11-10
 CVE-2026-92392  # HIGH | curl and libcurl 8.22.0-r0: HTTP/2 upload use-after-free, in the nginx:1.31-alpine base (digest a3554c0d); Alpine fixed it in 8.23.0-r0 but the upstream rebuild predates that package. nginx does not link libcurl and the frontend serves static files; the curl binary performs no HTTP/2 uploads in this image. Drop with the next digest bump. | Added: 2026-10-27 | Review: 2026-11-10
