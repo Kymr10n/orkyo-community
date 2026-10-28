@@ -34,6 +34,7 @@ visitors. Repo-level setting, nothing to commit.
 
 ## 5. Refresh screenshots when the UI changes
 
-The current shots are from the `manufacturing / large` demo seed (`./dev.sh seed --profile manufacturing
---scale large --mode reset`). Re-capture at the same window size after notable UI changes so the gallery
-stays honest. Keep filenames stable (`screenshot-<feature>.png`) so the README needs no edit.
+Capture new shots from the `manufacturing / medium` demo seed (`./dev.sh seed --profile manufacturing
+--scale medium --mode reset`). This seed has 72 people across three sites, the size of a typical customer.
+The `large` seed (600 people) is for load tests. The current shots come from the `large` seed. Re-capture
+at the same window size after notable UI changes so the gallery stays honest. Keep filenames stable (`screenshot-<feature>.png`) so the README needs no edit.
