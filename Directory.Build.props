@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <OrkyoFoundationVersion Condition="'$(OrkyoFoundationVersion)' == ''">1.7.0</OrkyoFoundationVersion>
+    <OrkyoFoundationVersion Condition="'$(OrkyoFoundationVersion)' == ''">1.7.1-nightly.20261028.f8adeeb</OrkyoFoundationVersion>
   </PropertyGroup>
   <PropertyGroup>
     <!-- Identical in every project in this repo, so they live here rather than being

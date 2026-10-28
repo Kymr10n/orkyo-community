@@ -34,7 +34,7 @@
     "@fullcalendar/list": "^6.1.22",
     "@fullcalendar/react": "^6.1.22",
     "@fullcalendar/timegrid": "^6.1.22",
-    "@kymr10n/foundation": "1.7.0",
+    "@kymr10n/foundation": "1.7.1-nightly.20261028.f8adeeb",
     "@radix-ui/react-alert-dialog": "^1.2.1",
     "@radix-ui/react-checkbox": "^1.4.1",
     "@radix-ui/react-dialog": "^1.1.15",
