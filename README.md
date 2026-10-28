@@ -108,7 +108,7 @@ cp .env.template .env
 
 ```bash
 ./dev.sh rebuild     # build images and start everything
-./dev.sh seed --profile manufacturing --scale large --mode reset   # optional demo data
+./dev.sh seed --profile manufacturing --scale medium --mode reset  # optional demo data
 ```
 
 **Active development — host processes with hot-reload:**
