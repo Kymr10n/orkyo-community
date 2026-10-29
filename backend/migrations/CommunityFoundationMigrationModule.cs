@@ -10,8 +10,9 @@ namespace Orkyo.Community.Migrations;
 /// <c>public</c> schema). Feedback lives in the control-plane table (migration 1170); the
 /// tenant-phase feedback migrations would operate on that same shared-schema table — the
 /// create (1240) collides with it (<c>42P07 relation "feedback" already exists</c>) and the
-/// drop (1630) would destroy it. Community has no feedback feature, so those tenant-phase
-/// migrations must never run here. In SaaS (separate control-plane and tenant databases) they
+/// drop (1630) would destroy it. Community's feedback feature uses that
+/// control-plane table (the admin Feedback tab reads it), so those tenant-phase migrations
+/// must never run here. In SaaS (separate control-plane and tenant databases) they
 /// run normally and don't collide.
 /// </summary>
 public sealed class CommunityFoundationMigrationModule : IMigrationModule

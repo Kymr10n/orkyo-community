@@ -19,8 +19,8 @@ Foundation services are designed to be consumed by both multi-tenant SaaS and si
 
 | Interface | SaaS implementation | Community implementation |
 |---|---|---|
-| `ITenantResolver` | `TenantResolver` (DB lookup by subdomain/header) | `SingleTenantResolver` (fixed config) |
-| `IDbConnectionFactory` | `DbConnectionFactory` (control-plane + per-tenant) | foundation's `SingleTenantDbConnectionFactory` (single DB) |
+| `ITenantResolver` | `SaasTenantResolver` (control-plane lookup by subdomain) | `SingleTenantResolver` (fixed config) |
+| `IDbConnectionFactory` | `MultiTenantDbConnectionFactory` (control-plane + per-tenant) | foundation's `SingleTenantDbConnectionFactory` (single DB) |
 | `IQuotaEnforcer` | `TierBasedQuotaEnforcer` (tier limits) | foundation's `NoOpQuotaEnforcer` (unlimited) |
 | `ITenantRegistry` | `SaasTenantRegistry` (queries tenant DB) | `CommunityTenantRegistry` (returns one entry) |
 

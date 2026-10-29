@@ -40,7 +40,7 @@ Local ports: API `5002` · Keycloak `8082` · Postgres `5433` · Frontend `5174`
   can/will/must. The 53 rules are in `.claude/skills/simple-english/SKILL.md`; the scope table
   and the Orkyo term list are in `orkyo-documentation/docs/LANGUAGE-STANDARD.md`. A
   `PostToolUse` hook (`.claude/hooks/ste-check.py`) reports violations — advisory, no CI gate.
-- **Observability**: structured Serilog logging is wired (same foundation helper as SaaS — `OrkyoObservability.InitBootstrapLogger()` + `UseOrkyoLogging` in `backend/api/Program.cs`; the Loki sink comes transitively from foundation). Prometheus metrics are wired via the foundation helpers too: `UseOrkyoMetrics()` + `MapOrkyoMetricsEndpoint(METRICS_TOKEN)` in `backend/api/Program.cs`. The `/metrics` endpoint is fail-secure — with no `METRICS_TOKEN` configured it is not mapped at all (404), so self-hosters opt in explicitly (see `release/.env.template`).
+- **Observability**: structured Serilog logging is wired (same foundation helper as SaaS — `OrkyoObservability.InitBootstrapLogger()` + `UseOrkyoLogging` in `backend/api/Program.cs`; the Loki sink comes transitively from foundation). Prometheus metrics are wired via the foundation helpers too: `UseOrkyoMetrics()` (called inside foundation's `UseOrkyoPipeline`) + `MapOrkyoMetricsEndpoint(METRICS_TOKEN)` in `backend/api/Program.cs`. The `/metrics` endpoint is fail-secure — with no `METRICS_TOKEN` configured it is not mapped at all (404), so self-hosters opt in explicitly (see `release/.env.template`).
 
 ## Where things live
 
