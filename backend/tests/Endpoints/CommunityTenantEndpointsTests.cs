@@ -5,7 +5,9 @@ using System.Text.Json;
 namespace Orkyo.Community.Tests.Endpoints;
 
 /// <summary>
-/// Integration tests for <see cref="Orkyo.Community.Api.Endpoints.CommunityTenantEndpoints"/>.
+/// Integration tests for foundation's GET /api/tenants/memberships as Community answers it:
+/// foundation's ControlPlaneTenantMembershipQuery over the seeded tenants row and the test
+/// user's membership (DatabaseFixture).
 /// The unauthenticated 401 is covered by <c>AuthorizationContractTests</c>, which proves every
 /// API route declares its authentication.
 /// </summary>
@@ -31,12 +33,14 @@ public class CommunityTenantEndpointsTests
         var memberships = await response.Content.ReadFromJsonAsync<JsonElement[]>();
         var membership = memberships.Should().ContainSingle().Subject;
         membership.GetProperty("tenantId").GetGuid().Should().Be(TestConstants.TenantId);
-        // Community:TenantSlug from appsettings.Test.json — pins that the file still reaches the host.
+        // The seeded tenants row (migration 3020), which Community:TenantSlug must agree with.
         membership.GetProperty("tenantSlug").GetString().Should().Be("community");
         membership.GetProperty("tenantStatus").GetString().Should().Be("active");
-        // In community (single-tenant), isOwner reflects the user's admin status in the
-        // security context. The exact value depends on IAuthorizationContext resolution;
-        // pin the shape, not the resolution.
-        membership.GetProperty("isOwner").ValueKind.Should().BeOneOf(JsonValueKind.True, JsonValueKind.False);
+        // The fixture seeds an active admin membership for the test user.
+        membership.GetProperty("role").GetString().Should().Be("admin");
+        membership.GetProperty("status").GetString().Should().Be("active");
+        membership.GetProperty("joinedAt").ValueKind.Should().Be(JsonValueKind.String);
+        // The seeded tenants row has no owner, so nobody is the owner.
+        membership.GetProperty("isOwner").GetBoolean().Should().BeFalse();
     }
 }

@@ -5,7 +5,6 @@ using Api.Services;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using Orkyo.Community;
-using Orkyo.Community.Api.Endpoints;
 using Orkyo.Community.Middleware;
 using Orkyo.Community.Migrations;
 using Orkyo.Community.Startup;
@@ -77,6 +76,10 @@ try
     builder.Services.Configure<SingleTenantOptions>(
         builder.Configuration.GetSection(SingleTenantOptions.SectionKey));
     builder.Services.AddSingleton<ITenantResolver, SingleTenantResolver>();
+    // GET /api/tenants/memberships (foundation route). Community has the control-plane rows
+    // too — the seeded tenants row (migration 3020) and one tenant_memberships row per user
+    // (nothing grants a membership implicitly since 3030) — so foundation's query serves it.
+    builder.Services.AddScoped<ITenantMembershipQuery, ControlPlaneTenantMembershipQuery>();
 
     // Optional one-time starter setup (ORKYO_STARTER_TEMPLATE) at first start. The preset and
     // its once-only rule are foundation's (IStarterTemplateService from AddFoundationServices);
@@ -91,8 +94,6 @@ try
 
     builder.Services.AddOrkyoValkey(builder.Configuration);
     builder.Services.AddSingleton<IBreakGlassSessionStore, NullBreakGlassSessionStore>();
-
-    builder.Services.AddScoped<CommunityJitProvisioningMiddleware>();
 
     // Tenant + org contexts — community always has exactly one fixed tenant.
     // Read directly from SingleTenantOptions so resolution is never affected by
@@ -155,7 +156,6 @@ try
         // SaaS-owned and exist for the public multi-tenant edge, not a LAN deployment.
         TenantResolution = a =>
         {
-            a.UseMiddleware<CommunityJitProvisioningMiddleware>();
             a.UseMiddleware<SingleTenantMiddleware>();
         },
     });
@@ -172,9 +172,6 @@ try
 
     // Foundation endpoints
     app.MapFoundationEndpoints();
-
-    // Community-specific endpoints
-    app.MapCommunityTenantEndpoints();
 
     app.Run();
     return 0;

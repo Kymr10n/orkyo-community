@@ -19,10 +19,11 @@ Foundation services are designed to be consumed by both multi-tenant SaaS and si
 
 | Interface | SaaS implementation | Community implementation |
 |---|---|---|
-| `ITenantResolver` | `TenantResolver` (DB lookup by subdomain/header) | `SingleTenantResolver` (fixed config) |
-| `IDbConnectionFactory` | `DbConnectionFactory` (control-plane + per-tenant) | foundation's `SingleTenantDbConnectionFactory` (single DB) |
+| `ITenantResolver` | `SaasTenantResolver` (control-plane lookup by subdomain) | `SingleTenantResolver` (fixed config) |
+| `IDbConnectionFactory` | `MultiTenantDbConnectionFactory` (control-plane + per-tenant) | foundation's `SingleTenantDbConnectionFactory` (single DB) |
 | `IQuotaEnforcer` | `TierBasedQuotaEnforcer` (tier limits) | foundation's `NoOpQuotaEnforcer` (unlimited) |
 | `ITenantRegistry` | `SaasTenantRegistry` (queries tenant DB) | `CommunityTenantRegistry` (returns one entry) |
+| `ITenantMembershipQuery` | foundation's `ControlPlaneTenantMembershipQuery` | the same: Community keeps the control-plane `tenants` and `tenant_memberships` rows (migrations 3020, 3030) |
 
 ## Database Model
 
@@ -47,6 +48,17 @@ COMMUNITY__TENANTNAME=Orkyo Community
 ```
 
 `SingleTenantMiddleware` sets this as `HttpContext.Items["TenantContext"]` on **every** request — including endpoints marked `[SkipTenantResolution]`, since the community edition always has exactly one tenant and setting the context unconditionally is harmless (see the note in `SingleTenantMiddleware`'s doc-comment). All foundation services receive a valid tenant context without any request header or subdomain.
+
+## User Linking
+
+A user reaches the database through foundation's identity link, the same way as in SaaS. The
+BFF callback links the Keycloak identity at sign-in. A bearer-token caller without a link is
+anonymous until it calls the session bootstrap. Access is by invitation only
+(`AllowSelfRegistration=false`), so a link needs an invited or an existing user.
+
+Community had a JIT provisioning middleware for a "lost BFF session" until 2026-10. That gap does
+not exist: a lost session fails authentication and sends the user through the callback again. For
+a bearer caller, the middleware repeated what the session bootstrap does. It was removed.
 
 ## Migration Order
 
