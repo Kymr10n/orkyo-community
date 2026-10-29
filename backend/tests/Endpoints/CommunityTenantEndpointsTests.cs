@@ -5,7 +5,8 @@ using System.Text.Json;
 namespace Orkyo.Community.Tests.Endpoints;
 
 /// <summary>
-/// Integration tests for <see cref="Orkyo.Community.Api.Endpoints.CommunityTenantEndpoints"/>.
+/// Integration tests for foundation's GET /api/tenants/memberships as Community answers it
+/// (<see cref="Orkyo.Community.Tenant.SingleTenantMembershipQuery"/>).
 /// The unauthenticated 401 is covered by <c>AuthorizationContractTests</c>, which proves every
 /// API route declares its authentication.
 /// </summary>

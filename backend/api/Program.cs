@@ -5,7 +5,6 @@ using Api.Services;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using Orkyo.Community;
-using Orkyo.Community.Api.Endpoints;
 using Orkyo.Community.Middleware;
 using Orkyo.Community.Migrations;
 using Orkyo.Community.Startup;
@@ -77,6 +76,8 @@ try
     builder.Services.Configure<SingleTenantOptions>(
         builder.Configuration.GetSection(SingleTenantOptions.SectionKey));
     builder.Services.AddSingleton<ITenantResolver, SingleTenantResolver>();
+    // GET /api/tenants/memberships (foundation route) answers with the one community tenant.
+    builder.Services.AddScoped<ITenantMembershipQuery, SingleTenantMembershipQuery>();
 
     // Optional one-time starter setup (ORKYO_STARTER_TEMPLATE) at first start. The preset and
     // its once-only rule are foundation's (IStarterTemplateService from AddFoundationServices);
@@ -172,9 +173,6 @@ try
 
     // Foundation endpoints
     app.MapFoundationEndpoints();
-
-    // Community-specific endpoints
-    app.MapCommunityTenantEndpoints();
 
     app.Run();
     return 0;
