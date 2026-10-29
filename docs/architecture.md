@@ -23,6 +23,7 @@ Foundation services are designed to be consumed by both multi-tenant SaaS and si
 | `IDbConnectionFactory` | `MultiTenantDbConnectionFactory` (control-plane + per-tenant) | foundation's `SingleTenantDbConnectionFactory` (single DB) |
 | `IQuotaEnforcer` | `TierBasedQuotaEnforcer` (tier limits) | foundation's `NoOpQuotaEnforcer` (unlimited) |
 | `ITenantRegistry` | `SaasTenantRegistry` (queries tenant DB) | `CommunityTenantRegistry` (returns one entry) |
+| `ITenantMembershipQuery` | foundation's `ControlPlaneTenantMembershipQuery` | the same: Community keeps the control-plane `tenants` and `tenant_memberships` rows (migrations 3020, 3030) |
 
 ## Database Model
 

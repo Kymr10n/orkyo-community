@@ -76,8 +76,10 @@ try
     builder.Services.Configure<SingleTenantOptions>(
         builder.Configuration.GetSection(SingleTenantOptions.SectionKey));
     builder.Services.AddSingleton<ITenantResolver, SingleTenantResolver>();
-    // GET /api/tenants/memberships (foundation route) answers with the one community tenant.
-    builder.Services.AddScoped<ITenantMembershipQuery, SingleTenantMembershipQuery>();
+    // GET /api/tenants/memberships (foundation route). Community has the control-plane rows
+    // too — the seeded tenants row (migration 3020) and one tenant_memberships row per user
+    // (nothing grants a membership implicitly since 3030) — so foundation's query serves it.
+    builder.Services.AddScoped<ITenantMembershipQuery, ControlPlaneTenantMembershipQuery>();
 
     // Optional one-time starter setup (ORKYO_STARTER_TEMPLATE) at first start. The preset and
     // its once-only rule are foundation's (IStarterTemplateService from AddFoundationServices);
@@ -92,7 +94,6 @@ try
 
     builder.Services.AddOrkyoValkey(builder.Configuration);
     builder.Services.AddSingleton<IBreakGlassSessionStore, NullBreakGlassSessionStore>();
-
 
     // Tenant + org contexts — community always has exactly one fixed tenant.
     // Read directly from SingleTenantOptions so resolution is never affected by
