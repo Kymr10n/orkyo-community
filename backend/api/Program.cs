@@ -93,7 +93,6 @@ try
     builder.Services.AddOrkyoValkey(builder.Configuration);
     builder.Services.AddSingleton<IBreakGlassSessionStore, NullBreakGlassSessionStore>();
 
-    builder.Services.AddScoped<CommunityJitProvisioningMiddleware>();
 
     // Tenant + org contexts — community always has exactly one fixed tenant.
     // Read directly from SingleTenantOptions so resolution is never affected by
@@ -156,7 +155,6 @@ try
         // SaaS-owned and exist for the public multi-tenant edge, not a LAN deployment.
         TenantResolution = a =>
         {
-            a.UseMiddleware<CommunityJitProvisioningMiddleware>();
             a.UseMiddleware<SingleTenantMiddleware>();
         },
     });
