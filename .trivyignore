@@ -23,6 +23,10 @@
 # 2026-10-27: upstream rebuilt nginx:1.31-alpine on 2026-10-21 (digest a3554c0d); the libexpat
 # and libx11 findings are gone with the digest bump in frontend/Dockerfile. The rebuild still
 # predates the Alpine brotli 1.2.1-r0 and curl 8.23.0-r0 packages, hence the two nginx entries.
+#
+# 2026-11-05: upstream rebuilt nginx:1.31-alpine (digest 785835ea). It still carries the brotli and
+# curl packages above and adds three libexpat findings, so the digest bump keeps the two entries and
+# adds three. The .NET bases move to 10.0.14 (GHSA-p3jp-9v83-76w9), as orkyo-saas#388 did.
 
 # ── Keycloak base OS layer ────────────────────────────────────────────────────
 # 2026-09-03: the KC-26.6.x-era entries that stood in this file (jackson-databind,
@@ -43,6 +47,13 @@ CVE-2026-114406  # CRITICAL | ca-certificates 2025.2.80_v9.0.305-91.el9: Red Hat
 # the deserialization DoS below; Guava 33.7.2 fixes it, and no Keycloak release carries it yet.
 CVE-2026-102554  # HIGH | guava 33.6.0-jre (lib/main in the Keycloak 26.8.1 base): denial of service through unthrottled memory allocation during deserialization, fixed in 33.7.2. Clients reach Keycloak over HTTP with form and JSON bodies only, and its embedded Infinispan cache marshals with ProtoStream, not Java serialization of client input. Drop with the foundation bump that ships a Keycloak base on Guava 33.7.2 or later. | Added: 2026-10-28 | Review: 2026-11-11
 
+# 2026-11-05: Oracle's 2026-10 CPU fixes the OpenJDK font-rendering CVE below. The foundation 1.9.0
+# Keycloak base still ships java-21-openjdk-headless 21.0.12; the next foundation release rebuilds it.
+CVE-2026-91415  # HIGH | java-21-openjdk-headless 1:21.0.12.1.1-1.2.el9 (foundation 1.9.0 Keycloak base): font rendering flaw, fixed in 1:21.0.13.0.9-1.2.el9. Keycloak renders its login and account pages as HTML and rasterizes no client-supplied fonts in the JVM. Drop with the foundation bump that ships a Keycloak base on OpenJDK 21.0.13 or later. | Added: 2026-11-05 | Review: 2026-11-19
+
 # ── nginx base, waiting for the upstream rebuild ──────────────────────────────
-CVE-2026-111497  # HIGH | brotli-libs 1.2.0-r1: out-of-bounds write in the Brotli decoder, in the nginx:1.31-alpine base (digest a3554c0d); Alpine fixed it in 1.2.1-r0 but the upstream rebuild predates that package. The frontend nginx loads no brotli module (frontend/nginx/default.conf) and never decodes Brotli input. Drop with the next digest bump. | Added: 2026-10-27 | Review: 2026-11-10
-CVE-2026-92392  # HIGH | curl and libcurl 8.22.0-r0: HTTP/2 upload use-after-free, in the nginx:1.31-alpine base (digest a3554c0d); Alpine fixed it in 8.23.0-r0 but the upstream rebuild predates that package. nginx does not link libcurl and the frontend serves static files; the curl binary performs no HTTP/2 uploads in this image. Drop with the next digest bump. | Added: 2026-10-27 | Review: 2026-11-10
+CVE-2026-111497  # CRITICAL | brotli-libs 1.2.0-r1: out-of-bounds write in the Brotli decoder, in the nginx:1.31-alpine base (digest 785835ea); Alpine fixed it in 1.2.1-r0 but the upstream rebuild predates that package. The frontend nginx loads no brotli module (frontend/nginx/default.conf) and never decodes Brotli input. Drop with the next digest bump. | Added: 2026-10-27 | Review: 2026-11-10
+CVE-2026-92392  # HIGH | curl and libcurl 8.22.0-r0: HTTP/2 upload use-after-free, in the nginx:1.31-alpine base (digest 785835ea); Alpine fixed it in 8.23.0-r0 but the upstream rebuild predates that package. nginx does not link libcurl and the frontend serves static files; the curl binary performs no HTTP/2 uploads in this image. Drop with the next digest bump. | Added: 2026-10-27 | Review: 2026-11-10
+CVE-2026-113351  # HIGH | libexpat 2.9.0-r0: denial of service in the nginx:1.31-alpine base (digest 785835ea); Alpine fixed it in 2.10.0-r0 but the upstream rebuild predates that package. Only fontconfig requires libexpat, and only the image_filter module links it; the frontend loads no dynamic module. Drop with the next digest bump that carries the fix. | Added: 2026-11-04 | Review: 2026-11-18
+CVE-2026-117610  # HIGH | libexpat 2.9.0-r0: NULL pointer dereference in the nginx:1.31-alpine base (digest 785835ea); Alpine fixed it in 2.10.0-r0 but the upstream rebuild predates that package. Only fontconfig requires libexpat, and only the image_filter module links it; the frontend loads no dynamic module. Drop with the next digest bump that carries the fix. | Added: 2026-11-04 | Review: 2026-11-18
+CVE-2026-118370  # HIGH | libexpat 2.9.0-r0: signed integer overflow in the nginx:1.31-alpine base (digest 785835ea); Alpine fixed it in 2.10.0-r0 but the upstream rebuild predates that package. Only fontconfig requires libexpat, and only the image_filter module links it; the frontend loads no dynamic module. Drop with the next digest bump that carries the fix. | Added: 2026-11-04 | Review: 2026-11-18
