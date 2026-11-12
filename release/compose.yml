@@ -285,7 +285,7 @@ services:
   # passkey step in the browser flow. Additive and idempotent; it deletes nothing.
   # Plain python image, standard library only — see scripts/keycloak-converge.py.
   keycloak-config:
-    image: python:3.13-alpine@sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a
+    image: python:3.14-alpine@sha256:a18b20ad69e74df6cf6d2e1b1a260d7a1ecf5380fd83b310f83ba88c461cf894
     container_name: orkyo_community_keycloak_config
     restart: "no"
     environment:
