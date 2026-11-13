@@ -2,7 +2,7 @@
 # Context: parent directory (../) — contains both orkyo-community/ and orkyo-foundation/.
 # No GHCR_TOKEN or published packages required.
 # For the production/CI build see: Dockerfile
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS build
 WORKDIR /src
 
 # Foundation source — satisfies Exists() condition in Orkyo.Community.csproj,
