@@ -44,6 +44,12 @@
 
 # 2026-10-28: Keycloak 26.8.1, the newest upstream release, ships Guava 33.6.0-jre. Trivy reports
 # the deserialization DoS below; Guava 33.7.2 fixes it, and no Keycloak release carries it yet.
+#
+# 2026-11-13: both entries above passed their review date. The scan of the Keycloak image built on
+# the pinned foundation base (26.8-orkyo-1.10.0) no longer reports the ca-certificates advisory, so
+# that entry is gone. It still reports Guava 33.6.0-jre, so the Guava entry is renewed; it was first
+# added on 2026-10-28.
+CVE-2026-102554  # HIGH | guava 33.6.0-jre (lib/main in the Keycloak base 26.8-orkyo-1.10.0): denial of service through unthrottled memory allocation during deserialization, fixed in 33.7.2. Clients reach Keycloak over HTTP with form and JSON bodies only, and its embedded Infinispan cache marshals with ProtoStream, not Java serialization of client input. Drop with the foundation bump that ships a Keycloak base on Guava 33.7.2 or later. | Added: 2026-11-13 | Review: 2026-11-27
 
 # 2026-11-05: Oracle's 2026-10 CPU fixes the OpenJDK font-rendering CVE below. The foundation 1.9.0
 # Keycloak base still ships java-21-openjdk-headless 21.0.12; the next foundation release rebuilds it.
