@@ -38,7 +38,7 @@ COPY orkyo-community/backend/src/CommunityConfigKeys.cs  orkyo-community/backend
 RUN dotnet publish orkyo-community/backend/migrator/Orkyo.Community.Migrator.csproj -c Release -o /app/publish --no-restore
 
 # Runtime stage — identical to Dockerfile (production)
-FROM mcr.microsoft.com/dotnet/runtime:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/runtime:11.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .
 
