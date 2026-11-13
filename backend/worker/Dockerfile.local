@@ -41,7 +41,7 @@ COPY orkyo-community/backend/worker      orkyo-community/backend/worker/
 RUN dotnet publish orkyo-community/backend/worker/Orkyo.Community.Worker.csproj -c Release -o /app/publish --no-restore
 
 # Runtime stage — identical to Dockerfile (production)
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:11.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .
 
