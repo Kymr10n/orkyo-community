@@ -10,7 +10,7 @@
 # scripts/bump-foundation.sh together with the NuGet and npm pins — never edit by hand, and
 # never override it with a build arg in CI: KeycloakBasePinTests fails if it drifts from
 # Directory.Build.props.
-ARG FOUNDATION_KC_IMAGE=ghcr.io/kymr10n/keycloak:26.8-orkyo-1.10.0@sha256:b0314cea3981448fe7e5b8fad80796888243858f4af8263e7a36a720cc7b027e
+ARG FOUNDATION_KC_IMAGE=ghcr.io/kymr10n/keycloak:26.8-orkyo-1.10.1-nightly.20261114.0c2d2a6@sha256:b0314cea3981448fe7e5b8fad80796888243858f4af8263e7a36a720cc7b027e
 
 # ── Stage 1: build (add token-exchange to foundation's pre-built server) ──────
 # Foundation already includes: recovery-codes, postgres, health, and the Orkyo theme.
