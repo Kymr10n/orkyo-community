@@ -38,7 +38,8 @@
 #
 # IGNORED MAJORS are upstream-blocked, not unwanted. Each entry names the blocker.
 # The monthly freshness report lists them so they are re-checked, and the entry is
-# dropped the moment the blocker ships.
+# dropped the moment the blocker ships. The one standing exception is policy, not a
+# blocker: the odd (STS) .NET majors stay ignored for good (orkyo-infra ADR 0009).
 #
 # NOT TRACKED: compose.local.yml. Dependabot's docker-compose ecosystem only reads
 # files named compose.y(a)ml or docker-compose.y(a)ml, so the local postgres, valkey
@@ -81,6 +82,11 @@ updates:
       default-days: 3
     # Four directories; a digest bump is one PR across all of them, a major one per image.
     open-pull-requests-limit: 10
+    # .NET runs on LTS releases only (orkyo-infra ADR 0009). LTS majors are even, so the
+    # odd STS majors are ignored. A version range in Bundler syntax: ~> 11.0 is 11.x.
+    ignore:
+      - dependency-name: "dotnet/*"
+        versions: ["~> 11.0", "~> 13.0", "~> 15.0"]
     groups:
       docker-security:
         applies-to: security-updates
@@ -143,6 +149,14 @@ updates:
     # replace that property reference with a literal version and race the train.
     ignore:
       - dependency-name: "Orkyo.*"
+      # .NET runs on LTS releases only (orkyo-infra ADR 0009). These packages version
+      # with the runtime; LTS majors are even, so the odd STS majors are ignored.
+      - dependency-name: "Microsoft.AspNetCore.*"
+        versions: ["11.*", "13.*", "15.*"]
+      - dependency-name: "Microsoft.Extensions.*"
+        versions: ["11.*", "13.*", "15.*"]
+      - dependency-name: "System.Security.Cryptography.*"
+        versions: ["11.*", "13.*", "15.*"]
     open-pull-requests-limit: 5
     groups:
       nuget-security:
