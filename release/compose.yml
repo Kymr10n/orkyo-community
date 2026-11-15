@@ -140,7 +140,7 @@ services:
     # Operators behind a reverse proxy may remove this port and route all
     # traffic through the frontend.
     ports:
-      - "${API_PORT:-8080}:8080"
+      - "${API_PORT:?set the API host port, e.g. 8080}:8080"
     networks: [orkyo-internal, orkyo-public]
     depends_on:
       db: { condition: service_healthy }
