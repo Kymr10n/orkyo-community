@@ -3,7 +3,7 @@
 #
 # Contract:
 #   - Not zero-downtime (single server, single tenant)
-#   - Steps: backup → add secrets a newer release requires → set ORKYO_VERSION in .env → pull → up
+#   - Steps: backup → add values a newer release requires → set ORKYO_VERSION in .env → pull → up
 #   - Aborts if the backup fails: never upgrade without a backup
 #   - Migrations run inside `docker compose up`: the migrator service is in the
 #     api service's depends_on chain with service_completed_successfully
@@ -30,7 +30,7 @@ if ! bash "${SCRIPT_DIR}/backup.sh"; then
 fi
 echo ""
 
-echo "Step 2/4: Adding secrets that newer releases require..."
+echo "Step 2/4: Adding values that newer releases require..."
 # The password re-check client's secret (orkyo-infra ADR 0008). compose.yml refuses to start
 # without it; an install from an older bundle has none.
 if ! grep -qE '^KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET=.' "$ENV_FILE"; then
@@ -38,6 +38,12 @@ if ! grep -qE '^KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET=.' "$ENV_FILE"; then
   sed -i -E '/^KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET=$/d' "$ENV_FILE"
   printf 'KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET=%s\n' "$(openssl rand -hex 32)" >> "$ENV_FILE"
   echo "  added KEYCLOAK_PASSWORD_CHECK_CLIENT_SECRET"
+fi
+# compose.yml refuses to start without API_PORT; older bundles fell back to 8080 silently.
+if ! grep -qE '^API_PORT=.' "$ENV_FILE"; then
+  sed -i -E '/^API_PORT=$/d' "$ENV_FILE"
+  printf 'API_PORT=8080\n' >> "$ENV_FILE"
+  echo "  added API_PORT=8080"
 fi
 
 echo "Step 3/4: Setting ORKYO_VERSION=${NEW_VERSION} in .env..."

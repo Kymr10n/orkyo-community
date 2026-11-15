@@ -27,7 +27,7 @@ These identify the single-tenant context. You can leave `TENANTID` at its defaul
 
 | Variable | Description |
 |---|---|
-| `API_PORT` | Host port for the API | 
+| `API_PORT` | Host port for the API. Required: compose refuses to start without it. The release template sets `8080` |
 | `APP_BASE_URL` | Public base URL of the API (used in email links) |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated allowed frontend origins |
 | `ORKYO_STARTER_TEMPLATE` | Optional one-time starter setup at first start: `manufacturing` or `office`. Unset keeps the installation empty. Recorded under Settings → Presets; never applied twice |

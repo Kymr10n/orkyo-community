@@ -102,7 +102,7 @@ If a required value is missing, compose stops at once. The message names the var
 |---|---|
 | Application | `${APP_BASE_URL}` (or `http://localhost` for local) |
 | Keycloak admin | `${KEYCLOAK_URL}` — sign in as `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD` |
-| API health | `http://<host>:8080/health` — the API's own health endpoint on the `API_PORT` mapping (default `8080`) |
+| API health | `http://<host>:8080/health` — the API's own health endpoint on the `API_PORT` mapping (`8080` in the generated `.env`) |
 | Frontend liveness | `${APP_BASE_URL}/health` — static `OK` stub served by the frontend nginx; does **not** check the API |
 
 One account is pre-imported in the realm. It carries the `UPDATE_PASSWORD`
