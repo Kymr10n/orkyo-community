@@ -700,7 +700,7 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-auto-bump.yml@a436fd590d99648724f35693dca72475819ed2f0
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-auto-bump.yml@50410aaa292a1740f39a3dbd89ffb96e53fce505
     secrets: inherit
 
   # ─────────────────────────────────────────────
