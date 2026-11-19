@@ -18,7 +18,7 @@ jobs:
       packages: read
       pull-requests: read
       issues: write
-    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-freshness-report.yml@b76d29f8f08088175ceedd4252a7b718a816297f
+    uses: Kymr10n/orkyo-foundation/.github/workflows/reusable-freshness-report.yml@f3528004eb290b0bf995ea4b5cb11cd6d4a85a51
     with:
       solution-path: Orkyo.Community.slnx
       with-private-registry: true
